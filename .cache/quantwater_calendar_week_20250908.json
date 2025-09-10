@@ -1,0 +1,162 @@
+[
+    {
+        "date": "2025-09-08",
+        "time_ist": "05:20",
+        "currency": "JPY",
+        "event_name": "JPY - GDP (QoQ) (Q2)",
+        "importance": 3,
+        "forecast": "0.30%",
+        "previous": "0.30%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-08",
+        "time_ist": "22:30",
+        "currency": "USD",
+        "event_name": "USD - Crude Oil Inventories",
+        "importance": 3,
+        "forecast": "N/A",
+        "previous": "2.415M",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-08",
+        "time_ist": "11:30",
+        "currency": "USD",
+        "event_name": "Test event for product testing",
+        "importance": 3,
+        "forecast": "0.00%",
+        "previous": "0.00%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-10",
+        "time_ist": "18:00",
+        "currency": "USD",
+        "event_name": "USD - PPI (MoM) (Aug)",
+        "importance": 3,
+        "forecast": "Link",
+        "previous": "0.90%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-10",
+        "time_ist": "22:30",
+        "currency": "USD",
+        "event_name": "USD - 10-Year Note Auction",
+        "importance": 3,
+        "forecast": "Link",
+        "previous": "4.255%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "17:45",
+        "currency": "EUR",
+        "event_name": "EUR - Deposit Facility Rate (Sep)",
+        "importance": 3,
+        "forecast": "2.000%",
+        "previous": "2.000%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "17:45",
+        "currency": "EUR",
+        "event_name": "EUR - ECB Interest Rate Decision (Sep)",
+        "importance": 3,
+        "forecast": "2.150%",
+        "previous": "2.150%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "18:00",
+        "currency": "USD",
+        "event_name": "USD - Core CPI (MoM) (Aug)",
+        "importance": 3,
+        "forecast": "0.300%",
+        "previous": "0.300%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "18:00",
+        "currency": "USD",
+        "event_name": "USD - CPI (YoY) (Aug)",
+        "importance": 3,
+        "forecast": "Link",
+        "previous": "2.700%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "18:00",
+        "currency": "USD",
+        "event_name": "USD - CPI (MoM) (Aug)",
+        "importance": 3,
+        "forecast": "0.300%",
+        "previous": "0.200%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "18:00",
+        "currency": "USD",
+        "event_name": "USD - Initial Jobless Claims",
+        "importance": 3,
+        "forecast": "Link",
+        "previous": "237K",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "18:15",
+        "currency": "EUR",
+        "event_name": "EUR - ECB Press Conference",
+        "importance": 3,
+        "forecast": "N/A",
+        "previous": "N/A",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-11",
+        "time_ist": "22:30",
+        "currency": "USD",
+        "event_name": "USD - 30-Year Bond Auction",
+        "importance": 3,
+        "forecast": "N/A",
+        "previous": "4.813%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-12",
+        "time_ist": "11:30",
+        "currency": "GBP",
+        "event_name": "GBP - GDP (MoM) (Jul)",
+        "importance": 3,
+        "forecast": "Link",
+        "previous": "0.400%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-12",
+        "time_ist": "11:30",
+        "currency": "EUR",
+        "event_name": "EUR - German CPI (MoM) (Aug)",
+        "importance": 3,
+        "forecast": "0.100%",
+        "previous": "0.300%",
+        "notes": "No additional notes available"
+    },
+    {
+        "date": "2025-09-17",
+        "time_ist": "23:30",
+        "currency": "USD",
+        "event_name": "USD - Fed Interest Rate Decision",
+        "importance": 3,
+        "forecast": "4.17%",
+        "previous": "4.38%",
+        "notes": "No additional notes available"
+    }
+]
