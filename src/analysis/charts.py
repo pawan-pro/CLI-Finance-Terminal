@@ -22,13 +22,8 @@ def generate_chart(dates: list[str], prices: list[float], width=80, height=20) -
         lc="cyan",
     )
 
-    # Customize x-axis ticks to show dates
-    # This is a bit tricky with plotille, we might need a more sophisticated approach
-    # For now, let's just show the first and last date
+    # Customize x-axis limits
     if date_objects:
-        fig.set_x_ticks(
-            [date_objects[0].timestamp(), date_objects[-1].timestamp()],
-            [dates[0], dates[-1]]
-        )
+        fig.set_x_limits(min_=date_objects[0].timestamp(), max_=date_objects[-1].timestamp())
 
     return fig.show()
