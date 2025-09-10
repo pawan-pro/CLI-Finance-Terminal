@@ -22,4 +22,4 @@ def sector():
         sector_table = format_sector_performance(sector_data)
         console.print(sector_table)
     else:
-        console.print("[bold red]Could not retrieve sector performance data.[/bold red]")
+        console.print("[bold red]Could not retrieve sector performance data. This might be a premium feature or the API is temporarily unavailable.[/bold red]")
