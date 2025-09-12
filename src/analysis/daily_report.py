@@ -1104,6 +1104,7 @@ class DailyInvestmentReportGenerator:
                                             commodities_data: pd.DataFrame, volatility_data: pd.DataFrame,
                                             historical_data_dict: Dict[str, pd.DataFrame]) -> Dict[str, float]:
         """Calculate comprehensive risk metrics for the report using institutional analytics"""
+        import numpy as np
         risk_metrics = {}
         
         try:
