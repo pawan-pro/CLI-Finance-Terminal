@@ -1,1 +1,12 @@
-null
+{
+    "01. symbol": "GOOG",
+    "02. open": "234.1900",
+    "03. high": "240.5900",
+    "04. low": "233.3800",
+    "05. price": "239.9400",
+    "06. volume": "22854794",
+    "07. latest trading day": "2025-09-09",
+    "08. previous close": "234.1600",
+    "09. change": "5.7800",
+    "10. change percent": "2.4684%"
+}

@@ -1,0 +1,1 @@
+{"key": "mt5_symbol_info_FTSE100", "value": {"name": "FTSE100", "path": "Mock/Symbols", "description": "FTSE 100", "ask": 7800.0, "bid": 7799.5, "last": 1.0, "volume": 1000, "spread": 1, "digits": 5, "trade_mode": 0, "trade_stops_level": 0, "trade_freeze_level": 0, "point": 1e-05, "high": 1.001, "low": 0.999, "time": 
