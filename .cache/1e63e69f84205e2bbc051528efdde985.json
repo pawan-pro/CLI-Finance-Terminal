@@ -1,0 +1,1 @@
+{"key": "mt5_symbol_info_AUDUSD", "value": {"name": "AUDUSD", "path": "Mock/Symbols", "description": "Australian Dollar vs US Dollar", "ask": 0.65, "bid": 0.6498, "last": 1.0, "volume": 1000, "spread": 1, "digits": 5, "trade_mode": 0, "trade_stops_level": 0, "trade_freeze_level": 0, "point": 1e-05, "high": 1.001, "low": 0.999, "time": 

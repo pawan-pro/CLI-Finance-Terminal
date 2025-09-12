@@ -1,0 +1,19 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+In your terminal:
+
+bash
+rm -rf ~/.qwen
+or, for some setups:
+
+bash
+rm -rf ~/.cache/qwen
+This wipes the saved OAuth tokens and cached credentials.
+
+If you want to be extra careful, you can run:
+
+bash
+ls -a ~ | grep qwen
+to see if any qwen folders are present, then remove as above.
+
+

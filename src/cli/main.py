@@ -6,6 +6,7 @@ from src.cli.commands.news import news
 from src.cli.commands.calendar import calendar
 from src.cli.commands.status import status
 from src.cli.commands.sector import sector
+from src.cli.commands.report import generate as report_generate
 from src.cli.commands import config as config_command
 from src.data.providers.alpha_vantage import AlphaVantage
 from src.cli.formatters.dashboard import format_dashboard
@@ -25,6 +26,7 @@ app.command("news")(news)
 app.command("calendar")(calendar)
 app.command("status")(status)
 app.command("sector")(sector)
+app.command("report")(report_generate)
 app.add_typer(config_command.app, name="config")
 
 @app.callback(invoke_without_command=True)

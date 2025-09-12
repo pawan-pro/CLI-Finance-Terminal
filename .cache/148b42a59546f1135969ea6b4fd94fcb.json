@@ -1,0 +1,1 @@
+{"key": "mt5_symbol_info_USDCHF", "value": {"name": "USDCHF", "path": "Mock/Symbols", "description": "US Dollar vs Swiss Franc", "ask": 0.92, "bid": 0.9198, "last": 1.0, "volume": 1000, "spread": 1, "digits": 5, "trade_mode": 0, "trade_stops_level": 0, "trade_freeze_level": 0, "point": 1e-05, "high": 1.001, "low": 0.999, "time": 
