@@ -16,7 +16,8 @@ def generate(
     save_dir: str = typer.Option("./reports", help="Directory to save the report"),
     format: str = typer.Option("pdf", help="Report format (txt or pdf)"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
-    wine_mt5: bool = typer.Option(False, "--wine-mt5", help="Use Wine MT5 for data fetching")
+    wine_mt5: bool = typer.Option(False, "--wine-mt5", help="Use Wine MT5 for data fetching"),
+    institutional_grade: bool = typer.Option(False, "--institutional", "-i", help="Generate institutional-grade report")
 ):
     """
     Generate a daily investment report
@@ -30,8 +31,11 @@ def generate(
         raise typer.Exit(code=1)
     
     try:
-        typer.echo(f"Generating daily investment report at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report_type = "institutional-grade daily investment report" if institutional_grade else "daily investment report"
+        typer.echo(f"Generating {report_type} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         typer.echo(f"Format: {format.upper()}")
+        if institutional_grade:
+            typer.echo("Institutional-grade report enabled")
         if wine_mt5:
             typer.echo("Using Wine MT5 for data fetching")
         
@@ -39,7 +43,7 @@ def generate(
         report_gen = DailyInvestmentReportGenerator(use_wine_mt5=wine_mt5)
         
         # Generate report
-        report_path = report_gen.generate_report(save_dir, format)
+        report_path = report_gen.generate_report(save_dir, format, institutional_grade)
         
         # Shutdown
         report_gen.shutdown()

@@ -251,6 +251,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             "Bonds/ETFs",
             "Market Volatility",
             "Top Market Movers",
+            "Market Regime Analysis",
             "Economic Calendar",
             "Risk Metrics",
             "Technical Charts"
@@ -269,9 +270,14 @@ class EnhancedInstitutionalPDFReportGenerator:
         
         self.story.append(PageBreak())
     
+    def add_title(self, title: str):
+        """Add title to the report"""
+        self.story.append(Paragraph(title, self.title_style))
+        self.story.append(Spacer(1, 12))
+    
     def add_executive_summary(self, summary_points: List[str]):
         """
-        Add executive summary section
+        Add executive summary section with institutional insights
         
         Args:
             summary_points: List of executive summary bullet points
@@ -287,22 +293,27 @@ class EnhancedInstitutionalPDFReportGenerator:
         self.story.append(Paragraph(summary_text, self.executive_summary_style))
         self.story.append(Spacer(1, 15))
         
-        # Add key insights boxes
+        # Add key insights boxes with more sophisticated institutional commentary
         insights_boxes = [
             {
                 "title": "KEY MARKET INSIGHT",
-                "content": "Market exhibits strong risk-on sentiment with continued inflows to growth assets.",
+                "content": "Market exhibiting strong risk-on sentiment with continued inflows to growth assets. Favorable for equity positioning with emphasis on quality cyclicals.",
                 "color": self.colors['accent_green']
             },
             {
                 "title": "BIGGEST RISK",
-                "content": "Potential policy pivot uncertainty as central banks navigate inflation dynamics.",
+                "content": "Potential policy pivot uncertainty as central banks navigate inflation dynamics. Monitoring key central bank communications for directional guidance.",
                 "color": self.colors['accent_red']
             },
             {
                 "title": "CONVICTION TRADE",
-                "content": "Overweight technology sector with selective duration exposure in high-grade credit.",
+                "content": "Overweight technology sector with selective duration exposure in high-grade credit. Tactical long volatility positioning recommended.",
                 "color": self.colors['accent_gold']
+            },
+            {
+                "title": "PORTFOLIO IMPLICATION",
+                "content": "Constructive bias for risk assets with emphasis on active management and dynamic hedging. Maintain diversified exposure across asset classes.",
+                "color": self.colors['primary_medium']
             }
         ]
         
@@ -357,7 +368,7 @@ class EnhancedInstitutionalPDFReportGenerator:
     
     def add_market_overview(self, market_status: Dict, indices_data: pd.DataFrame):
         """
-        Add market overview section
+        Add market overview section with institutional insights
         
         Args:
             market_status: Market status information
@@ -370,6 +381,33 @@ class EnhancedInstitutionalPDFReportGenerator:
         status_text = f"Markets are currently <b>{status}</b> as of {market_status.get('timestamp', 'N/A')} ({market_status.get('timezone', 'N/A')} timezone)."
         self.story.append(Paragraph(status_text, self.body_text_style))
         self.story.append(Spacer(1, 15))
+        
+        # Institutional market commentary
+        if not indices_data.empty:
+            # Calculate overall market performance
+            returns = []
+            for _, row in indices_data.head(5).iterrows():
+                ask = float(row.get('ask', 0))
+                bid = float(row.get('bid', 0))
+                if bid != 0:
+                    pct_change = (ask - bid) / bid * 100
+                    returns.append(pct_change)
+            
+            if returns:
+                avg_return = np.mean(returns)
+                market_direction = "bullish" if avg_return > 0 else "bearish" if avg_return < 0 else "neutral"
+                market_momentum = "strong" if abs(avg_return) > 0.5 else "moderate" if abs(avg_return) > 0.1 else "weak"
+                
+                commentary = f"<b>Institutional Commentary:</b> Market displaying {market_momentum} {market_direction} momentum with average index movement of {avg_return:.2f}%. "
+                if abs(avg_return) > 0.5:
+                    commentary += "Significant price action warrants attention from portfolio managers."
+                elif abs(avg_return) > 0.1:
+                    commentary += "Normal trading activity with moderate directional bias."
+                else:
+                    commentary += "Range-bound conditions with limited directional conviction."
+                
+                self.story.append(Paragraph(commentary, self.highlight_box_style))
+                self.story.append(Spacer(1, 15))
         
         # Key indices performance
         if not indices_data.empty:
@@ -727,7 +765,7 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("TOP MARKET MOVERS")
         
         # Create top movers table
-        table_data = [['Symbol', 'Name', 'Price', 'Chg', 'Chg %', 'Volume', 'Attribution']]
+        table_data = [['Symbol', 'Name', 'Price', 'Chg', 'Chg %', 'Volume', 'Attribution', 'Confidence']]
         
         for _, row in top_movers.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
@@ -737,13 +775,22 @@ class EnhancedInstitutionalPDFReportGenerator:
             pct_change = float(row.get('pct_change', 0))
             volume = float(row.get('volume', 0))
             
-            # Determine attribution (simplified)
-            if abs(pct_change) > 2.0:
-                attribution = "High impact"
+            # Determine attribution with more sophistication
+            if abs(pct_change) > 3.0:
+                attribution = "Macro Event Driven"
+                confidence = "High"
+            elif abs(pct_change) > 2.0:
+                attribution = "Technical Breakout"
+                confidence = "Medium-High"
             elif abs(pct_change) > 1.0:
-                attribution = "Moderate impact"
+                attribution = "Sector Rotation"
+                confidence = "Medium"
+            elif volume > 1000000:  # High volume
+                attribution = "Flow Driven"
+                confidence = "Medium"
             else:
-                attribution = "Low impact"
+                attribution = "Normal Volatility"
+                confidence = "Low"
             
             table_data.append([
                 symbol,
@@ -752,7 +799,8 @@ class EnhancedInstitutionalPDFReportGenerator:
                 f"{change:+.4f}",
                 f"{pct_change:+.2f}%",
                 f"{volume:,.0f}",
-                attribution
+                attribution,
+                confidence
             ])
         
         table = Table(table_data)
@@ -774,6 +822,47 @@ class EnhancedInstitutionalPDFReportGenerator:
         ]))
         
         self.story.append(table)
+        self.story.append(Spacer(1, 20))
+    
+    def add_market_regime_analysis(self, regime_info: Dict):
+        """
+        Add market regime analysis section
+        
+        Args:
+            regime_info: Market regime information
+        """
+        self._add_section_header("MARKET REGIME ANALYSIS")
+        
+        if not regime_info:
+            self.story.append(Paragraph("No market regime information available.", self.body_text_style))
+            self.story.append(Spacer(1, 20))
+            return
+        
+        regime = regime_info.get("regime", "Unknown")
+        confidence = regime_info.get("confidence", 0.0)
+        driver = regime_info.get("driver", "No specific driver")
+        
+        # Add regime summary box
+        regime_text = f"<b>Current Market Regime:</b> {regime}<br/>"
+        regime_text += f"<b>Confidence Level:</b> {confidence:.0%}<br/>"
+        regime_text += f"<b>Primary Driver:</b> {driver}"
+        
+        self.story.append(Paragraph(regime_text, self.highlight_box_style))
+        self.story.append(Spacer(1, 15))
+        
+        # Add institutional commentary
+        if regime == "Risk-On":
+            commentary = "Market exhibiting strong risk-on sentiment. Favorable environment for growth assets and cyclical sectors. Consider increasing equity exposure with emphasis on quality names."
+        elif regime == "Risk-Off":
+            commentary = "Market showing pronounced risk-off behavior. Defensive positioning recommended with emphasis on quality assets and defensive sectors. Consider increasing cash allocation and defensive hedges."
+        elif regime == "High Volatility":
+            commentary = "Market experiencing elevated volatility conditions. Increased hedging activity and reduced net exposures advisable. Focus on volatility trading opportunities and dynamic risk management."
+        elif regime == "Range-Bound":
+            commentary = "Market displaying range-bound characteristics. Tactical trading opportunities within established ranges. Consider mean-reversion strategies and active management."
+        else:
+            commentary = "Market in normal conditions. Standard risk management protocols appropriate. Maintain diversified portfolio positioning."
+        
+        self.story.append(Paragraph(f"<b>Institutional Commentary:</b> {commentary}", self.executive_summary_style))
         self.story.append(Spacer(1, 20))
     
     def add_calendar_events(self, calendar_data: pd.DataFrame):
@@ -915,11 +1004,14 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('Sharpe Ratio', 'sharpe_ratio', 'Risk-adjusted return measure'),
             ('Sortino Ratio', 'sortino_ratio', 'Downside risk-adjusted return'),
             ('Max Drawdown', 'max_drawdown', 'Largest peak-to-trough decline'),
-            ('Value at Risk (95%)', 'var_95', 'Loss not exceeded 95% of time'),
-            ('Conditional VaR (95%)', 'cvar_95', 'Expected loss beyond VaR threshold'),
-            ('Beta', 'beta', 'Market sensitivity measure'),
-            ('Alpha', 'alpha', 'Excess return relative to benchmark'),
-            ('Volatility (Annualized)', 'volatility_annualized', 'Annualized price volatility'),
+            ('Value at Risk (95%)', 'value_at_risk_95', 'Loss not exceeded 95% of time'),
+            ('Value at Risk (99%)', 'value_at_risk_99', 'Loss not exceeded 99% of time'),
+            ('Conditional VaR (95%)', 'conditional_var_95', 'Expected loss beyond VaR threshold'),
+            ('Beta', 'market_beta', 'Market sensitivity measure'),
+            ('Volatility (Annualized)', 'indices_volatility_annualized', 'Annualized price volatility'),
+            ('Average Correlation', 'average_correlation', 'Average correlation between assets'),
+            ('Market Stress Indicator', 'market_stress_indicator', 'Current market stress level'),
+            ('Market Regime Confidence', 'market_regime_confidence', 'Confidence in detected market regime'),
         ]
         
         for metric_name, metric_key, description in key_metrics:
@@ -927,9 +1019,9 @@ class EnhancedInstitutionalPDFReportGenerator:
             if isinstance(value, (int, float)):
                 if 'ratio' in metric_key:
                     formatted_value = f"{value:.2f}"
-                elif 'var' in metric_key or 'drawdown' in metric_key or 'volatility' in metric_key:
+                elif 'var' in metric_key or 'drawdown' in metric_key or 'volatility' in metric_key or 'indicator' in metric_key:
                     formatted_value = f"{value:.2%}"
-                elif 'beta' in metric_key or 'alpha' in metric_key:
+                elif 'beta' in metric_key or 'alpha' in metric_key or 'correlation' in metric_key or 'confidence' in metric_key:
                     formatted_value = f"{value:.3f}"
                 else:
                     formatted_value = f"{value:.2f}"

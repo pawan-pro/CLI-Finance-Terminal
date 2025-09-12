@@ -59,9 +59,14 @@ The daily investment report provides a comprehensive analysis of the markets inc
 - Economic calendar events
 - Technical charts for key assets
 
-Generate a report with:
+Generate a standard report with:
 ```
 python -m src.cli.main report
+```
+
+Generate an institutional-grade report with:
+```
+python -m src.cli.main report --institutional
 ```
 
 ## MT5 Integration
@@ -74,11 +79,16 @@ For Wine-based setup on macOS/Linux, see [MT5_WINE_SETUP.md](MT5_WINE_SETUP.md) 
 Ensure MT5 is installed and running before using the report feature. The tool will automatically
 detect and use your MT5 setup, falling back to mock data if MT5 is not available.
 
-## To generate a daily investment report with real market data from MT5 through
-  Wine:
+To generate a daily investment report with real market data from MT5 through
+Wine:
 
-   1 # Generate report with real MT5 data from Wine
-   2 python -m src.cli.main report --format pdf --wine-mt5
-   3 
-   4 # Specify custom save directory
-   5 python -m src.cli.main report --format pdf --wine-mt5 --save-dir./my_reports
+```bash
+# Generate standard report with real MT5 data from Wine
+python -m src.cli.main report --format pdf --wine-mt5
+
+# Generate institutional-grade report with real MT5 data from Wine
+python -m src.cli.main report --institutional --format pdf --wine-mt5
+
+# Specify custom save directory
+python -m src.cli.main report --format pdf --wine-mt5 --save-dir ./my_reports
+```

@@ -1,1 +1,0 @@
-{"key": "mt5_symbol_info_XAUUSD", "value": {"name": "XAUUSD", "path": "Mock/Symbols", "description": "Gold vs US Dollar", "ask": 1950.0, "bid": 1949.8, "last": 1.0, "volume": 1000, "spread": 1, "digits": 5, "trade_mode": 0, "trade_stops_level": 0, "trade_freeze_level": 0, "point": 1e-05, "high": 1.001, "low": 0.999, "time": 
