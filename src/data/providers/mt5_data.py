@@ -128,27 +128,51 @@ class MT5DataFetcher:
             logger.warning(f"Failed to get symbol info for {symbol}")
             return None
         
-        info_dict = {
-            'name': symbol_info.name,
-            'path': symbol_info.path,
-            'description': symbol_info.description,
-            'ask': symbol_info.ask,
-            'bid': symbol_info.bid,
-            'last': symbol_info.last,
-            'volume': symbol_info.volume,
-            'spread': symbol_info.spread,
-            'digits': symbol_info.digits,
-            'trade_mode': symbol_info.trade_mode,
-            'trade_stops_level': symbol_info.trade_stops_level,
-            'trade_freeze_level': symbol_info.trade_freeze_level,
-            'point': symbol_info.point,
-            'high': symbol_info.high,
-            'low': symbol_info.low,
-            'time': datetime.fromtimestamp(symbol_info.time) if symbol_info.time else None,
-            'time_msc': symbol_info.time_msc,
-            'session_open': symbol_info.session_open,
-            'session_close': symbol_info.session_close,
-        }
+        # Handle both dict and object formats
+        if isinstance(symbol_info, dict):
+            info_dict = {
+                'name': symbol_info.get('name'),
+                'path': symbol_info.get('path'),
+                'description': symbol_info.get('description'),
+                'ask': symbol_info.get('ask'),
+                'bid': symbol_info.get('bid'),
+                'last': symbol_info.get('last'),
+                'volume': symbol_info.get('volume'),
+                'spread': symbol_info.get('spread'),
+                'digits': symbol_info.get('digits'),
+                'trade_mode': symbol_info.get('trade_mode'),
+                'trade_stops_level': symbol_info.get('trade_stops_level'),
+                'trade_freeze_level': symbol_info.get('trade_freeze_level'),
+                'point': symbol_info.get('point'),
+                'high': symbol_info.get('high'),
+                'low': symbol_info.get('low'),
+                'time': datetime.fromtimestamp(symbol_info.get('time')) if symbol_info.get('time') else None,
+                'time_msc': symbol_info.get('time_msc'),
+                'session_open': symbol_info.get('session_open'),
+                'session_close': symbol_info.get('session_close'),
+            }
+        else:
+            info_dict = {
+                'name': symbol_info.name,
+                'path': symbol_info.path,
+                'description': symbol_info.description,
+                'ask': symbol_info.ask,
+                'bid': symbol_info.bid,
+                'last': symbol_info.last,
+                'volume': symbol_info.volume,
+                'spread': symbol_info.spread,
+                'digits': symbol_info.digits,
+                'trade_mode': symbol_info.trade_mode,
+                'trade_stops_level': symbol_info.trade_stops_level,
+                'trade_freeze_level': symbol_info.trade_freeze_level,
+                'point': symbol_info.point,
+                'high': symbol_info.high,
+                'low': symbol_info.low,
+                'time': datetime.fromtimestamp(symbol_info.time) if symbol_info.time else None,
+                'time_msc': symbol_info.time_msc,
+                'session_open': symbol_info.session_open,
+                'session_close': symbol_info.session_close,
+            }
         
         # Cache the result
         if self.use_cache:
