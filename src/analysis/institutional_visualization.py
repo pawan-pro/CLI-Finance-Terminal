@@ -515,11 +515,7 @@ class EnhancedInstitutionalVisualizer:
             regime_text = f"🔵 NORMAL MARKET REGIME ({confidence*100:.0f}% CONFIDENCE)"
         
         # Add comprehensive regime annotation with institutional commentary
-        regime_annotation = f"{regime_text}
-
-{commentary}
-
-Primary Driver: {driver}"
+        regime_annotation = f"{regime_text}\n\n{commentary}\n\nPrimary Driver: {driver}"
         
         ax.text(0.02, 0.98, 
                regime_annotation,

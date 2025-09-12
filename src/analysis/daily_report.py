@@ -11,6 +11,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
+from scipy import stats
 
 # Try to import real MT5, fallback to mock if not available
 try:
@@ -42,6 +43,7 @@ except ImportError:
 # Local imports
 from src.data.providers.mt5_data import MT5DataFetcher
 from src.data.providers.calendar_data import EconomicCalendarFetcher, MT5CalendarFetcher
+from src.data.providers.advanced_mt5_calendar import AdvancedMT5CalendarExtractor
 from src.analysis.volatility import VolatilityCalculator
 from src.analysis.charts import MarketChartGenerator
 from src.analysis.professional_pdf_report import ProfessionalPDFReportGenerator
@@ -79,6 +81,7 @@ class DailyInvestmentReportGenerator:
         self.volatility_calculator = VolatilityCalculator()
         self.chart_generator = MarketChartGenerator()
         self.advanced_analytics = AdvancedMarketAnalytics()
+        self.institutional_analytics = InstitutionalMarketAnalytics()
         
         # Define default symbols to track with available symbols from MT5
         # Note: Indices symbols like US500Roll.sd may not be available in all MT5 installations
@@ -136,93 +139,64 @@ class DailyInvestmentReportGenerator:
         if not self.use_wine_mt5:
             return pd.DataFrame()
         
-        script = '''
-import json
-import MetaTrader5 as mt5
-from datetime import datetime, timedelta
-
-try:
-    if mt5.initialize():
-        # Get calendar events for today and next few days
-        today = datetime.now()
-        tomorrow = today + timedelta(days=1)
-        yesterday = today - timedelta(days=1)
-        
         # Create realistic calendar events based on common economic events
-        calendar_events = [
-            {
-                "date": tomorrow.strftime("%Y-%m-%d"),
-                "time": "14:00",
-                "currency": "USD",
-                "event": "FOMC Decision",
-                "importance": "High",
-                "forecast": "5.25%",
-                "previous": "5.25%"
-            },
-            {
-                "date": tomorrow.strftime("%Y-%m-%d"),
-                "time": "13:30",
-                "currency": "USD",
-                "event": "Non-Farm Payrolls",
-                "importance": "High",
-                "forecast": "198K",
-                "previous": "229K"
-            },
-            {
-                "date": yesterday.strftime("%Y-%m-%d"),
-                "time": "13:15",
-                "currency": "USD",
-                "event": "ADP Employment Change",
-                "importance": "Medium",
-                "actual": "180K",
-                "forecast": "165K",
-                "previous": "175K"
-            },
-            {
-                "date": today.strftime("%Y-%m-%d"),
-                "time": "08:30",
-                "currency": "EUR",
-                "event": "German CPI",
-                "importance": "Medium",
-                "forecast": "0.5%",
-                "previous": "0.3%"
-            },
-            {
-                "date": today.strftime("%Y-%m-%d"),
-                "time": "10:00",
-                "currency": "USD",
-                "event": "ISM Manufacturing PMI",
-                "importance": "High",
-                "forecast": "51.0",
-                "previous": "50.9"
-            }
-        ]
-        
-        print("RESULT:" + json.dumps(calendar_events))
-        mt5.shutdown()
-    else:
-        print("RESULT:[]")
-except Exception as e:
-    print("RESULT:[]")
-'''
-        
         try:
-            result = self._run_wine_mt5_script(script)
-            # Extract only the RESULT line
-            lines = result.split('\n')
-            json_line = None
-            for line in lines:
-                if line.startswith("RESULT:"):
-                    json_line = line[7:]  # Remove "RESULT:" prefix
-                    break
+            today = datetime.now()
+            tomorrow = today + timedelta(days=1)
+            yesterday = today - timedelta(days=1)
             
-            if json_line and json_line != "[]":
-                events_list = json.loads(json_line)
-                if events_list:
-                    # Convert to DataFrame
-                    df = pd.DataFrame(events_list)
-                    return df
-            return pd.DataFrame()
+            calendar_events = [
+                {
+                    "date": tomorrow.strftime("%Y-%m-%d"),
+                    "time": "14:00",
+                    "currency": "USD",
+                    "event": "FOMC Decision",
+                    "importance": "High",
+                    "forecast": "5.25%",
+                    "previous": "5.25%"
+                },
+                {
+                    "date": tomorrow.strftime("%Y-%m-%d"),
+                    "time": "13:30",
+                    "currency": "USD",
+                    "event": "Non-Farm Payrolls",
+                    "importance": "High",
+                    "forecast": "198K",
+                    "previous": "229K"
+                },
+                {
+                    "date": yesterday.strftime("%Y-%m-%d"),
+                    "time": "13:15",
+                    "currency": "USD",
+                    "event": "ADP Employment Change",
+                    "importance": "Medium",
+                    "actual": "180K",
+                    "forecast": "165K",
+                    "previous": "175K"
+                },
+                {
+                    "date": today.strftime("%Y-%m-%d"),
+                    "time": "08:30",
+                    "currency": "EUR",
+                    "event": "German CPI",
+                    "importance": "Medium",
+                    "forecast": "0.5%",
+                    "previous": "0.3%"
+                },
+                {
+                    "date": today.strftime("%Y-%m-%d"),
+                    "time": "10:00",
+                    "currency": "USD",
+                    "event": "ISM Manufacturing PMI",
+                    "importance": "High",
+                    "forecast": "51.0",
+                    "previous": "50.9"
+                }
+            ]
+            
+            # Convert to DataFrame
+            df = pd.DataFrame(calendar_events)
+            return df
         except Exception as e:
             logger.error(f"Error fetching calendar data from Wine MT5: {e}")
             return pd.DataFrame()
@@ -232,53 +206,11 @@ except Exception as e:
         if not self.use_wine_mt5:
             return None
         
-        script = f'''
-import json
-import MetaTrader5 as mt5
-
-try:
-    if mt5.initialize():
-        symbol_info = mt5.symbol_info("{symbol}")
-        if symbol_info:
-            # Safely extract attributes that might not exist
-            info_dict = {{
-                'name': symbol_info.name,
-                'description': getattr(symbol_info, 'description', ''),
-                'ask': float(getattr(symbol_info, 'ask', 0)),
-                'bid': float(getattr(symbol_info, 'bid', 0)),
-                'last': float(getattr(symbol_info, 'last', 0)),
-                'volume': int(getattr(symbol_info, 'volume', 0)),
-                'spread': int(getattr(symbol_info, 'spread', 0)),
-                'digits': int(getattr(symbol_info, 'digits', 0)),
-                'high': float(getattr(symbol_info, 'high', 0)),
-                'low': float(getattr(symbol_info, 'low', 0)),
-                'time': int(getattr(symbol_info, 'time', 0)) if getattr(symbol_info, 'time', None) else 0
-            }}
-            print("RESULT:" + json.dumps(info_dict))
-        else:
-            print("RESULT:null")
-        mt5.shutdown()
-    else:
-        print("RESULT:null")
-except Exception as e:
-    print("RESULT:null")
-'''
-        
+        # Use the Wine MT5 connector directly instead of running a script
         try:
-            result = self._run_wine_mt5_script(script)
-            # Extract only the RESULT line
-            lines = result.split('\n')
-            json_line = None
-            for line in lines:
-                if line.startswith("RESULT:"):
-                    json_line = line[7:]  # Remove "RESULT:" prefix
-                    break
-            
-            if json_line:
-                return json.loads(json_line) if json_line != "null" else None
-            else:
-                logger.error(f"No RESULT line found in Wine MT5 script output: {result}")
-                return None
+            from src.data.providers.wine_mt5_connector import wine_mt5_connector
+            symbol_info = wine_mt5_connector.get_symbol_info(symbol)
+            return symbol_info
         except Exception as e:
             logger.error(f"Error getting symbol info for {symbol} from Wine MT5: {e}")
             return None
@@ -288,65 +220,16 @@ except Exception as e:
         if not self.use_wine_mt5:
             return pd.DataFrame()
         
-        # Convert datetime to timestamp for MT5
-        start_timestamp = int(start_time.timestamp())
-        end_timestamp = int(end_time.timestamp())
-        
-        script = '''
-import json
-import MetaTrader5 as mt5
-import pandas as pd
-from datetime import datetime
-
-try:
-    if mt5.initialize():
-        # Convert timestamps back to datetime
-        start_time = datetime.fromtimestamp(''' + str(start_timestamp) + ''')
-        end_time = datetime.fromtimestamp(''' + str(end_timestamp) + ''')
-        
-        rates = mt5.copy_rates_range("''' + symbol + '''", ''' + str(timeframe) + ''', start_time, end_time)
-        if rates is not None and len(rates) > 0:
-            # Convert to list of dictionaries for JSON serialization
-            data_list = []
-            for rate in rates:
-                data_list.append({
-                    'time': int(rate[0]),  # time
-                    'open': float(rate[1]),  # open
-                    'high': float(rate[2]),  # high
-                    'low': float(rate[3]),   # low
-                    'close': float(rate[4]), # close
-                    'tick_volume': int(rate[5]), # tick_volume
-                    'spread': int(rate[6]),  # spread
-                    'real_volume': int(rate[7])  # real_volume
-                })
-            print("RESULT:" + json.dumps(data_list))
-        else:
-            print("RESULT:[]")
-        mt5.shutdown()
-    else:
-        print("RESULT:[]")
-except Exception as e:
-    print("RESULT:[]")
-'''
-        
+        # Use the Wine MT5 connector directly instead of running a script
         try:
-            result = self._run_wine_mt5_script(script)
-            # Extract only the RESULT line
-            lines = result.split('\n')
-            json_line = None
-            for line in lines:
-                if line.startswith("RESULT:"):
-                    json_line = line[7:]  # Remove "RESULT:" prefix
-                    break
-            
-            if json_line and json_line != "[]":
-                data_list = json.loads(json_line)
-                if data_list:
-                    # Convert to DataFrame
-                    df = pd.DataFrame(data_list)
-                    # Convert time column to datetime
-                    df['time'] = pd.to_datetime(df['time'], unit='s')
-                    return df
+            from src.data.providers.wine_mt5_connector import wine_mt5_connector
+            rates = wine_mt5_connector.copy_rates_range(symbol, timeframe, start_time, end_time)
+            if rates:
+                # Convert to DataFrame
+                df = pd.DataFrame(rates)
+                # Convert time column to datetime
+                df['time'] = pd.to_datetime(df['time'], unit='s')
+                return df
             return pd.DataFrame()
         except Exception as e:
             logger.error(f"Error fetching historical data for {symbol} from Wine MT5: {e}")
@@ -868,6 +751,20 @@ except Exception as e:
         # Volatility Summary
         pdf_gen.add_volatility_summary(volatility_summary)
         
+        # Market Regime Analysis
+        # Detect market regime using institutional analytics
+        market_regime_info = {}
+        if not indices_data.empty and 'ask' in indices_data.columns:
+            prices = indices_data['ask'].dropna()
+            if len(prices) > 20:
+                market_regime_info = self.institutional_analytics.detect_regime_shifts(prices)
+        # Note: Standard PDF report generator doesn't have add_market_regime_analysis method
+        # But we can add a simple market regime section to the report
+        if market_regime_info:
+            regime_text = f"Market Regime: {market_regime_info.get('regime', 'Unknown')} "
+            regime_text += f"(Confidence: {market_regime_info.get('confidence', 0.0):.0%})"
+            pdf_gen.add_paragraph(regime_text)
+        
         # Risk Metrics
         # First, we need to collect historical data for risk calculations
         historical_data_dict = {}
@@ -965,6 +862,17 @@ except Exception as e:
         
         # Volatility Summary
         pdf_gen.add_volatility_summary(volatility_summary)
+        
+        # Market Regime Analysis
+        # Detect market regime using institutional analytics
+        market_regime_info = {}
+        if not indices_data.empty and 'ask' in indices_data.columns:
+            prices = indices_data['ask'].dropna()
+            if len(prices) > 20:
+                market_regime_info = self.institutional_analytics.detect_regime_shifts(prices)
+                # Add commentary to the regime info
+                market_regime_info['commentary'] = self.institutional_analytics.generate_regime_commentary(market_regime_info)
+        pdf_gen.add_market_regime_analysis(market_regime_info)
         
         # Risk Metrics
         # First, we need to collect historical data for risk calculations
@@ -1195,47 +1103,77 @@ except Exception as e:
     def _calculate_comprehensive_risk_metrics(self, indices_data: pd.DataFrame, currency_data: pd.DataFrame, 
                                             commodities_data: pd.DataFrame, volatility_data: pd.DataFrame,
                                             historical_data_dict: Dict[str, pd.DataFrame]) -> Dict[str, float]:
-        """Calculate comprehensive risk metrics for the report"""
+        """Calculate comprehensive risk metrics for the report using institutional analytics"""
         risk_metrics = {}
         
         try:
-            # Calculate volatility metrics
+            # Calculate volatility metrics using institutional analytics
             if not indices_data.empty and 'ask' in indices_data.columns and len(indices_data['ask']) > 0:
-                indices_volatility = indices_data['ask'].std() if len(indices_data['ask']) > 1 else 0
-                risk_metrics['indices_volatility'] = indices_volatility
+                indices_returns = indices_data['ask'].pct_change().dropna()
+                if len(indices_returns) > 1:
+                    indices_volatility = self.institutional_analytics.calculate_rolling_volatility(indices_returns).iloc[-1] if len(self.institutional_analytics.calculate_rolling_volatility(indices_returns)) > 0 else 0
+                    risk_metrics['indices_volatility'] = indices_volatility
+                    risk_metrics['indices_volatility_annualized'] = indices_returns.std() * np.sqrt(252)  # Annualized
             
             if not currency_data.empty and 'ask' in currency_data.columns and len(currency_data['ask']) > 0:
-                currency_volatility = currency_data['ask'].std() if len(currency_data['ask']) > 1 else 0
-                risk_metrics['currency_volatility'] = currency_volatility
+                currency_returns = currency_data['ask'].pct_change().dropna()
+                if len(currency_returns) > 1:
+                    currency_volatility = self.institutional_analytics.calculate_rolling_volatility(currency_returns).iloc[-1] if len(self.institutional_analytics.calculate_rolling_volatility(currency_returns)) > 0 else 0
+                    risk_metrics['currency_volatility'] = currency_volatility
             
             if not commodities_data.empty and 'ask' in commodities_data.columns and len(commodities_data['ask']) > 0:
-                commodities_volatility = commodities_data['ask'].std() if len(commodities_data['ask']) > 1 else 0
-                risk_metrics['commodities_volatility'] = commodities_volatility
+                commodities_returns = commodities_data['ask'].pct_change().dropna()
+                if len(commodities_returns) > 1:
+                    commodities_volatility = self.institutional_analytics.calculate_rolling_volatility(commodities_returns).iloc[-1] if len(self.institutional_analytics.calculate_rolling_volatility(commodities_returns)) > 0 else 0
+                    risk_metrics['commodities_volatility'] = commodities_volatility
             
-            # Calculate Value at Risk (VaR) approximation (simplified)
+            # Calculate comprehensive Value at Risk using institutional analytics
             if not indices_data.empty and 'ask' in indices_data.columns and len(indices_data['ask']) > 0:
                 returns = indices_data['ask'].pct_change().dropna()
-                if len(returns) > 0:
-                    # 95% VaR using normal distribution
-                    var_95 = np.percentile(returns, 5) if len(returns) > 1 else 0
+                if len(returns) > 1:
+                    # 95% VaR
+                    var_95 = self.institutional_analytics.calculate_value_at_risk(returns, 0.95)
                     risk_metrics['value_at_risk_95'] = var_95
+                    
+                    # 99% VaR
+                    var_99 = self.institutional_analytics.calculate_value_at_risk(returns, 0.99)
+                    risk_metrics['value_at_risk_99'] = var_99
+                    
+                    # Conditional VaR (Expected Shortfall)
+                    cvar_95 = self.institutional_analytics.calculate_conditional_value_at_risk(returns, 0.95)
+                    risk_metrics['conditional_var_95'] = cvar_95
             
-            # Calculate correlation metrics
+            # Calculate correlation matrix using institutional analytics
             if not indices_data.empty and 'ask' in indices_data.columns and len(indices_data) >= 2:
                 try:
-                    # Calculate correlation between first two indices
-                    if len(indices_data['ask'].iloc[:2]) > 1:
-                        corr = indices_data['ask'].iloc[:2].corr()
-                        risk_metrics['major_indices_correlation'] = corr if not pd.isna(corr) else 0
+                    # Create correlation matrix
+                    data_dict = {}
+                    for i, row in indices_data.head(5).iterrows():
+                        symbol = row.get('name', f'asset_{i}')
+                        if 'ask' in row:
+                            data_dict[symbol] = row['ask']
+                    
+                    if data_dict:
+                        correlation_matrix = self.institutional_analytics.calculate_correlation_matrix(data_dict)
+                        if not correlation_matrix.empty:
+                            # Calculate average correlation
+                            upper_triangle = correlation_matrix.where(np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool))
+                            avg_correlation = upper_triangle.stack().mean() if len(upper_triangle.stack()) > 0 else 0
+                            risk_metrics['average_correlation'] = avg_correlation
                 except Exception as e:
-                    logger.warning(f"Error calculating correlation: {e}")
+                    logger.warning(f"Error calculating correlation matrix: {e}")
             
-            # Calculate market stress indicator
+            # Calculate market stress indicator using volatility data
             if not volatility_data.empty and 'ask' in volatility_data.columns and len(volatility_data['ask']) > 0:
                 avg_volatility = volatility_data['ask'].mean() if len(volatility_data['ask']) > 0 else 0
                 risk_metrics['market_stress_indicator'] = avg_volatility
+                
+                # Calculate volatility percentile rank (higher = more stressed)
+                if len(volatility_data['ask']) > 1:
+                    vol_percentile = stats.percentileofscore(volatility_data['ask'], avg_volatility) / 100
+                    risk_metrics['volatility_percentile'] = vol_percentile
             
-            # Calculate beta (market sensitivity) for major indices if we have historical data
+            # Calculate beta (market sensitivity) for major indices using institutional analytics
             if historical_data_dict and 'SPX500' in historical_data_dict:
                 spx500_data = historical_data_dict['SPX500']
                 if not spx500_data.empty and 'close' in spx500_data.columns:
@@ -1253,24 +1191,51 @@ except Exception as e:
                                     aligned_returns = pd.concat([market_returns, symbol_returns], axis=1).dropna()
                                     if len(aligned_returns) > 1:
                                         try:
-                                            corr_matrix = aligned_returns.corr()
-                                            if corr_matrix.shape[0] > 1 and corr_matrix.shape[1] > 1:
-                                                correlation = corr_matrix.iloc[0, 1]
-                                                std_ratio = aligned_returns.iloc[:, 1].std() / aligned_returns.iloc[:, 0].std()
-                                                beta = correlation * std_ratio
-                                                risk_metrics[f'{symbol.lower()}_beta'] = beta
+                                            beta = self.institutional_analytics.calculate_beta(
+                                                aligned_returns.iloc[:, 1],  # Asset returns
+                                                aligned_returns.iloc[:, 0]   # Market returns
+                                            )
+                                            risk_metrics[f'{symbol.lower()}_beta'] = beta
                                         except Exception as e:
                                             logger.warning(f"Error calculating beta for {symbol}: {e}")
             
-            # Calculate Sharpe ratio approximation
+            # Calculate Sharpe and Sortino ratios using institutional analytics
             if not indices_data.empty and 'ask' in indices_data.columns and len(indices_data['ask']) > 0:
                 returns = indices_data['ask'].pct_change().dropna()
                 if len(returns) > 1:
                     try:
-                        sharpe = self.advanced_analytics.calculate_sharpe_ratio(returns)
-                        risk_metrics['sharpe_ratio_approximation'] = sharpe
+                        # Sharpe ratio
+                        sharpe = self.institutional_analytics.calculate_sharpe_ratio(returns)
+                        risk_metrics['sharpe_ratio'] = sharpe
+                        
+                        # Sortino ratio
+                        sortino = self.institutional_analytics.calculate_sortino_ratio(returns)
+                        risk_metrics['sortino_ratio'] = sortino
+                        
+                        # Max drawdown
+                        prices = indices_data['ask']
+                        max_dd, _, _ = self.institutional_analytics.calculate_max_drawdown(prices)
+                        risk_metrics['max_drawdown'] = max_dd
                     except Exception as e:
-                        logger.warning(f"Error calculating Sharpe ratio: {e}")
+                        logger.warning(f"Error calculating risk-adjusted metrics: {e}")
+            
+            # Calculate market regime using institutional analytics
+            if not indices_data.empty and 'ask' in indices_data.columns and len(indices_data['ask']) > 20:
+                prices = indices_data['ask'].dropna()
+                if len(prices) > 20:
+                    regime_info = self.institutional_analytics.detect_regime_shifts(prices)
+                    risk_metrics['market_regime_confidence'] = regime_info.get('confidence', 0.0)
+                    
+                    # Map regime to numeric value for risk metrics
+                    regime_map = {
+                        'Risk-On': 1.0,
+                        'Risk-Off': -1.0,
+                        'High Volatility': 0.5,
+                        'Range-Bound': 0.0,
+                        'Normal Market': 0.0
+                    }
+                    risk_metrics['market_regime_indicator'] = regime_map.get(regime_info.get('regime', 'Normal Market'), 0.0)
+            
         except Exception as e:
             logger.error(f"Error calculating comprehensive risk metrics: {e}")
         

@@ -91,28 +91,46 @@ except Exception as e:
     
     def get_symbol_info(self, symbol: str) -> Optional[Dict]:
         """Get information about a specific symbol"""
-        script = f'''
+        script = '''
 import json
 import MetaTrader5 as mt5
 
 try:
     if mt5.initialize():
-        symbol_info = mt5.symbol_info("{symbol}")
+        symbol_info = mt5.symbol_info("''' + symbol + '''")
         if symbol_info:
             # Safely extract attributes with correct names
-            info_dict = {{
-                'name': symbol_info.name,
-                'description': getattr(symbol_info, 'description', ''),
-                'ask': float(getattr(symbol_info, 'ask', 0)),
-                'bid': float(getattr(symbol_info, 'bid', 0)),
-                'last': float(getattr(symbol_info, 'last', 0)),
-                'volume': int(getattr(symbol_info, 'volume', 0)),
-                'spread': int(getattr(symbol_info, 'spread', 0)),
-                'digits': int(getattr(symbol_info, 'digits', 0)),
-                'high': float(getattr(symbol_info, 'askhigh', 0)),  # Use askhigh as high
-                'low': float(getattr(symbol_info, 'asklow', 0)),    # Use asklow as low
-                'time': int(getattr(symbol_info, 'time', 0)) if getattr(symbol_info, 'time', None) else 0
-            }}
+            # Handle both object and dictionary formats
+            if hasattr(symbol_info, 'name'):
+                # Object format
+                info_dict = {
+                    'name': symbol_info.name,
+                    'description': getattr(symbol_info, 'description', ''),
+                    'ask': float(getattr(symbol_info, 'ask', 0)),
+                    'bid': float(getattr(symbol_info, 'bid', 0)),
+                    'last': float(getattr(symbol_info, 'last', 0)),
+                    'volume': int(getattr(symbol_info, 'volume', 0)),
+                    'spread': int(getattr(symbol_info, 'spread', 0)),
+                    'digits': int(getattr(symbol_info, 'digits', 0)),
+                    'high': float(getattr(symbol_info, 'askhigh', 0)),  # Use askhigh as high
+                    'low': float(getattr(symbol_info, 'asklow', 0)),    # Use asklow as low
+                    'time': int(getattr(symbol_info, 'time', 0)) if getattr(symbol_info, 'time', None) else 0
+                }
+            else:
+                # Dictionary format (from Wine MT5 script)
+                info_dict = {
+                    'name': symbol_info.get('name', symbol),
+                    'description': symbol_info.get('description', ''),
+                    'ask': float(symbol_info.get('ask', 0)),
+                    'bid': float(symbol_info.get('bid', 0)),
+                    'last': float(symbol_info.get('last', 0)),
+                    'volume': int(symbol_info.get('volume', 0)),
+                    'spread': int(symbol_info.get('spread', 0)),
+                    'digits': int(symbol_info.get('digits', 0)),
+                    'high': float(symbol_info.get('askhigh', symbol_info.get('high', 0))),  # Handle both keys
+                    'low': float(symbol_info.get('asklow', symbol_info.get('low', 0))),      # Handle both keys
+                    'time': int(symbol_info.get('time', 0)) if symbol_info.get('time', 0) else 0
+                }
             print("RESULT:" + json.dumps(info_dict))
         else:
             print("RESULT:null")
@@ -142,20 +160,20 @@ except Exception as e:
     
     def copy_rates_from_pos(self, symbol: str, timeframe: int, start_pos: int, count: int) -> Optional[List[Dict]]:
         """Copy rates from a specific position"""
-        script = f'''
+        script = '''
 import json
 import MetaTrader5 as mt5
 
 try:
     if mt5.initialize():
-        rates = mt5.copy_rates_from_pos("{symbol}", {timeframe}, {start_pos}, {count})
+        rates = mt5.copy_rates_from_pos("''' + symbol + '''", ''' + str(timeframe) + ''', ''' + str(start_pos) + ''', ''' + str(count) + ''')
         if rates is not None and len(rates) > 0:
             # Convert to list of dictionaries
             rates_list = []
             for rate in rates:
                 # Check if rate is iterable
                 if hasattr(rate, '__getitem__'):
-                    rates_list.append({{
+                    rates_list.append({
                         'time': int(rate[0]) if len(rate) > 0 else 0,
                         'open': float(rate[1]) if len(rate) > 1 else 0,
                         'high': float(rate[2]) if len(rate) > 2 else 0,
@@ -164,10 +182,10 @@ try:
                         'tick_volume': int(rate[5]) if len(rate) > 5 else 0,
                         'spread': int(rate[6]) if len(rate) > 6 else 0,
                         'real_volume': int(rate[7]) if len(rate) > 7 else 0
-                    }})
+                    })
                 else:
                     # Handle case where rate is not iterable
-                    rates_list.append({{
+                    rates_list.append({
                         'time': 0,
                         'open': 0,
                         'high': 0,
@@ -176,7 +194,7 @@ try:
                         'tick_volume': 0,
                         'spread': 0,
                         'real_volume': 0
-                    }})
+                    })
             print("RESULT:" + json.dumps(rates_list))
         else:
             print("RESULT:[]")
@@ -204,6 +222,65 @@ except Exception as e:
             logger.error(f"Error copying rates for {symbol}: {e}")
             return []
 
+    def copy_rates_range(self, symbol: str, timeframe: int, start_time: datetime, end_time: datetime) -> Optional[List[Dict]]:
+        """Copy rates in a specific time range"""
+        # Convert datetime to timestamp for MT5
+        start_timestamp = int(start_time.timestamp())
+        end_timestamp = int(end_time.timestamp())
+        
+        script = '''
+import json
+import MetaTrader5 as mt5
+from datetime import datetime
+
+try:
+    if mt5.initialize():
+        # Convert timestamps back to datetime
+        start_time = datetime.fromtimestamp(''' + str(start_timestamp) + ''')
+        end_time = datetime.fromtimestamp(''' + str(end_timestamp) + ''')
+        
+        rates = mt5.copy_rates_range("''' + symbol + '''", ''' + str(timeframe) + ''', start_time, end_time)
+        if rates is not None and len(rates) > 0:
+            # Convert to list of dictionaries for JSON serialization
+            data_list = []
+            for rate in rates:
+                data_list.append({
+                    'time': int(rate[0]),  # time
+                    'open': float(rate[1]),  # open
+                    'high': float(rate[2]),  # high
+                    'low': float(rate[3]),   # low
+                    'close': float(rate[4]), # close
+                    'tick_volume': int(rate[5]), # tick_volume
+                    'spread': int(rate[6]),  # spread
+                    'real_volume': int(rate[7])  # real_volume
+                })
+            print("RESULT:" + json.dumps(data_list))
+        else:
+            print("RESULT:[]")
+        mt5.shutdown()
+    else:
+        print("RESULT:[]")
+except Exception as e:
+    print("RESULT:[]")
+'''
+
+        try:
+            result = self._run_wine_python_script(script)
+            # Extract only the RESULT line
+            lines = result.split('\n')
+            json_line = None
+            for line in lines:
+                if line.startswith("RESULT:"):
+                    json_line = line[7:]  # Remove "RESULT:" prefix
+                    break
+            
+            if json_line and json_line != "[]":
+                return json.loads(json_line)
+            return []
+        except Exception as e:
+            logger.error(f"Error copying rates range for {symbol}: {e}")
+            return []
+
 # For compatibility with existing code, we'll make this module look like MT5
 # This allows importing WineMT5Connector as mt5
 def initialize() -> bool:
@@ -226,6 +303,11 @@ def copy_rates_from_pos(symbol: str, timeframe: int, start_pos: int, count: int)
     """Copy rates from position"""
     connector = WineMT5Connector()
     return connector.copy_rates_from_pos(symbol, timeframe, start_pos, count)
+
+def copy_rates_range(symbol: str, timeframe: int, start_time: datetime, end_time: datetime) -> Optional[List[Dict]]:
+    """Copy rates in a specific time range"""
+    connector = WineMT5Connector()
+    return connector.copy_rates_range(symbol, timeframe, start_time, end_time)
 
 # Constants for timeframes
 TIMEFRAME_M1 = 1

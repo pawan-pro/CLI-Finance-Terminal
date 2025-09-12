@@ -1,1 +1,0 @@
-{"key": "mt5_symbol_info_USDJPY", "value": {"name": "USDJPY", "path": "Mock/Symbols", "description": "US Dollar vs Japanese Yen", "ask": 149.5, "bid": 149.48, "last": 1.0, "volume": 1000, "spread": 1, "digits": 5, "trade_mode": 0, "trade_stops_level": 0, "trade_freeze_level": 0, "point": 1e-05, "high": 1.001, "low": 0.999, "time": 
