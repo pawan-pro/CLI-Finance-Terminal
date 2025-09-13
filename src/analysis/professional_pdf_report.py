@@ -293,16 +293,10 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            ask = f"{row.get('ask', 'N/A'):.2f}" if isinstance(row.get('ask'), (int, float)) else str(row.get('ask', 'N/A'))
-            bid = f"{row.get('bid', 'N/A'):.2f}" if isinstance(row.get('bid'), (int, float)) else str(row.get('bid', 'N/A'))
-            # Calculate spread
-            if isinstance(row.get('ask'), (int, float)) and isinstance(row.get('bid'), (int, float)):
-                spread = f"{abs(row.get('ask') - row.get('bid')):.4f}"
-            else:
-                spread = "N/A"
-            data.append([name, ask, bid, spread])
-        
-        self.add_rich_table(data, ["Index", "Ask", "Bid", "Spread"], [2*inch, 1.5*inch, 1.5*inch, 1*inch])
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            data.append([name, price])
+
+        self.add_rich_table(data, ["Index", "Price"], [3*inch, 2*inch])
     
     def add_currencies_table(self, currency_data: pd.DataFrame):
         """Add currencies table with professional styling"""
@@ -313,16 +307,10 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in currency_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            ask = f"{row.get('ask', 'N/A'):.4f}" if isinstance(row.get('ask'), (int, float)) else str(row.get('ask', 'N/A'))
-            bid = f"{row.get('bid', 'N/A'):.4f}" if isinstance(row.get('bid'), (int, float)) else str(row.get('bid', 'N/A'))
-            # Calculate spread
-            if isinstance(row.get('ask'), (int, float)) and isinstance(row.get('bid'), (int, float)):
-                spread = f"{abs(row.get('ask') - row.get('bid')):.4f}"
-            else:
-                spread = "N/A"
-            data.append([name, ask, bid, spread])
-        
-        self.add_rich_table(data, ["Currency Pair", "Ask", "Bid", "Spread"], [2*inch, 1.5*inch, 1.5*inch, 1*inch])
+            price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            data.append([name, price])
+
+        self.add_rich_table(data, ["Currency Pair", "Price"], [3*inch, 2*inch])
     
     def add_commodities_table(self, commodities_data: pd.DataFrame):
         """Add commodities table with professional styling"""
@@ -333,16 +321,10 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in commodities_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            ask = f"{row.get('ask', 'N/A'):.2f}" if isinstance(row.get('ask'), (int, float)) else str(row.get('ask', 'N/A'))
-            bid = f"{row.get('bid', 'N/A'):.2f}" if isinstance(row.get('bid'), (int, float)) else str(row.get('bid', 'N/A'))
-            # Calculate spread
-            if isinstance(row.get('ask'), (int, float)) and isinstance(row.get('bid'), (int, float)):
-                spread = f"{abs(row.get('ask') - row.get('bid')):.2f}"
-            else:
-                spread = "N/A"
-            data.append([name, ask, bid, spread])
-        
-        self.add_rich_table(data, ["Commodity", "Ask", "Bid", "Spread"], [2.5*inch, 1.75*inch, 1.75*inch, 1*inch])
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            data.append([name, price])
+
+        self.add_rich_table(data, ["Commodity", "Price"], [3*inch, 2*inch])
     
     def add_bonds_table(self, bonds_data: pd.DataFrame):
         """Add bonds table with professional styling"""
@@ -353,16 +335,10 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in bonds_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            ask = f"{row.get('ask', 'N/A'):.2f}" if isinstance(row.get('ask'), (int, float)) else str(row.get('ask', 'N/A'))
-            bid = f"{row.get('bid', 'N/A'):.2f}" if isinstance(row.get('bid'), (int, float)) else str(row.get('bid', 'N/A'))
-            # Calculate spread
-            if isinstance(row.get('ask'), (int, float)) and isinstance(row.get('bid'), (int, float)):
-                spread = f"{abs(row.get('ask') - row.get('bid')):.2f}"
-            else:
-                spread = "N/A"
-            data.append([name, ask, bid, spread])
-        
-        self.add_rich_table(data, ["Bond/ETF", "Ask", "Bid", "Spread"], [2.5*inch, 1.75*inch, 1.75*inch, 1*inch])
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            data.append([name, price])
+
+        self.add_rich_table(data, ["Bond/ETF", "Price"], [3*inch, 2*inch])
     
     def add_volatility_table(self, volatility_data: pd.DataFrame):
         """Add volatility indices table with professional styling"""
@@ -373,30 +349,29 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in volatility_data.head(10).iterrows():
             name = str(row.get('name', 'N/A'))
-            ask = f"{row.get('ask', 'N/A'):.2f}" if isinstance(row.get('ask'), (int, float)) else str(row.get('ask', 'N/A'))
-            bid = f"{row.get('bid', 'N/A'):.2f}" if isinstance(row.get('bid'), (int, float)) else str(row.get('bid', 'N/A'))
-            data.append([name, ask, bid])
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            data.append([name, price])
         
-        self.add_rich_table(data, ["Volatility Index", "Ask", "Bid"], [2.5*inch, 1.75*inch, 1.75*inch])
+        self.add_rich_table(data, ["Volatility Index", "Price"], [3*inch, 2*inch])
     
     def add_top_movers_table(self, top_movers: pd.DataFrame):
         """Add top movers table with professional styling"""
         if top_movers.empty:
             return
             
-        self.add_section("Top Market Movers")
+        self.add_section("Top Market Movers (24h)")
         data = []
         for _, row in top_movers.iterrows():
             name = str(row.get('name', 'N/A'))
-            ask = f"{row.get('ask', 'N/A'):.2f}" if isinstance(row.get('ask'), (int, float)) else str(row.get('ask', 'N/A'))
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             pct_change = row.get('pct_change', 0)
             direction = "+" if pct_change >= 0 else ""
             change_text = f"{direction}{pct_change:.2f}%"
             
             # Color coding for changes
-            data.append([name, ask, change_text])
+            data.append([name, price, change_text])
         
-        self.add_rich_table(data, ["Symbol", "Price", "Change"], [2.5*inch, 1.75*inch, 1.75*inch])
+        self.add_rich_table(data, ["Symbol", "Price", "24h Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
     def add_calendar_events(self, calendar_data: pd.DataFrame):
         """Add economic calendar events with professional styling"""

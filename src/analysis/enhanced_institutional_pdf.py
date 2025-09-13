@@ -475,28 +475,18 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("MAJOR INDICES PERFORMANCE")
         
         # Create comprehensive indices table
-        table_data = [['Index', 'Description', 'Last', 'Bid', 'Ask', 'Chg', 'Chg %', 'Spread']]
+        table_data = [['Index', 'Description', 'Price']]
         
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             description = str(row.get('description', 'N/A'))
-            ask = float(row.get('ask', 0))
-            bid = float(row.get('bid', 0))
-            last = (ask + bid) / 2
-            spread = abs(ask - bid) if ask != 0 and bid != 0 else 0
-            change = ask - bid
-            pct_change = (change / bid * 100) if bid != 0 else 0
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
             # Format numbers with appropriate precision
             table_data.append([
                 name,
                 description[:30] + "..." if len(description) > 30 else description,
-                f"{last:.2f}",
-                f"{bid:.2f}",
-                f"{ask:.2f}",
-                f"{change:+.2f}",
-                f"{pct_change:+.2f}%",
-                f"{spread:.4f}"
+                price
             ])
         
         table = Table(table_data)
@@ -533,31 +523,17 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("CURRENCY MARKETS")
         
         # Create currencies table
-        table_data = [['Pair', 'Description', 'Bid', 'Ask', 'Spread (pips)', 'Chg', 'Chg %']]
+        table_data = [['Pair', 'Description', 'Price']]
         
         for _, row in currency_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             description = str(row.get('description', 'N/A'))
-            ask = float(row.get('ask', 0))
-            bid = float(row.get('bid', 0))
-            spread = abs(ask - bid) if ask != 0 and bid != 0 else 0
-            change = ask - bid
-            pct_change = (change / bid * 100) if bid != 0 else 0
-            
-            # Convert spread to pips (4 decimal places for most pairs, 2 for JPY pairs)
-            if 'JPY' in name:
-                spread_pips = spread * 100  # 2 decimal places
-            else:
-                spread_pips = spread * 10000  # 4 decimal places
-            
+            price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+
             table_data.append([
                 name,
                 description[:25] + "..." if len(description) > 25 else description,
-                f"{bid:.5f}",
-                f"{ask:.5f}",
-                f"{spread_pips:.1f}",
-                f"{change:+.5f}",
-                f"{pct_change:+.2f}%"
+                price
             ])
         
         table = Table(table_data)
@@ -594,27 +570,17 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("COMMODITIES")
         
         # Create commodities table
-        table_data = [['Commodity', 'Description', 'Last', 'Bid', 'Ask', 'Chg', 'Chg %', 'Spread']]
+        table_data = [['Commodity', 'Description', 'Price']]
         
         for _, row in commodities_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             description = str(row.get('description', 'N/A'))
-            ask = float(row.get('ask', 0))
-            bid = float(row.get('bid', 0))
-            last = (ask + bid) / 2
-            spread = abs(ask - bid) if ask != 0 and bid != 0 else 0
-            change = ask - bid
-            pct_change = (change / bid * 100) if bid != 0 else 0
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
             table_data.append([
                 name,
                 description[:25] + "..." if len(description) > 25 else description,
-                f"{last:.2f}",
-                f"{bid:.2f}",
-                f"{ask:.2f}",
-                f"{change:+.2f}",
-                f"{pct_change:+.2f}%",
-                f"{spread:.2f}"
+                price
             ])
         
         table = Table(table_data)
@@ -651,28 +617,20 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("BONDS/ETFs")
         
         # Create bonds table
-        table_data = [['Bond/ETF', 'Description', 'Last', 'Bid', 'Ask', 'Chg', 'Chg %', 'Yield']]
+        table_data = [['Bond/ETF', 'Description', 'Price', 'Yield']]
         
         for _, row in bonds_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             description = str(row.get('description', 'N/A'))
-            ask = float(row.get('ask', 0))
-            bid = float(row.get('bid', 0))
-            last = (ask + bid) / 2
-            change = ask - bid
-            pct_change = (change / bid * 100) if bid != 0 else 0
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
             # Estimate yield (simplified calculation)
-            yield_estimate = (last * 0.03) if last > 0 else 0  # Simplified yield estimation
+            yield_estimate = (row.get('Price', 0) * 0.03) if row.get('Price', 0) > 0 else 0  # Simplified yield estimation
             
             table_data.append([
                 name,
                 description[:25] + "..." if len(description) > 25 else description,
-                f"{last:.2f}",
-                f"{bid:.2f}",
-                f"{ask:.2f}",
-                f"{change:+.2f}",
-                f"{pct_change:+.2f}%",
+                price,
                 f"{yield_estimate:.2f}%"
             ])
         
@@ -710,25 +668,17 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("MARKET VOLATILITY")
         
         # Create volatility table
-        table_data = [['Volatility Index', 'Description', 'Last', 'Bid', 'Ask', 'Chg', 'Chg %']]
+        table_data = [['Volatility Index', 'Description', 'Price']]
         
         for _, row in volatility_data.head(10).iterrows():
             name = str(row.get('name', 'N/A'))
             description = str(row.get('description', 'N/A'))
-            ask = float(row.get('ask', 0))
-            bid = float(row.get('bid', 0))
-            last = (ask + bid) / 2
-            change = ask - bid
-            pct_change = (change / bid * 100) if bid != 0 else 0
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
             table_data.append([
                 name,
                 description[:30] + "..." if len(description) > 30 else description,
-                f"{last:.2f}",
-                f"{bid:.2f}",
-                f"{ask:.2f}",
-                f"{change:+.2f}",
-                f"{pct_change:+.2f}%"
+                price
             ])
         
         table = Table(table_data)
@@ -762,16 +712,15 @@ class EnhancedInstitutionalPDFReportGenerator:
         if top_movers.empty:
             return
             
-        self._add_section_header("TOP MARKET MOVERS")
+        self._add_section_header("TOP MARKET MOVERS (24h)")
         
         # Create top movers table
-        table_data = [['Symbol', 'Name', 'Price', 'Chg', 'Chg %', 'Volume', 'Attribution', 'Confidence']]
+        table_data = [['Symbol', 'Name', 'Price', '24h Change %', 'Volume', 'Attribution', 'Confidence']]
         
         for _, row in top_movers.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             symbol = str(row.get('symbol', name))
-            price = float(row.get('ask', 0))
-            change = float(row.get('change', 0))
+            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             pct_change = float(row.get('pct_change', 0))
             volume = float(row.get('volume', 0))
             
@@ -795,8 +744,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             table_data.append([
                 symbol,
                 name[:20] + "..." if len(name) > 20 else name,
-                f"{price:.4f}",
-                f"{change:+.4f}",
+                price,
                 f"{pct_change:+.2f}%",
                 f"{volume:,.0f}",
                 attribution,
