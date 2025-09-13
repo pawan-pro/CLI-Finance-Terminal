@@ -285,11 +285,6 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
-        # Calculate Price column
-        for item in indices_data:
-            if 'ask' in item and 'bid' in item:
-                item['Price'] = (item['ask'] + item['bid']) / 2
-
         return pd.DataFrame(indices_data)
     
     def get_currency_data(self) -> pd.DataFrame:
@@ -324,11 +319,6 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
-        # Calculate Price column
-        for item in currency_data:
-            if 'ask' in item and 'bid' in item:
-                item['Price'] = (item['ask'] + item['bid']) / 2
-
         return pd.DataFrame(currency_data)
     
     def get_commodities_data(self) -> pd.DataFrame:
@@ -363,11 +353,6 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
-        # Calculate Price column
-        for item in commodities_data:
-            if 'ask' in item and 'bid' in item:
-                item['Price'] = (item['ask'] + item['bid']) / 2
-
         return pd.DataFrame(commodities_data)
     
     def get_bonds_data(self) -> pd.DataFrame:
@@ -402,11 +387,6 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
-        # Calculate Price column
-        for item in bonds_data:
-            if 'ask' in item and 'bid' in item:
-                item['Price'] = (item['ask'] + item['bid']) / 2
-
         return pd.DataFrame(bonds_data)
     
     def get_volatility_data(self) -> pd.DataFrame:
@@ -453,25 +433,33 @@ class DailyInvestmentReportGenerator:
 
         for index, row in data.iterrows():
             symbol = row['name']
-            current_price = row['Price']
+
+            # Calculate current price as the average of ask and bid
+            if 'ask' in row and 'bid' in row and row['bid'] != 0:
+                current_price = (row['ask'] + row['bid']) / 2
+            else:
+                continue
 
             # Fetch historical data for the last 24 hours
             end_time = datetime.now()
             start_time = end_time - timedelta(days=1)
 
-            historical_data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_M1, start_time, end_time)
+            try:
+                historical_data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_M1, start_time, end_time)
 
-            if not historical_data.empty:
-                price_24h_ago = historical_data['close'].iloc[0]
-                if price_24h_ago != 0:
-                    pct_change = ((current_price - price_24h_ago) / price_24h_ago) * 100
-                    data.loc[index, 'pct_change'] = pct_change
+                if not historical_data.empty and 'close' in historical_data.columns:
+                    price_24h_ago = historical_data['close'].iloc[0]
+                    if price_24h_ago != 0:
+                        pct_change = ((current_price - price_24h_ago) / price_24h_ago) * 100
+                        data.loc[index, 'pct_change'] = pct_change
+            except Exception as e:
+                logger.warning(f"Could not calculate 24h change for {symbol}: {e}")
 
         # Sort by absolute percentage change
         data['abs_pct_change'] = data['pct_change'].abs()
         top_movers = data.nlargest(top_n, 'abs_pct_change')
 
-        return top_movers[['name', 'Price', 'pct_change']]
+        return top_movers[['name', 'ask', 'bid', 'pct_change']]
     
     def generate_charts(self, save_dir: str = "./reports/charts") -> List[str]:
         """Generate key market charts with specific timeframes and intervals"""
@@ -580,31 +568,25 @@ class DailyInvestmentReportGenerator:
         return chart_files
     
     def get_economic_calendar(self) -> pd.DataFrame:
-        """Get today's economic calendar"""
+        """Get today's economic calendar from the CSV file."""
         try:
-            # Try Wine MT5 calendar first if enabled
+            # Path to the economic calendar CSV file
+            calendar_csv_path = "C:/Users/Administrator/AppData/Roaming/MetaQuotes/Terminal/Common/Files/economic_calendar.csv"
+            
+            # In a Wine environment, the C: drive is typically mapped to a path within the user's home directory.
+            # We'll construct a path that can be accessed from the Unix-like environment.
             if self.use_wine_mt5:
-                from src.data.providers import wine_mt5_connector
-                calendar_events = wine_mt5_connector.get_calendar_events()
-                if calendar_events:
-                    return pd.DataFrame(calendar_events)
-            
-            # Try advanced MT5 calendar extractor
-            calendar_data = self.advanced_calendar_extractor.get_comprehensive_calendar()
-            if not calendar_data.empty:
-                return calendar_data
-            
-            # Try MT5 calendar
-            calendar_data = self.mt5_calendar_fetcher.fetch_mt5_calendar(
-                datetime.now(), datetime.now() + timedelta(days=1))
-            
-            if calendar_data.empty:
-                # Fallback to generic calendar
-                calendar_data = self.calendar_fetcher.get_todays_events()
-            
-            return calendar_data
+                wine_path = os.path.expanduser("~/.wine/drive_c")
+                if os.path.exists(wine_path):
+                    calendar_csv_path = calendar_csv_path.replace("C:", wine_path, 1)
+
+            if os.path.exists(calendar_csv_path):
+                return pd.read_csv(calendar_csv_path)
+            else:
+                logger.warning(f"Economic calendar CSV file not found at: {calendar_csv_path}")
+                return pd.DataFrame()
         except Exception as e:
-            logger.error(f"Error fetching economic calendar: {e}")
+            logger.error(f"Error reading economic calendar CSV: {e}")
             return pd.DataFrame()
     
     def get_volatility_summary(self) -> pd.DataFrame:

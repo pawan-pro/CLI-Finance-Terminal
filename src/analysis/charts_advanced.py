@@ -76,28 +76,26 @@ class MarketChartGenerator:
             return ""
         
         # Filter out NaN values
-        df = df.dropna(subset=['time', 'close'])
+        df = df.dropna(subset=['time', 'close', 'open', 'high', 'low'])
         if df.empty:
             logger.warning(f"No valid data available for {symbol}")
             return ""
-        
+
+        df['time'] = pd.to_datetime(df['time'])
+        df = df.set_index('time')
+
+        # Calculate SMAs
+        df['SMA50'] = df['close'].rolling(window=50).mean()
+        df['SMA200'] = df['close'].rolling(window=200).mean()
+
         # Create the plot
-        plt.figure(figsize=(12, 6))
-        plt.plot(df['time'], df['close'], linewidth=1.5, color='blue')
-        plt.title(f"{symbol} Price Chart", fontsize=16)
-        plt.xlabel("Date", fontsize=12)
-        plt.ylabel("Price", fontsize=12)
-        plt.grid(True, alpha=0.3)
-        
-        # Format x-axis dates
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=5))
-        plt.gcf().autofmt_xdate()
-        
-        # Save the plot
-        plt.tight_layout()
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.close()
+        import mplfinance as mpf
+        mpf.plot(df, type='candle', style='yahoo',
+                 title=f"{symbol} Price Chart",
+                 ylabel='Price',
+                 mav=(50, 200),
+                 volume=True,
+                 savefig=save_path)
         
         return save_path
     

@@ -61,6 +61,12 @@ class CacheManager:
         """
         cache_path = self._get_cache_path(key)
         
+        class DateTimeEncoder(json.JSONEncoder):
+            def default(self, o):
+                if isinstance(o, (datetime, pd.Timestamp)):
+                    return o.isoformat()
+                return json.JSONEncoder.default(self, o)
+
         try:
             # Create cache data with timestamp
             cache_data = {
@@ -71,7 +77,7 @@ class CacheManager:
             
             # Write to cache file
             with open(cache_path, 'w') as f:
-                json.dump(cache_data, f)
+                json.dump(cache_data, f, cls=DateTimeEncoder)
             
             logger.debug(f"Cache set for key: {key}")
             return True
