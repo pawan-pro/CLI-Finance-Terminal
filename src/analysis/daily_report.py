@@ -285,6 +285,11 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
+        # Calculate Price column
+        for item in indices_data:
+            if 'ask' in item and 'bid' in item:
+                item['Price'] = (item['ask'] + item['bid']) / 2
+
         return pd.DataFrame(indices_data)
     
     def get_currency_data(self) -> pd.DataFrame:
@@ -319,6 +324,11 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
+        # Calculate Price column
+        for item in currency_data:
+            if 'ask' in item and 'bid' in item:
+                item['Price'] = (item['ask'] + item['bid']) / 2
+
         return pd.DataFrame(currency_data)
     
     def get_commodities_data(self) -> pd.DataFrame:
@@ -353,6 +363,11 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
+        # Calculate Price column
+        for item in commodities_data:
+            if 'ask' in item and 'bid' in item:
+                item['Price'] = (item['ask'] + item['bid']) / 2
+
         return pd.DataFrame(commodities_data)
     
     def get_bonds_data(self) -> pd.DataFrame:
@@ -387,6 +402,11 @@ class DailyInvestmentReportGenerator:
                 except Exception as e:
                     logger.warning(f"Error fetching data for {symbol}: {e}")
         
+        # Calculate Price column
+        for item in bonds_data:
+            if 'ask' in item and 'bid' in item:
+                item['Price'] = (item['ask'] + item['bid']) / 2
+
         return pd.DataFrame(bonds_data)
     
     def get_volatility_data(self) -> pd.DataFrame:
@@ -424,19 +444,34 @@ class DailyInvestmentReportGenerator:
         return pd.DataFrame(volatility_data)
     
     def get_top_movers(self, data: pd.DataFrame, top_n: int = 5) -> pd.DataFrame:
-        """Get top gainers and losers"""
+        """Get top gainers and losers based on 24-hour price change."""
         if data.empty:
             return pd.DataFrame()
-        
-        # Calculate percentage change (simplified)
+
         data = data.copy()
-        data['pct_change'] = ((data['ask'] - data['bid']) / data['bid'] * 100).fillna(0)
-        
+        data['pct_change'] = 0.0
+
+        for index, row in data.iterrows():
+            symbol = row['name']
+            current_price = row['Price']
+
+            # Fetch historical data for the last 24 hours
+            end_time = datetime.now()
+            start_time = end_time - timedelta(days=1)
+
+            historical_data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_M1, start_time, end_time)
+
+            if not historical_data.empty:
+                price_24h_ago = historical_data['close'].iloc[0]
+                if price_24h_ago != 0:
+                    pct_change = ((current_price - price_24h_ago) / price_24h_ago) * 100
+                    data.loc[index, 'pct_change'] = pct_change
+
         # Sort by absolute percentage change
         data['abs_pct_change'] = data['pct_change'].abs()
         top_movers = data.nlargest(top_n, 'abs_pct_change')
-        
-        return top_movers[['name', 'ask', 'bid', 'pct_change']]
+
+        return top_movers[['name', 'Price', 'pct_change']]
     
     def generate_charts(self, save_dir: str = "./reports/charts") -> List[str]:
         """Generate key market charts with specific timeframes and intervals"""
@@ -549,9 +584,10 @@ class DailyInvestmentReportGenerator:
         try:
             # Try Wine MT5 calendar first if enabled
             if self.use_wine_mt5:
-                calendar_data = self._get_wine_calendar_data()
-                if not calendar_data.empty:
-                    return calendar_data
+                from src.data.providers import wine_mt5_connector
+                calendar_events = wine_mt5_connector.get_calendar_events()
+                if calendar_events:
+                    return pd.DataFrame(calendar_events)
             
             # Try advanced MT5 calendar extractor
             calendar_data = self.advanced_calendar_extractor.get_comprehensive_calendar()
