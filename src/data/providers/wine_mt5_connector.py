@@ -52,7 +52,7 @@ class WineMT5Connector:
             
             # Run the script in Wine Python
             cmd = ['wine', 'python.exe', 'Z:\\\\' + temp_script.replace('/', '\\\\')]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30,
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60,
                                   env={**os.environ, 'MVK_CONFIG_LOG_LEVEL': '0'})
             
             # Clean up

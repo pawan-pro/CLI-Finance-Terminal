@@ -114,6 +114,14 @@ class MT5DataFetcher:
                         'time': datetime.fromtimestamp(wine_symbol_info.get('time', 0)) if wine_symbol_info.get('time', 0) else None,
                     }
                     
+                    # Apply fallback logic for zero ask/bid values
+                    # Check if both ask and bid are zero, try to use last price
+                    if info_dict.get('ask', 0) == 0 and info_dict.get('bid', 0) == 0:
+                        if info_dict.get('last', 0) != 0:
+                            info_dict['ask'] = info_dict['last']
+                            info_dict['bid'] = info_dict['last']
+                        # If last is also zero, we keep the zeros to indicate no data
+                    
                     # Cache the result
                     if self.use_cache:
                         cache_manager.set(cache_key, info_dict)
@@ -174,6 +182,14 @@ class MT5DataFetcher:
                 'session_close': symbol_info.session_close,
             }
         
+        # Apply fallback logic for zero ask/bid values
+        # Check if both ask and bid are zero, try to use last price
+        if info_dict.get('ask', 0) == 0 and info_dict.get('bid', 0) == 0:
+            if info_dict.get('last', 0) != 0:
+                info_dict['ask'] = info_dict['last']
+                info_dict['bid'] = info_dict['last']
+            # If last is also zero, we keep the zeros to indicate no data
+        
         # Cache the result
         if self.use_cache:
             cache_manager.set(cache_key, info_dict)
@@ -218,7 +234,12 @@ class MT5DataFetcher:
                         # Cache the result
                         if self.use_cache:
                             # Convert DataFrame to dict for caching
-                            cache_data = df.to_dict('records')
+                            # Convert Timestamp objects to strings to make them JSON serializable
+                            df_copy = df.copy()
+                            for col in df_copy.columns:
+                                if df_copy[col].dtype == 'datetime64[ns]':
+                                    df_copy[col] = df_copy[col].astype(str)
+                            cache_data = df_copy.to_dict('records')
                             cache_manager.set(cache_key, cache_data)
                         
                         return df
@@ -251,7 +272,12 @@ class MT5DataFetcher:
         # Cache the result
         if self.use_cache:
             # Convert DataFrame to dict for caching
-            cache_data = df.to_dict('records')
+            # Convert Timestamp objects to strings to make them JSON serializable
+            df_copy = df.copy()
+            for col in df_copy.columns:
+                if df_copy[col].dtype == 'datetime64[ns]':
+                    df_copy[col] = df_copy[col].astype(str)
+            cache_data = df_copy.to_dict('records')
             cache_manager.set(cache_key, cache_data)
         
         return df
@@ -292,7 +318,12 @@ class MT5DataFetcher:
         # Cache the result
         if self.use_cache:
             # Convert DataFrame to dict for caching
-            cache_data = df.to_dict('records')
+            # Convert Timestamp objects to strings to make them JSON serializable
+            df_copy = df.copy()
+            for col in df_copy.columns:
+                if df_copy[col].dtype == 'datetime64[ns]':
+                    df_copy[col] = df_copy[col].astype(str)
+            cache_data = df_copy.to_dict('records')
             cache_manager.set(cache_key, cache_data)
         
         return df
@@ -324,7 +355,12 @@ class MT5DataFetcher:
         # Cache the result
         if self.use_cache:
             # Convert DataFrame to dict for caching
-            cache_data = df.to_dict('records')
+            # Convert Timestamp objects to strings to make them JSON serializable
+            df_copy = df.copy()
+            for col in df_copy.columns:
+                if df_copy[col].dtype == 'datetime64[ns]':
+                    df_copy[col] = df_copy[col].astype(str)
+            cache_data = df_copy.to_dict('records')
             cache_manager.set(cache_key, cache_data)
         
         return df

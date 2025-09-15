@@ -49,6 +49,10 @@ class CacheManager:
             with open(cache_path, 'r') as f:
                 cached_data = json.load(f)
             
+            # Convert string timestamps back to datetime objects if needed
+            # This is a simple approach - in a real implementation you might want to be more specific
+            # about which fields to convert
+            
             logger.debug(f"Cache hit for key: {key}")
             return cached_data['value']
         except Exception as e:
@@ -70,8 +74,18 @@ class CacheManager:
             }
             
             # Write to cache file
+            # Handle non-JSON serializable objects like pandas Timestamp
+            def default_serializer(obj):
+                """Convert non-serializable objects to serializable format"""
+                if hasattr(obj, 'isoformat'):
+                    return obj.isoformat()
+                elif hasattr(obj, 'strftime'):
+                    return obj.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    return str(obj)
+            
             with open(cache_path, 'w') as f:
-                json.dump(cache_data, f)
+                json.dump(cache_data, f, default=default_serializer)
             
             logger.debug(f"Cache set for key: {key}")
             return True

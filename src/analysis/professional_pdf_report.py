@@ -274,10 +274,15 @@ class ProfessionalPDFReportGenerator:
             indices_summary = []
             for _, row in key_indices.head(5).iterrows():
                 name = row.get('name', 'N/A')
-                ask = row.get('ask', 0)
-                bid = row.get('bid', 0)
-                spread = abs(ask - bid) if isinstance(ask, (int, float)) and isinstance(bid, (int, float)) else 0
-                indices_summary.append(f"• {name}: {ask:.2f} (Spread: {spread:.4f})")
+                price = row.get('Price', 0)
+                # Show integer values for indices, decimal for others
+                if any(index_name in name for index_name in ['US', 'JP', 'DE', 'UK', 'FR', 'IT', 'ES', 'AU', 'NZ', 'CA']):
+                    # Format as integer for indices
+                    price_formatted = f"{price:.0f}" if isinstance(price, (int, float)) else str(price)
+                else:
+                    # Format with decimals for currencies and others
+                    price_formatted = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
+                indices_summary.append(f"• {name}: {price_formatted}")
             
             for summary in indices_summary:
                 self.add_paragraph(summary)
@@ -293,10 +298,31 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            data.append([name, price])
+            # Show integer values for indices
+            price_value = row.get('Price', 'N/A')
+            if isinstance(price_value, (int, float)):
+                # Check if this is an index symbol
+                index_symbols = ['US', 'JP', 'DE', 'UK', 'FR', 'IT', 'ES', 'AU', 'NZ', 'CA']
+                if any(index_name in name for index_name in index_symbols):
+                    # Format as integer for indices
+                    price = f"{price_value:.0f}"
+                else:
+                    # Format with decimals for others
+                    price = f"{price_value:.2f}"
+            else:
+                price = str(price_value)
+                
+            # Add 24H % change if available
+            pct_change_24h = row.get('pct_change_24h', 0)
+            if isinstance(pct_change_24h, (int, float)):
+                direction = "+" if pct_change_24h >= 0 else ""
+                change_text = f"{direction}{pct_change_24h:.2f}%"
+            else:
+                change_text = "N/A"
+            
+            data.append([name, price, change_text])
 
-        self.add_rich_table(data, ["Index", "Price"], [3*inch, 2*inch])
+        self.add_rich_table(data, ["Index", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
     def add_currencies_table(self, currency_data: pd.DataFrame):
         """Add currencies table with professional styling"""
@@ -307,10 +333,24 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in currency_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            data.append([name, price])
+            price_value = row.get('Price', 'N/A')
+            if isinstance(price_value, (int, float)):
+                # Format with 4 decimal places for currencies
+                price = f"{price_value:.4f}"
+            else:
+                price = str(price_value)
+                
+            # Add 24H % change if available
+            pct_change_24h = row.get('pct_change_24h', 0)
+            if isinstance(pct_change_24h, (int, float)):
+                direction = "+" if pct_change_24h >= 0 else ""
+                change_text = f"{direction}{pct_change_24h:.2f}%"
+            else:
+                change_text = "N/A"
+            
+            data.append([name, price, change_text])
 
-        self.add_rich_table(data, ["Currency Pair", "Price"], [3*inch, 2*inch])
+        self.add_rich_table(data, ["Currency Pair", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
     def add_commodities_table(self, commodities_data: pd.DataFrame):
         """Add commodities table with professional styling"""
@@ -321,10 +361,27 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in commodities_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            data.append([name, price])
+            price_value = row.get('Price', 'N/A')
+            if isinstance(price_value, (int, float)):
+                # Special handling for gold (XAUUSD) - should show 4 decimal places
+                if name == 'XAUUSD':
+                    price = f"{price_value:.2f}"  # Show 2 decimal places for gold
+                else:
+                    price = f"{price_value:.2f}"  # Show 2 decimal places for other commodities
+            else:
+                price = str(price_value)
+                
+            # Add 24H % change if available
+            pct_change_24h = row.get('pct_change_24h', 0)
+            if isinstance(pct_change_24h, (int, float)):
+                direction = "+" if pct_change_24h >= 0 else ""
+                change_text = f"{direction}{pct_change_24h:.2f}%"
+            else:
+                change_text = "N/A"
+            
+            data.append([name, price, change_text])
 
-        self.add_rich_table(data, ["Commodity", "Price"], [3*inch, 2*inch])
+        self.add_rich_table(data, ["Commodity", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
     def add_bonds_table(self, bonds_data: pd.DataFrame):
         """Add bonds table with professional styling"""
@@ -335,10 +392,23 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in bonds_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            data.append([name, price])
+            price_value = row.get('Price', 'N/A')
+            if isinstance(price_value, (int, float)):
+                price = f"{price_value:.2f}"
+            else:
+                price = str(price_value)
+                
+            # Add 24H % change if available
+            pct_change_24h = row.get('pct_change_24h', 0)
+            if isinstance(pct_change_24h, (int, float)):
+                direction = "+" if pct_change_24h >= 0 else ""
+                change_text = f"{direction}{pct_change_24h:.2f}%"
+            else:
+                change_text = "N/A"
+            
+            data.append([name, price, change_text])
 
-        self.add_rich_table(data, ["Bond/ETF", "Price"], [3*inch, 2*inch])
+        self.add_rich_table(data, ["Bond/ETF", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
     def add_volatility_table(self, volatility_data: pd.DataFrame):
         """Add volatility indices table with professional styling"""
@@ -349,10 +419,23 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in volatility_data.head(10).iterrows():
             name = str(row.get('name', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            data.append([name, price])
+            price_value = row.get('Price', 'N/A')
+            if isinstance(price_value, (int, float)):
+                price = f"{price_value:.2f}"
+            else:
+                price = str(price_value)
+                
+            # Add 24H % change if available
+            pct_change_24h = row.get('pct_change_24h', 0)
+            if isinstance(pct_change_24h, (int, float)):
+                direction = "+" if pct_change_24h >= 0 else ""
+                change_text = f"{direction}{pct_change_24h:.2f}%"
+            else:
+                change_text = "N/A"
+            
+            data.append([name, price, change_text])
         
-        self.add_rich_table(data, ["Volatility Index", "Price"], [3*inch, 2*inch])
+        self.add_rich_table(data, ["Volatility Index", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
     def add_top_movers_table(self, top_movers: pd.DataFrame):
         """Add top movers table with professional styling"""
@@ -363,7 +446,18 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in top_movers.iterrows():
             name = str(row.get('name', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            # Show integer values for indices
+            price_value = row.get('Price', 'N/A')
+            if isinstance(price_value, (int, float)):
+                # Check if this is an index symbol
+                if any(index_name in name for index_name in ['US', 'JP', 'DE', 'UK', 'FR', 'IT', 'ES', 'AU', 'NZ', 'CA']):
+                    # Format as integer for indices
+                    price = f"{price_value:.0f}"
+                else:
+                    # Format with decimals for others
+                    price = f"{price_value:.2f}"
+            else:
+                price = str(price_value)
             pct_change = row.get('pct_change', 0)
             direction = "+" if pct_change >= 0 else ""
             change_text = f"{direction}{pct_change:.2f}%"
@@ -381,9 +475,23 @@ class ProfessionalPDFReportGenerator:
         self.add_section("Economic Calendar")
         data = []
         for _, row in calendar_data.head(20).iterrows():
-            date_time = f"{row.get('date', 'N/A')} {row.get('time', 'N/A')}"
-            currency = str(row.get('currency', 'N/A'))
-            event = str(row.get('event', 'N/A'))
+            # Handle the new CSV format with DateTime,EventID,Name,Country,Currency,Impact,Actual,Forecast,Previous
+            # Or the old format with Time,Name,Impact,Currency,Actual,Forecast,Previous
+            if 'DateTime' in calendar_data.columns:
+                # New format
+                date_time = str(row.get('DateTime', 'N/A'))
+                currency = str(row.get('Currency', 'N/A'))
+                event = str(row.get('Name', 'N/A'))
+            elif 'Time' in calendar_data.columns:
+                # Old format
+                date_time = str(row.get('Time', 'N/A'))
+                currency = str(row.get('Currency', 'N/A'))
+                event = str(row.get('Name', 'N/A'))
+            else:
+                # Fallback
+                date_time = "N/A"
+                currency = "N/A"
+                event = "N/A"
             data.append([date_time, currency, event])
         
         self.add_rich_table(data, ["Date/Time", "Currency", "Event"], [2*inch, 1*inch, 3*inch])
