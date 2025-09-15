@@ -74,13 +74,13 @@ class MarketChartGenerator:
         if df.empty or 'time' not in df.columns or 'close' not in df.columns:
             logger.warning(f"No data available for {symbol}")
             return ""
-        
+
         # Filter out NaN values
         df = df.dropna(subset=['time', 'close'])
         if df.empty:
             logger.warning(f"No valid data available for {symbol}")
             return ""
-        
+
         # Create the plot
         plt.figure(figsize=(12, 6))
         plt.plot(df['time'], df['close'], linewidth=1.5, color='blue')
@@ -100,7 +100,77 @@ class MarketChartGenerator:
         plt.close()
         
         return save_path
-    
+
+    def generate_candlestick_chart(self, df: pd.DataFrame, symbol: str, save_path: str) -> str:
+        """
+        Generate candlestick chart for a symbol using matplotlib
+        
+        Args:
+            df: DataFrame with OHLC data ('time', 'open', 'high', 'low', 'close')
+            symbol: Symbol name
+            save_path: Path to save the chart
+            
+        Returns:
+            Path to saved chart
+        """
+        if df.empty:
+            logger.warning(f"No data available for {symbol}")
+            return ""
+            
+        # Required columns for candlestick chart
+        required_columns = ['time', 'open', 'high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            logger.warning(f"Missing columns for candlestick chart {symbol}: {missing_columns}")
+            return ""
+            
+        # Filter out NaN values
+        df = df.dropna(subset=required_columns)
+        if df.empty:
+            logger.warning(f"No valid data available for {symbol}")
+            return ""
+            
+        # Sort by time to ensure proper order
+        df = df.sort_values('time')
+        
+        # Create the candlestick chart
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Plot candlesticks
+        width = 0.6  # Width of candles
+        for i, (_, row) in enumerate(df.iterrows()):
+            # Draw the high-low line (wick)
+            ax.plot([i, i], [row['low'], row['high']], color='black', linewidth=1)
+            
+            # Determine colors (green for up, red for down)
+            color = 'green' if row['close'] >= row['open'] else 'red'
+            
+            # Draw the body
+            body_height = abs(row['close'] - row['open'])
+            body_bottom = min(row['close'], row['open'])
+            ax.bar(i, body_height, bottom=body_bottom, width=width, color=color, edgecolor='black')
+        
+        # Format x-axis
+        ax.set_xlabel("Date", fontsize=12)
+        ax.set_ylabel("Price", fontsize=12)
+        ax.set_title(f"{symbol} Candlestick Chart", fontsize=16)
+        ax.grid(True, alpha=0.3)
+        
+        # Set x-axis labels to show dates at regular intervals
+        num_points = len(df)
+        step = max(1, num_points // 10)  # Show approximately 10 date labels
+        xticks = list(range(0, num_points, step))
+        xtick_labels = [df.iloc[i]['time'].strftime('%m/%d') for i in xticks]
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xtick_labels, rotation=45)
+        
+        # Save the plot
+        plt.tight_layout()
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return save_path
+
     def generate_dashboard(self, df: pd.DataFrame, symbol: str, save_path_base: str) -> List[str]:
         """
         Generate dashboard with both ASCII and matplotlib charts

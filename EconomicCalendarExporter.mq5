@@ -58,7 +58,7 @@ void OnTimer()
            {
             if(CalendarEventById(values[i].event_id, event))
               {
-               string impact = EnumToString((ENUM_CALENDAR_EVENT_IMPACT)event.impact);
+               string impact = EnumToString(event.importance);
                FileWrite(file_handle,
                          TimeToString(values[i].time, TIME_DATE|TIME_MINUTES),
                          event.name,
