@@ -1,0 +1,62 @@
+
+# 2025-09-12 11:58:33.248068
++y
+
+# 2025-09-12 11:59:05.874954
++no
+
+# 2025-09-12 11:59:15.073547
++n
+
+# 2025-09-12 11:59:40.837624
++how to update the forks of each intern in @Interns folder
+
+# 2025-09-12 12:00:43.140538
++# Example (Python, VertexAI SDK)
++from vertexai.preview.language_models import list_models
++models = list_models()
++print(models)
++
+
+# 2025-09-12 12:00:48.384884
++python # Example (Python, VertexAI SDK)
++from vertexai.preview.language_models import list_models
++models = list_models()
++print(models)
++
+
+# 2025-09-12 12:03:56.100045
++y
+
+# 2025-09-12 12:05:00.710737
++how to update the forks of each intern in @Interns folder  
+
+# 2025-09-12 17:42:50.585960
++y
+
+# 2025-09-12 17:42:55.997450
++hello
+
+# 2025-09-12 17:43:14.309613
++aider
+
+# 2025-09-12 17:43:16.697510
++hello
+
+# 2025-09-12 17:45:56.979670
++y
+
+# 2025-09-12 17:46:01.905977
++hello
+
+# 2025-09-12 17:46:21.625067
++y
+
+# 2025-09-12 17:46:23.646775
++hello
+
+# 2025-09-12 17:46:48.185994
++y
+
+# 2025-09-12 17:46:50.162393
++hello

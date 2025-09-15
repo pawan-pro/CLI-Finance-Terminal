@@ -580,31 +580,43 @@ class DailyInvestmentReportGenerator:
         return chart_files
     
     def get_economic_calendar(self) -> pd.DataFrame:
-        """Get today's economic calendar"""
+        """Get today's economic calendar from the CSV file."""
         try:
-            # Try Wine MT5 calendar first if enabled
+            # Path to the economic calendar CSV file
+            calendar_csv_path = "C:/Users/Administrator/AppData/Roaming/MetaQuotes/Terminal/Common/Files/economic_calendar.csv"
+            
+            # In a Wine environment, the C: drive is typically mapped to a path within the user's home directory.
+            # We'll construct a path that can be accessed from the Unix-like environment.
             if self.use_wine_mt5:
-                from src.data.providers import wine_mt5_connector
-                calendar_events = wine_mt5_connector.get_calendar_events()
-                if calendar_events:
-                    return pd.DataFrame(calendar_events)
-            
-            # Try advanced MT5 calendar extractor
-            calendar_data = self.advanced_calendar_extractor.get_comprehensive_calendar()
-            if not calendar_data.empty:
-                return calendar_data
-            
-            # Try MT5 calendar
-            calendar_data = self.mt5_calendar_fetcher.fetch_mt5_calendar(
-                datetime.now(), datetime.now() + timedelta(days=1))
-            
-            if calendar_data.empty:
-                # Fallback to generic calendar
-                calendar_data = self.calendar_fetcher.get_todays_events()
-            
-            return calendar_data
+                wine_path = os.path.expanduser("~/.wine/drive_c")
+                if os.path.exists(wine_path):
+                    calendar_csv_path = calendar_csv_path.replace("C:", wine_path, 1)
+
+            if os.path.exists(calendar_csv_path):
+                # Read the CSV file
+                df = pd.read_csv(calendar_csv_path)
+                
+                # Handle the new CSV format with additional columns
+                # The new format has: DateTime,EventID,Name,Country,Currency,Impact,Actual,Forecast,Previous
+                # The old format had: Time,Name,Impact,Currency,Actual,Forecast,Previous
+                
+                # If we have the DateTime column, use it as Time
+                if 'DateTime' in df.columns:
+                    df.rename(columns={'DateTime': 'Time'}, inplace=True)
+                
+                # Convert Time column to datetime if it's not already
+                if 'Time' in df.columns:
+                    df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+                
+                # Handle nan values by replacing them with None/NaN
+                df = df.replace('nan', pd.NA)
+                
+                return df
+            else:
+                logger.warning(f"Economic calendar CSV file not found at: {calendar_csv_path}")
+                return pd.DataFrame()
         except Exception as e:
-            logger.error(f"Error fetching economic calendar: {e}")
+            logger.error(f"Error reading economic calendar CSV: {e}")
             return pd.DataFrame()
     
     def get_volatility_summary(self) -> pd.DataFrame:
