@@ -1,1 +1,0 @@
-{"key": "mt5_symbol_info_DAX30", "value": {"name": "DAX30", "path": "Mock/Symbols", "description": "DAX 30", "ask": 16000.0, "bid": 15999.5, "last": 1.0, "volume": 1000, "spread": 1, "digits": 5, "trade_mode": 0, "trade_stops_level": 0, "trade_freeze_level": 0, "point": 1e-05, "high": 1.001, "low": 0.999, "time": 

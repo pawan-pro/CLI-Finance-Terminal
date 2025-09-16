@@ -449,12 +449,25 @@ class ProfessionalPDFReportGenerator:
             # Show integer values for indices
             price_value = row.get('Price', 'N/A')
             if isinstance(price_value, (int, float)):
-                # Check if this is an index symbol
-                if any(index_name in name for index_name in ['US', 'JP', 'DE', 'UK', 'FR', 'IT', 'ES', 'AU', 'NZ', 'CA']):
+                # Check if this is an index symbol by looking for exact matches
+                # rather than partial matches to avoid false positives with currencies
+                name = str(row.get('name', ''))
+                is_index = False
+                index_symbols = ['US30', 'US500', 'US30Roll', 'US500Roll', 'UT100', 'UT100Roll', 
+                               'DE30', 'DE40', 'DE30Roll', 'DE40Roll', 'UK100', 'UK100Roll',
+                               'JP225', 'FR40', 'IT50', 'ES35', 'AU200', 'NZ50', 'CA60']
+                
+                # Check if the name matches any index symbol exactly or as a prefix
+                for index_symbol in index_symbols:
+                    if name.startswith(index_symbol):
+                        is_index = True
+                        break
+                
+                if is_index:
                     # Format as integer for indices
                     price = f"{price_value:.0f}"
                 else:
-                    # Format with decimals for others
+                    # Format with decimals for others (currencies, commodities, etc.)
                     price = f"{price_value:.2f}"
             else:
                 price = str(price_value)
@@ -473,28 +486,165 @@ class ProfessionalPDFReportGenerator:
             return
             
         self.add_section("Economic Calendar")
+        
+        # Filter for current day only
+        from datetime import datetime
+        import pandas as pd
+        
+        # Filter calendar data for today
+        today = pd.Timestamp('today').date()
+        
+        # Parse datetime column and filter for today's events
+        filtered_data = calendar_data.copy()
+        
+        # Handle datetime parsing for filtering
+        if 'DateTime' in filtered_data.columns:
+            filtered_data['parsed_datetime'] = pd.to_datetime(filtered_data['DateTime'], errors='coerce')
+            filtered_data = filtered_data[filtered_data['parsed_datetime'].dt.date == today]
+        elif 'Time' in filtered_data.columns:
+            filtered_data['parsed_datetime'] = pd.to_datetime(filtered_data['Time'], errors='coerce')
+            filtered_data = filtered_data[filtered_data['parsed_datetime'].dt.date == today]
+        
+        # Filter to show only Medium and High importance events
+        importance_filter = ['Medium', 'High', 'Very High']
+        if 'Impact' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['Impact'].isin(importance_filter)]
+        elif 'importance' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['importance'].isin(importance_filter)]
+        
+        if filtered_data.empty:
+            # Add a message when no events for today
+            from reportlab.platypus import Paragraph
+            self.story.append(Paragraph("No economic events scheduled for today.", self.normal_style))
+            return
+        
+        # Required columns per your specification (without Notes)
+        required_columns = ["Date/Time", "Imp.", "Curr.", "Event", "Actual", "Forecast", "Previous"]
+        
+        # Prepare data rows
         data = []
-        for _, row in calendar_data.head(20).iterrows():
+        
+        # Convert time properly - assume the incoming time is in EST/EDT, not UTC
+        import pytz
+        from datetime import datetime
+        
+        # Define the source timezone (likely EST/EDT - let's use EST for now)
+        # In the future, this might need to be configurable based on the data source
+        source_tz = pytz.timezone('US/Eastern')  # EST/EDT
+        target_tz = pytz.timezone('Asia/Kolkata')  # IST
+        
+        for _, row in filtered_data.iterrows():
             # Handle the new CSV format with DateTime,EventID,Name,Country,Currency,Impact,Actual,Forecast,Previous
             # Or the old format with Time,Name,Impact,Currency,Actual,Forecast,Previous
-            if 'DateTime' in calendar_data.columns:
+            
+            # Process date/time and convert to IST
+            date_time_str = "N/A"
+            if 'DateTime' in filtered_data.columns:
                 # New format
-                date_time = str(row.get('DateTime', 'N/A'))
+                date_time_value = row.get('DateTime', 'N/A')
+                event_name = str(row.get('Name', 'N/A'))
                 currency = str(row.get('Currency', 'N/A'))
-                event = str(row.get('Name', 'N/A'))
-            elif 'Time' in calendar_data.columns:
+                importance = str(row.get('Impact', 'N/A'))
+                actual = str(row.get('Actual', 'N/A'))
+                forecast = str(row.get('Forecast', 'N/A'))
+                previous = str(row.get('Previous', 'N/A'))
+            elif 'Time' in filtered_data.columns:
                 # Old format
-                date_time = str(row.get('Time', 'N/A'))
+                date_time_value = row.get('Time', 'N/A')
+                event_name = str(row.get('Name', 'N/A'))
+                importance = str(row.get('Impact', 'N/A'))
                 currency = str(row.get('Currency', 'N/A'))
-                event = str(row.get('Name', 'N/A'))
+                actual = str(row.get('Actual', 'N/A'))
+                forecast = str(row.get('Forecast', 'N/A'))
+                previous = str(row.get('Previous', 'N/A'))
             else:
                 # Fallback
-                date_time = "N/A"
+                date_time_value = "N/A"
+                event_name = "N/A"
+                importance = "N/A"
                 currency = "N/A"
-                event = "N/A"
-            data.append([date_time, currency, event])
+                actual = "N/A"
+                forecast = "N/A"
+                previous = "N/A"
+            
+            # Convert to IST properly - assume incoming time is in EST/EDT
+            if date_time_value != "N/A" and date_time_value is not None:
+                try:
+                    # Parse the datetime
+                    if isinstance(date_time_value, str):
+                        # Try to parse different datetime formats
+                        dt = pd.to_datetime(date_time_value, errors='coerce')
+                    else:
+                        dt = date_time_value
+                    
+                    if pd.notna(dt):
+                        # Localize to source timezone (EST/EDT) instead of UTC
+                        if dt.tzinfo is None:
+                            dt_localized = source_tz.localize(dt)
+                        else:
+                            dt_localized = dt
+                        
+                        # Convert to IST
+                        dt_ist = dt_localized.astimezone(target_tz)
+                        date_time_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
+                    else:
+                        date_time_str = str(date_time_value)
+                except Exception as e:
+                    # Fallback to original value if conversion fails
+                    date_time_str = str(date_time_value)
+            else:
+                date_time_str = str(date_time_value)
+            
+            # Handle NaN values by leaving them blank
+            importance = "" if importance == "nan" or pd.isna(importance) else importance
+            currency = "" if currency == "nan" or pd.isna(currency) else currency
+            actual = "" if actual == "nan" or pd.isna(actual) else actual
+            forecast = "" if forecast == "nan" or pd.isna(forecast) else forecast
+            previous = "" if previous == "nan" or pd.isna(previous) else previous
+            
+            data.append([date_time_str, importance, currency, event_name, actual, forecast, previous])
         
-        self.add_rich_table(data, ["Date/Time", "Currency", "Event"], [2*inch, 1*inch, 3*inch])
+        # Create table with adjusted column widths (reduced Date/Time column)
+        # Column widths: Date/Time, Imp., Curr., Event, Actual, Forecast, Previous
+        column_widths = [1.5*inch, 0.5*inch, 0.4*inch, 2.2*inch, 0.7*inch, 0.7*inch, 0.7*inch]
+        
+        # Create the table with row height adjustment to prevent overflow
+        from reportlab.platypus import Table, TableStyle
+        table = Table([required_columns] + data, column_widths, repeatRows=1)
+        
+        # Apply styling with proper alignment and row height
+        from reportlab.lib import colors
+        table.setStyle(TableStyle([
+            # Header styling
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2c5282")),  # Dark blue header
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Header centered
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            
+            # Data rows styling with row height adjustment
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor("#e2e8f0")),  # Light gray grid
+            
+            # Row height adjustment to prevent text overflow
+            ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            
+            # Column-specific alignment
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),      # Date/Time - left aligned
+            ('ALIGN', (1, 1), (1, -1), 'CENTER'),    # Imp. - center aligned
+            ('ALIGN', (2, 1), (2, -1), 'CENTER'),    # Curr. - center aligned
+            ('ALIGN', (3, 1), (3, -1), 'LEFT'),      # Event - left aligned
+            ('ALIGN', (4, 1), (6, -1), 'RIGHT'),     # Actual, Forecast, Previous - right aligned
+            
+            # Vertical alignment for all cells
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        self.story.append(table)
     
     def add_volatility_summary(self, volatility_summary: pd.DataFrame):
         """Add volatility summary with professional styling"""
