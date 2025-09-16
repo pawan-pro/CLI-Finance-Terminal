@@ -27,3 +27,4 @@ test_reports/
 
 # System files
 .DS_Store
+.cache/
