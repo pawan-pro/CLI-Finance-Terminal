@@ -1,59 +1,31 @@
-# TODO List for CLI Finance Terminal Updates
+High-Priority Critical Bugs
 
-## Report Formatting Issues
+ModuleNotFoundError: No module named 'MetaTrader5' in Wine Environment: The logs show that the Python script being executed inside Wine is missing the MetaTrader5 library. This is the root cause for all +0.00% change calculations failing. The script cannot fetch historical data and defaults to zero.
 
-### 1. Executive Summary Decimal Values
-- [ ] Fix index values showing decimals in Executive Summary (e.g., US30Roll showing 45921.70 instead of 45922)
-- [ ] Apply integer formatting consistently for all indices in Executive Summary
+Data Fetching Timeouts for US Indices: The logs show a 60-second timeout when trying to fetch data for US30Roll. This is why US30Roll and likely US500Roll are completely missing from the report tables and charts.
+Data & Calculation Fixes
 
-### 2. Market Overview Status
-- [ ] Fix "Markets closed" message in Market Overview section
-- [ ] Ensure correct market status is displayed based on actual trading hours
+Fix 24H % Change Calculation: This is directly caused by the ModuleNotFoundError. Once the library is installed in the Wine environment, this calculation should work. Verify across all tables (Indices, Currencies, Commodities).
 
-### 3. UT100Roll Formatting
-- [ ] UT100Roll is Nasdaq 100 index, should not show decimal values
-- [ ] Apply integer formatting specifically for UT100Roll
+Restore Missing US500 & US30 Data: This is directly caused by the timeout error. Investigate the connector script to optimize it or increase the timeout duration.
+Formatting & Display Issues
 
-### 4. Missing US500 Data
-- [ ] US500 is still not being fetched/displayed
-- [ ] Re-implement US500 data fetching or find alternative symbol
+Top Movers Currency Formatting: There is a major formatting regression. Currency prices in the "Top Movers" table are being rounded to whole numbers (e.g., EURUSD is 1, USDCHF is 1). These must be displayed with their proper decimal precision.
 
-### 5. Major Indices Performance - 24H % Change
-- [ ] Add 24H % change column to Major Indices Performance table
-- [ ] Calculate and display percentage change for each index
+Executive Summary & Index Formatting: Index values are still showing decimals in some places. Ensure all index values (UT100Roll, DE40Roll, etc.) are consistently formatted as integers throughout the report.
+Chart Enhancements
 
-### 6. Currency Markets - 24H % Change
-- [ ] Add 24H % change column to Currency Markets table
-- [ ] Calculate and display percentage change for each currency pair
+Fix Chart Appearance: Address the stretched/compressed look of the candlestick charts.
 
-### 7. Commodities - 24H % Change
-- [ ] Add 24H % change column to Commodities table
-- [ ] Calculate and display percentage change for each commodity
+Improve Chart X-Axis: The x-axis should show time intervals relevant to the trading day (e.g., HH:MM), not just the date.
+Completed Tasks
 
-### 8. Top Movers Currency Formatting
-- [ ] Currencies in Top Movers should not be rounded to integers
-- [ ] Maintain proper decimal precision for currency values in Top Movers
+Economic Calendar Integration: The calendar is now successfully reading and displaying events from the CSV file. This is a major success.
 
-### 9. Economic Calendar Still N/A
-- [x] Economic Calendar is still showing as "NA"
-- [x] Read and parse CSV file from specified directory: /Users/pawan/.wine/drive_c/Users/Administrator/AppData/Roaming/MetaQuotes/Terminal/Common/Files/economic_calendar.csv
-- [ ] Fix formatting and display of economic calendar events
+Chart Type Upgrade: Charts have been successfully converted to the candlestick format.
 
-### 10. Market Charts Issues
-- [ ] Fix stretched/compressed chart appearance
-- [ ] Fix x-axis to show time in IST (10:00 or 22:00) instead of just date
-- [ ] Fix candlestick rendering (sticks should be within candles, not at whiskers)
+Integer Values for Indices: Partially complete, but needs consistent application.
 
-## Priority Order
-1. Fix critical data display issues (US500, Economic Calendar)
-2. Add missing 24H % change columns to all tables
-3. Fix formatting issues (decimals vs integers for specific symbols)
-4. Fix chart rendering problems
-5. Address Market Overview status message
+Remove Spread Values: Completed.
 
-## Completed Tasks
-- [x] Integer Values for Indices (partially completed)
-- [x] Remove Spread Values
-- [x] Gold Value Issue (XAUUSD)
-- [x] Decimal Values in Top Market Movers (partially completed)
-- [x] Chart Updates to Candlestick Format (basic implementation)
+Gold Value Issue (XAUUSD): The price is now being fetched correctly.

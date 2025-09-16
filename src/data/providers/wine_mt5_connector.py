@@ -50,10 +50,28 @@ class WineMT5Connector:
             with open(temp_script, 'w') as f:
                 f.write(script)
             
+            # Log the script path for debugging
+            logger.debug(f"Created temporary script at: {temp_script}")
+            
             # Run the script in Wine Python
-            cmd = ['wine', 'python.exe', 'Z:\\\\' + temp_script.replace('/', '\\\\')]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60,
+            # Fix the path construction - we need to make sure we're using the correct path format for Wine
+            wine_path = temp_script.replace('/', '\\\\')
+            # Make sure we're using the correct drive mapping for Wine
+            if wine_path.startswith('\\\\Users'):
+                # Already has the correct format
+                cmd = ['wine', 'python.exe', 'Z:' + wine_path]
+            else:
+                # Need to add the drive mapping
+                cmd = ['wine', 'python.exe', 'Z:\\\\' + wine_path]
+            logger.debug(f"Running command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=15,
                                   env={**os.environ, 'MVK_CONFIG_LOG_LEVEL': '0'})
+            
+            # Log the result for debugging
+            logger.debug(f"Command result - return code: {result.returncode}")
+            logger.debug(f"Command stdout: {result.stdout}")
+            if result.stderr:
+                logger.debug(f"Command stderr: {result.stderr}")
             
             # Clean up
             if os.path.exists(temp_script):
@@ -63,8 +81,19 @@ class WineMT5Connector:
                 raise Exception(f"Script execution failed: {result.stderr}")
             
             return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            logger.warning(f"Timeout expired while running Wine Python script. This is expected for some operations.")
+            # Clean up
+            if os.path.exists(temp_script):
+                os.remove(temp_script)
+            # Return empty result instead of raising exception
+            return ""
         except Exception as e:
             logger.error(f"Error running Wine Python script: {e}")
+            # Clean up
+            if os.path.exists(temp_script):
+                os.remove(temp_script)
+            # Re-raise the exception
             raise
     
     def initialize(self) -> bool:

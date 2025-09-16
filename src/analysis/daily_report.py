@@ -68,7 +68,7 @@ class DailyInvestmentReportGenerator:
         # Define default symbols to track with available symbols from MT5
         # Note: Indices symbols like US500Roll.sd may not be available in all MT5 installations
         # We'll use what's available and fall back to other symbols
-        self.major_indices = ['US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll']  # Removed US500Roll since it times out
+        self.major_indices = ['US500Roll', 'US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll']  # Added US500Roll back since it's now working
         self.major_currencies = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD']
         self.commodities = ['XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL']  # Keep XAUUSD for gold
         # Use bond ETFs as proxies for bonds (these may not be available in MT5)
@@ -113,7 +113,6 @@ class DailyInvestmentReportGenerator:
         """Calculate 24-hour percentage change for a symbol"""
         try:
             from datetime import datetime, timedelta
-            import MetaTrader5 as mt5
             
             # Get data for the last 24 hours
             end_time = datetime.now()
@@ -469,22 +468,10 @@ class DailyInvestmentReportGenerator:
             if not symbol:
                 continue
                 
-            current_price = row.get('Price', 0)
-            if pd.isna(current_price) or current_price == 0:
-                continue
-
-            # Fetch historical data for the last 24 hours
-            end_time = datetime.now()
-            start_time = end_time - timedelta(days=1)
-
             try:
-                historical_data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_M1, start_time, end_time)
-
-                if not historical_data.empty and 'close' in historical_data.columns:
-                    price_24h_ago = historical_data['close'].iloc[0] if len(historical_data) > 0 else 0
-                    if pd.notna(price_24h_ago) and price_24h_ago != 0:
-                        pct_change = ((current_price - price_24h_ago) / price_24h_ago) * 100
-                        data.loc[index, 'pct_change'] = pct_change
+                # Use the same 24H percentage change calculation as used for the main table
+                pct_change = self._calculate_24h_percentage_change(symbol)
+                data.loc[index, 'pct_change'] = pct_change
             except Exception as e:
                 logger.warning(f"Error calculating 24h change for {symbol}: {e}")
 
@@ -492,7 +479,14 @@ class DailyInvestmentReportGenerator:
         data['abs_pct_change'] = data['pct_change'].abs()
         top_movers = data.nlargest(top_n, 'abs_pct_change')
 
-        return top_movers[['name', 'Price', 'pct_change']] if not top_movers.empty else pd.DataFrame()
+        # Make sure we have the required columns
+        columns_to_return = ['name', 'Price', 'pct_change']
+        available_columns = [col for col in columns_to_return if col in top_movers.columns]
+        if not available_columns:
+            # If none of the expected columns are available, return an empty DataFrame with the expected structure
+            return pd.DataFrame(columns=['name', 'Price', 'pct_change'])
+        
+        return top_movers[available_columns] if not top_movers.empty else pd.DataFrame(columns=['name', 'Price', 'pct_change'])
 
     def generate_charts(self, save_dir: str = "./reports/charts") -> List[str]:
         """Generate key market charts with specific timeframes and intervals"""

@@ -825,20 +825,51 @@ class EnhancedInstitutionalPDFReportGenerator:
             
         self._add_section_header("ECONOMIC CALENDAR")
         
-        # Filter for high-impact events
-        high_impact = calendar_data[
-            calendar_data['importance'].isin(['High', 'Very High'])
-        ] if 'importance' in calendar_data.columns else calendar_data
+        # Filter for current day only
+        from datetime import datetime
+        import pandas as pd
         
-        if high_impact.empty:
-            self.story.append(Paragraph("No high-impact economic events scheduled.", self.body_text_style))
+        # Filter calendar data for today
+        today = pd.Timestamp('today').date()
+        
+        # Parse datetime column and filter for today's events
+        filtered_data = calendar_data.copy()
+        
+        # Handle datetime parsing for filtering
+        if 'DateTime' in filtered_data.columns:
+            filtered_data['parsed_datetime'] = pd.to_datetime(filtered_data['DateTime'], errors='coerce')
+            filtered_data = filtered_data[filtered_data['parsed_datetime'].dt.date == today]
+        elif 'Time' in filtered_data.columns:
+            filtered_data['parsed_datetime'] = pd.to_datetime(filtered_data['Time'], errors='coerce')
+            filtered_data = filtered_data[filtered_data['parsed_datetime'].dt.date == today]
+        
+        # Filter to show only Medium and High importance events
+        importance_filter = ['Medium', 'High', 'Very High']
+        if 'Impact' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['Impact'].isin(importance_filter)]
+        elif 'importance' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['importance'].isin(importance_filter)]
+        
+        if filtered_data.empty:
+            from reportlab.platypus import Paragraph
+            from reportlab.lib import colors
+            self.story.append(Paragraph("No economic events scheduled for today.", self.body_text_style))
             self.story.append(Spacer(1, 20))
             return
         
-        # Create calendar table
-        table_data = [['Date/Time', 'Currency', 'Event', 'Actual', 'Forecast', 'Previous', 'Impact']]
+        # Create calendar table without Notes column and with shortened headers
+        table_data = [['Date/Time', 'Imp.', 'Curr.', 'Event', 'Actual', 'Forecast', 'Previous']]
         
-        for _, row in high_impact.head(20).iterrows():
+        # Convert time properly - assume the incoming time is in EST/EDT, not UTC
+        import pytz
+        from datetime import datetime
+        
+        # Define the source timezone (likely EST/EDT - let's use EST for now)
+        source_tz = pytz.timezone('US/Eastern')  # EST/EDT
+        target_tz = pytz.timezone('Asia/Kolkata')  # IST
+        
+        for _, row in filtered_data.iterrows():
+            # Extract data
             date = str(row.get('date', 'N/A'))
             time = str(row.get('time', 'N/A'))
             currency = str(row.get('currency', 'N/A'))
@@ -846,18 +877,50 @@ class EnhancedInstitutionalPDFReportGenerator:
             actual = str(row.get('actual', 'N/A'))
             forecast = str(row.get('forecast', 'N/A'))
             previous = str(row.get('previous', 'N/A'))
-            impact = str(row.get('importance', 'Medium'))
+            importance = str(row.get('importance', 'Medium')) if 'importance' in row else str(row.get('Impact', 'Medium'))
+            
+            # Combine date and time
+            datetime_str = f"{date} {time}" if date != 'N/A' and time != 'N/A' else (date if date != 'N/A' else time)
+            
+            # Convert to IST properly - assume incoming time is in EST/EDT
+            if datetime_str != "N/A" and datetime_str is not None and datetime_str.strip():
+                try:
+                    # Parse the datetime
+                    dt = pd.to_datetime(datetime_str, errors='coerce')
+                    
+                    if pd.notna(dt):
+                        # Localize to source timezone (EST/EDT) instead of UTC
+                        if dt.tzinfo is None:
+                            dt_localized = source_tz.localize(dt)
+                        else:
+                            dt_localized = dt
+                        
+                        # Convert to IST
+                        dt_ist = dt_localized.astimezone(target_tz)
+                        datetime_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
+                except Exception as e:
+                    # Keep original datetime string if conversion fails
+                    pass
+            
+            # Handle NaN values by leaving them blank
+            importance = "" if importance == "nan" or pd.isna(importance) else importance
+            currency = "" if currency == "nan" or pd.isna(currency) else currency
+            actual = "" if actual == "nan" or pd.isna(actual) else actual
+            forecast = "" if forecast == "nan" or pd.isna(forecast) else forecast
+            previous = "" if previous == "nan" or pd.isna(previous) else previous
             
             table_data.append([
-                f"{date} {time}",
+                datetime_str,
+                importance,
                 currency,
                 event[:30] + "..." if len(event) > 30 else event,
                 actual,
                 forecast,
-                previous,
-                impact
+                previous
             ])
         
+        from reportlab.platypus import Table, TableStyle
+        from reportlab.lib import colors
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
@@ -867,12 +930,23 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            # Data rows styling
+            # Data rows styling with row height adjustment
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
-            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+            
+            # Row height adjustment to prevent text overflow
+            ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            
+            # Column-specific alignment (reduced Date/Time column width)
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),      # Date/Time - left aligned
+            ('ALIGN', (1, 1), (1, -1), 'CENTER'),    # Imp. - center aligned
+            ('ALIGN', (2, 1), (2, -1), 'CENTER'),    # Curr. - center aligned
+            ('ALIGN', (3, 1), (3, -1), 'LEFT'),      # Event - left aligned
+            ('ALIGN', (4, 1), (6, -1), 'RIGHT'),     # Actual, Forecast, Previous - right aligned
+            
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         
