@@ -69,6 +69,24 @@ class MT5DataFetcher:
                 logger.info("Returning symbols from cache")
                 return cached
         
+        # If using Wine MT5, we need to handle this differently
+        if self.use_wine_mt5:
+            # For Wine MT5, we'll use the Wine MT5 connector methods
+            try:
+                wine_symbols = self.wine_connector.symbols_get()
+                if wine_symbols:
+                    symbol_names = [symbol['name'] for symbol in wine_symbols]
+                    logger.info(f"Retrieved {len(symbol_names)} symbols from Wine MT5")
+                    
+                    # Cache the result
+                    if self.use_cache:
+                        cache_manager.set(cache_key, symbol_names)
+                    
+                    return symbol_names
+            except Exception as e:
+                logger.error(f"Error getting symbols from Wine MT5: {e}")
+                return []
+        
         symbols = mt5.symbols_get()
         if symbols is None:
             logger.error("Failed to get symbols")

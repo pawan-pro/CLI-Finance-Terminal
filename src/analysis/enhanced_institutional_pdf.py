@@ -8,15 +8,15 @@ bank formatting, color schemes, and analytical depth.
 import pandas as pd
 from datetime import datetime
 import logging
-from typing import Dict, List, Optional
-from reportlab.lib.pagesizes import letter, A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak, Frame, PageTemplate
+from typing import Dict, List
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from reportlab.platypus.tableofcontents import TableOfContents
 import os
+import numpy as np
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -860,12 +860,11 @@ class EnhancedInstitutionalPDFReportGenerator:
         # Create calendar table without Notes column and with shortened headers
         table_data = [['Date/Time', 'Imp.', 'Curr.', 'Event', 'Actual', 'Forecast', 'Previous']]
         
-        # Convert time properly - assume the incoming time is in EST/EDT, not UTC
+        # Convert time properly - apply timezone adjustments
         import pytz
-        from datetime import datetime
+        from datetime import datetime, timedelta
         
-        # Define the source timezone (likely EST/EDT - let's use EST for now)
-        source_tz = pytz.timezone('US/Eastern')  # EST/EDT
+        # Define the target timezone (IST)
         target_tz = pytz.timezone('Asia/Kolkata')  # IST
         
         for _, row in filtered_data.iterrows():
@@ -878,26 +877,46 @@ class EnhancedInstitutionalPDFReportGenerator:
             forecast = str(row.get('forecast', 'N/A'))
             previous = str(row.get('previous', 'N/A'))
             importance = str(row.get('importance', 'Medium')) if 'importance' in row else str(row.get('Impact', 'Medium'))
+            country = str(row.get('country', 'N/A')) if 'country' in row else 'N/A'
             
             # Combine date and time
             datetime_str = f"{date} {time}" if date != 'N/A' and time != 'N/A' else (date if date != 'N/A' else time)
             
-            # Convert to IST properly - assume incoming time is in EST/EDT
+            # Convert to IST with appropriate adjustments
             if datetime_str != "N/A" and datetime_str is not None and datetime_str.strip():
                 try:
                     # Parse the datetime
                     dt = pd.to_datetime(datetime_str, errors='coerce')
                     
                     if pd.notna(dt):
-                        # Localize to source timezone (EST/EDT) instead of UTC
-                        if dt.tzinfo is None:
-                            dt_localized = source_tz.localize(dt)
+                        # Special handling for CFTC events
+                        if "CFTC" in event:
+                            # CFTC events have a specific 3-hour shift pattern
+                            # 22:30 in source data should be displayed as 01:00 IST next day
+                            # Apply 3-hour shift and move to next day if needed
+                            dt_adjusted = dt + timedelta(hours=3)
+                            # Format as IST string
+                            datetime_str = dt_adjusted.strftime('%Y-%m-%d %H:%M:%S IST')
+                        # Apply timezone conversion based on country
+                        elif country == 'JP':
+                            # Special handling for Japanese events
+                            # Japanese events are typically in JST (UTC+9)
+                            # IST is UTC+5:30
+                            # So we need to subtract 3.5 hours to convert from JST to IST
+                            dt_adjusted = dt - timedelta(hours=3, minutes=30)
+                            # Format as IST string
+                            datetime_str = dt_adjusted.strftime('%Y-%m-%d %H:%M:%S IST')
                         else:
-                            dt_localized = dt
-                        
-                        # Convert to IST
-                        dt_ist = dt_localized.astimezone(target_tz)
-                        datetime_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
+                            # For other countries, assume the data is in EST/EDT and convert to IST
+                            source_tz = pytz.timezone('US/Eastern')
+                            if dt.tzinfo is None:
+                                dt_localized = source_tz.localize(dt)
+                            else:
+                                dt_localized = dt
+                            
+                            # Convert to IST
+                            dt_ist = dt_localized.astimezone(target_tz)
+                            datetime_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
                 except Exception as e:
                     # Keep original datetime string if conversion fails
                     pass
@@ -909,11 +928,16 @@ class EnhancedInstitutionalPDFReportGenerator:
             forecast = "" if forecast == "nan" or pd.isna(forecast) else forecast
             previous = "" if previous == "nan" or pd.isna(previous) else previous
             
+            # Truncate long event names to prevent text overflow
+            max_event_length = 60  # Increased from 30 to 60 characters
+            if len(event) > max_event_length:
+                event = event[:max_event_length-3] + "..."
+            
             table_data.append([
                 datetime_str,
                 importance,
                 currency,
-                event[:30] + "..." if len(event) > 30 else event,
+                event,
                 actual,
                 forecast,
                 previous
@@ -937,10 +961,10 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             
             # Row height adjustment to prevent text overflow
-            ('TOPPADDING', (0, 1), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            ('TOPPADDING', (0, 1), (-1, -1), 8),    # Increased padding
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8), # Increased padding
             
-            # Column-specific alignment (reduced Date/Time column width)
+            # Column-specific alignment (increased Event column width)
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),      # Date/Time - left aligned
             ('ALIGN', (1, 1), (1, -1), 'CENTER'),    # Imp. - center aligned
             ('ALIGN', (2, 1), (2, -1), 'CENTER'),    # Curr. - center aligned
@@ -948,6 +972,9 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('ALIGN', (4, 1), (6, -1), 'RIGHT'),     # Actual, Forecast, Previous - right aligned
             
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Word wrapping for long text in Event column
+            ('WORDWRAP', (3, 1), (3, -1)),  # Word wrap for Event column
         ]))
         
         self.story.append(table)
@@ -1183,6 +1210,16 @@ if __name__ == "__main__":
             'actual': '5.25%',
             'forecast': '5.25%',
             'previous': '5.25%'
+        },
+        {
+            'date': '2025-09-19',
+            'time': '22:30',
+            'currency': 'USD',
+            'event': 'CFTC Aluminium Non-Commercial Net Positions',
+            'importance': 'Low',
+            'actual': '1.2K',
+            'forecast': '',
+            'previous': '1.2K'
         }
     ])
     

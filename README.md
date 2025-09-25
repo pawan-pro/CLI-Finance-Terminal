@@ -83,6 +83,9 @@ To generate a daily investment report with real market data from MT5 through
 Wine:
 
 ```bash
+#venv
+source .venv/bin/activate
+
 # Generate standard report with real MT5 data from Wine
 python -m src.cli.main report --format pdf --wine-mt5
 

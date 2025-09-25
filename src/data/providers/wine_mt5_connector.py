@@ -310,6 +310,80 @@ except Exception as e:
             logger.error(f"Error copying rates range for {symbol}: {e}")
             return []
 
+    def symbols_get(self) -> Optional[List[Dict]]:
+        """Get all available symbols"""
+        script = '''
+import json
+import MetaTrader5 as mt5
+
+try:
+    if mt5.initialize():
+        symbols = mt5.symbols_get()
+        if symbols is not None and len(symbols) > 0:
+            symbols_list = []
+            for symbol in symbols:
+                # Convert symbol object to dictionary
+                # Handle both object and tuple formats
+                if hasattr(symbol, 'name'):
+                    # Object format
+                    symbol_dict = {
+                        'name': symbol.name,
+                        'path': getattr(symbol, 'path', ''),
+                        'description': getattr(symbol, 'description', ''),
+                        'ask': float(getattr(symbol, 'ask', 0)),
+                        'bid': float(getattr(symbol, 'bid', 0)),
+                        'last': float(getattr(symbol, 'last', 0)),
+                        'volume': int(getattr(symbol, 'volume', 0)),
+                        'spread': int(getattr(symbol, 'spread', 0)),
+                        'digits': int(getattr(symbol, 'digits', 0)),
+                        'high': float(getattr(symbol, 'high', 0)),
+                        'low': float(getattr(symbol, 'low', 0)),
+                        'time': int(getattr(symbol, 'time', 0)) if getattr(symbol, 'time', None) else 0
+                    }
+                else:
+                    # Tuple format (index-based)
+                    symbol_dict = {
+                        'name': symbol[0] if len(symbol) > 0 else '',
+                        'path': symbol[1] if len(symbol) > 1 else '',
+                        'description': symbol[13] if len(symbol) > 13 else '',
+                        'ask': float(symbol[2]) if len(symbol) > 2 else 0,
+                        'bid': float(symbol[3]) if len(symbol) > 3 else 0,
+                        'last': float(symbol[4]) if len(symbol) > 4 else 0,
+                        'volume': int(symbol[5]) if len(symbol) > 5 else 0,
+                        'spread': int(symbol[6]) if len(symbol) > 6 else 0,
+                        'digits': int(symbol[7]) if len(symbol) > 7 else 0,
+                        'high': float(symbol[8]) if len(symbol) > 8 else 0,
+                        'low': float(symbol[9]) if len(symbol) > 9 else 0,
+                        'time': int(symbol[10]) if len(symbol) > 10 else 0
+                    }
+                symbols_list.append(symbol_dict)
+            print("RESULT:" + json.dumps(symbols_list))
+        else:
+            print("RESULT:[]")
+        mt5.shutdown()
+    else:
+        print("RESULT:[]")
+except Exception as e:
+    print("RESULT:[]")
+'''
+
+        try:
+            result = self._run_wine_python_script(script)
+            # Extract only the RESULT line
+            lines = result.split('\n')
+            json_line = None
+            for line in lines:
+                if line.startswith("RESULT:"):
+                    json_line = line[7:]  # Remove "RESULT:" prefix
+                    break
+
+            if json_line and json_line != "[]":
+                return json.loads(json_line)
+            return []
+        except Exception as e:
+            logger.error(f"Error getting symbols: {e}")
+            return []
+
 # For compatibility with existing code, we'll make this module look like MT5
 # This allows importing WineMT5Connector as mt5
 def initialize() -> bool:
@@ -337,6 +411,11 @@ def copy_rates_range(symbol: str, timeframe: int, start_time: datetime, end_time
     """Copy rates in a specific time range"""
     connector = WineMT5Connector()
     return connector.copy_rates_range(symbol, timeframe, start_time, end_time)
+
+def symbols_get() -> Optional[List[Any]]:
+    """Get all available symbols"""
+    connector = WineMT5Connector()
+    return connector.symbols_get()
 
 # Constants for timeframes
 TIMEFRAME_M1 = 1
@@ -407,6 +486,81 @@ except Exception as e:
         return []
     except Exception as e:
         logger.error(f"Error getting calendar events: {e}")
+        return []
+
+def symbols_get() -> Optional[List[Any]]:
+    """Get all available symbols"""
+    connector = WineMT5Connector()
+    script = '''
+import json
+import MetaTrader5 as mt5
+
+try:
+    if mt5.initialize():
+        symbols = mt5.symbols_get()
+        if symbols is not None and len(symbols) > 0:
+            symbols_list = []
+            for symbol in symbols:
+                # Convert symbol object to dictionary
+                # Handle both object and tuple formats
+                if hasattr(symbol, 'name'):
+                    # Object format
+                    symbol_dict = {
+                        'name': symbol.name,
+                        'path': getattr(symbol, 'path', ''),
+                        'description': getattr(symbol, 'description', ''),
+                        'ask': float(getattr(symbol, 'ask', 0)),
+                        'bid': float(getattr(symbol, 'bid', 0)),
+                        'last': float(getattr(symbol, 'last', 0)),
+                        'volume': int(getattr(symbol, 'volume', 0)),
+                        'spread': int(getattr(symbol, 'spread', 0)),
+                        'digits': int(getattr(symbol, 'digits', 0)),
+                        'high': float(getattr(symbol, 'high', 0)),
+                        'low': float(getattr(symbol, 'low', 0)),
+                        'time': int(getattr(symbol, 'time', 0)) if getattr(symbol, 'time', None) else 0
+                    }
+                else:
+                    # Tuple format (index-based)
+                    symbol_dict = {
+                        'name': symbol[0] if len(symbol) > 0 else '',
+                        'path': symbol[1] if len(symbol) > 1 else '',
+                        'description': symbol[13] if len(symbol) > 13 else '',
+                        'ask': float(symbol[2]) if len(symbol) > 2 else 0,
+                        'bid': float(symbol[3]) if len(symbol) > 3 else 0,
+                        'last': float(symbol[4]) if len(symbol) > 4 else 0,
+                        'volume': int(symbol[5]) if len(symbol) > 5 else 0,
+                        'spread': int(symbol[6]) if len(symbol) > 6 else 0,
+                        'digits': int(symbol[7]) if len(symbol) > 7 else 0,
+                        'high': float(symbol[8]) if len(symbol) > 8 else 0,
+                        'low': float(symbol[9]) if len(symbol) > 9 else 0,
+                        'time': int(symbol[10]) if len(symbol) > 10 else 0
+                    }
+                symbols_list.append(symbol_dict)
+            print("RESULT:" + json.dumps(symbols_list))
+        else:
+            print("RESULT:[]")
+        mt5.shutdown()
+    else:
+        print("RESULT:[]")
+except Exception as e:
+    print("RESULT:[]")
+'''
+
+    try:
+        result = connector._run_wine_python_script(script)
+        # Extract only the RESULT line
+        lines = result.split('\n')
+        json_line = None
+        for line in lines:
+            if line.startswith("RESULT:"):
+                json_line = line[7:]  # Remove "RESULT:" prefix
+                break
+
+        if json_line and json_line != "[]":
+            return json.loads(json_line)
+        return []
+    except Exception as e:
+        logger.error(f"Error getting symbols: {e}")
         return []
 
 # Export the connector

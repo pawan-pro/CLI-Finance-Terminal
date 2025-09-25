@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
 from scipy import stats
+
+# Add the project root to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Try to import real MT5, fallback to mock if not available
 try:
@@ -39,6 +43,7 @@ from src.analysis.institutional_analytics import InstitutionalMarketAnalytics
 from src.analysis.enhanced_top_movers import EnhancedTopMoversAnalyzer
 from src.analysis.institutional_calendar import InstitutionalCalendarAnalyzer
 from src.analysis.enhanced_institutional_pdf import EnhancedInstitutionalPDFReportGenerator
+from src.analysis.llm_integration import LLMExecutiveSummaryGenerator
 import subprocess
 import json
 import pandas as pd
@@ -64,6 +69,9 @@ class DailyInvestmentReportGenerator:
         self.chart_generator = MarketChartGenerator()
         self.advanced_analytics = AdvancedMarketAnalytics()
         self.institutional_analytics = InstitutionalMarketAnalytics()
+        
+        # Initialize LLM executive summary generator
+        self.llm_generator = LLMExecutiveSummaryGenerator()
         
         # Define default symbols to track with available symbols from MT5
         # Note: Indices symbols like US500Roll.sd may not be available in all MT5 installations
@@ -828,14 +836,24 @@ class DailyInvestmentReportGenerator:
         # Add title
         pdf_gen.add_title("DAILY INVESTMENT REPORT")
         
-        # Executive Summary (simplified for now)
-        executive_summary_points = [
-            "Markets are currently stable with mixed sentiment.",
-            "Key indices showing moderate volatility.",
-            "Currency markets reflecting ongoing macroeconomic developments.",
-            "Commodities sector showing divergent trends.",
-            "Economic calendar highlights upcoming key events."
-        ]
+        # Generate AI-powered executive summary
+        try:
+            executive_summary_points = self.llm_generator.generate_executive_summary(
+                indices_data, currency_data, commodities_data, top_movers, calendar_data
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate AI executive summary: {e}")
+            # Fallback to static summary with specific indication
+            executive_summary_points = [
+                "⚠️ LLM EXECUTIVE SUMMARY UNAVAILABLE ⚠️",
+                "Markets are currently stable with mixed sentiment.",
+                "Key indices showing moderate volatility.",
+                "Currency markets reflecting ongoing macroeconomic developments.",
+                "Commodities sector showing divergent trends.",
+                "Economic calendar highlights upcoming key events."
+            ]
+        
+        # Add Executive Summary
         pdf_gen.add_executive_summary(executive_summary_points)
         
         # Market Overview
@@ -896,14 +914,24 @@ class DailyInvestmentReportGenerator:
         # Add title
         pdf_gen.add_title("DAILY INVESTMENT REPORT - INSTITUTIONAL GRADE")
         
-        # Executive Summary (simplified for now)
-        executive_summary_points = [
-            "Markets are currently stable with mixed sentiment.",
-            "Key indices showing moderate volatility.",
-            "Currency markets reflecting ongoing macroeconomic developments.",
-            "Commodities sector showing divergent trends.",
-            "Economic calendar highlights upcoming key events."
-        ]
+        # Generate AI-powered executive summary
+        try:
+            executive_summary_points = self.llm_generator.generate_executive_summary(
+                indices_data, currency_data, commodities_data, top_movers, calendar_data
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate AI executive summary: {e}")
+            # Fallback to static summary with specific indication
+            executive_summary_points = [
+                "⚠️ LLM EXECUTIVE SUMMARY UNAVAILABLE ⚠️",
+                "Markets are currently stable with mixed sentiment.",
+                "Key indices showing moderate volatility.",
+                "Currency markets reflecting ongoing macroeconomic developments.",
+                "Commodities sector showing divergent trends.",
+                "Economic calendar highlights upcoming key events."
+            ]
+        
+        # Add Executive Summary
         pdf_gen.add_executive_summary(executive_summary_points)
         
         # Market Overview
@@ -1023,10 +1051,47 @@ class DailyInvestmentReportGenerator:
         report.append("ECONOMIC CALENDAR")
         report.append("-" * 20)
         if not calendar_data.empty:
+            # Show date at the top
+            import datetime as dt_module
+            today = dt_module.datetime.now().strftime('%Y-%m-%d')
+            report.append(f"Date: {today}")
+            report.append("")
+            
             for _, row in calendar_data.iterrows():
-                report.append(f"{row.get('Time', 'N/A')} | {row.get('Currency', 'N/A')} | {row.get('Name', 'N/A')}")
-                if 'Actual' in row and 'Forecast' in row:
-                    report.append(f"  Actual: {row.get('Actual', 'N/A')} | Forecast: {row.get('Forecast', 'N/A')} | Previous: {row.get('Previous', 'N/A')}")
+                # Show only time in first column
+                time_only = "N/A"
+                if 'Time' in row:
+                    try:
+                        dt = pd.to_datetime(row['Time'], errors='coerce')
+                        if pd.notna(dt):
+                            time_only = dt.strftime('%H:%M:%S')
+                        else:
+                            time_only = str(row['Time'])
+                    except:
+                        time_only = str(row['Time'])
+                elif 'DateTime' in row:
+                    try:
+                        dt = pd.to_datetime(row['DateTime'], errors='coerce')
+                        if pd.notna(dt):
+                            time_only = dt.strftime('%H:%M:%S')
+                        else:
+                            time_only = str(row['DateTime'])
+                    except:
+                        time_only = str(row['DateTime'])
+                
+                currency = row.get('Currency', 'N/A')
+                event_name = row.get('Name', 'N/A')
+                
+                # Format the line with more space for event names
+                report.append(f"{time_only:>8} | {currency:>3} | {event_name}")
+                
+                # Show actual, forecast, previous on separate line if available
+                actual = row.get('Actual', 'N/A')
+                forecast = row.get('Forecast', 'N/A')
+                previous = row.get('Previous', 'N/A')
+                
+                if actual != 'N/A' or forecast != 'N/A' or previous != 'N/A':
+                    report.append(f"         |     | Actual: {actual} | Forecast: {forecast} | Previous: {previous}")
         else:
             report.append("No events scheduled")
         report.append("")

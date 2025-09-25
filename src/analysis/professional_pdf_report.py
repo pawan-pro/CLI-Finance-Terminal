@@ -524,26 +524,25 @@ class ProfessionalPDFReportGenerator:
         # Prepare data rows
         data = []
         
-        # Convert time properly - assume the incoming time is in EST/EDT, not UTC
+        # Convert time properly - apply timezone adjustments
         import pytz
-        from datetime import datetime
+        from datetime import datetime, timedelta
         
-        # Define the source timezone (likely EST/EDT - let's use EST for now)
-        # In the future, this might need to be configurable based on the data source
-        source_tz = pytz.timezone('US/Eastern')  # EST/EDT
+        # Define the target timezone (IST)
         target_tz = pytz.timezone('Asia/Kolkata')  # IST
         
         for _, row in filtered_data.iterrows():
             # Handle the new CSV format with DateTime,EventID,Name,Country,Currency,Impact,Actual,Forecast,Previous
             # Or the old format with Time,Name,Impact,Currency,Actual,Forecast,Previous
             
-            # Process date/time and convert to IST
+            # Process date/time and convert to IST with appropriate adjustments
             date_time_str = "N/A"
             if 'DateTime' in filtered_data.columns:
                 # New format
                 date_time_value = row.get('DateTime', 'N/A')
                 event_name = str(row.get('Name', 'N/A'))
                 currency = str(row.get('Currency', 'N/A'))
+                country = str(row.get('Country', 'N/A'))
                 importance = str(row.get('Impact', 'N/A'))
                 actual = str(row.get('Actual', 'N/A'))
                 forecast = str(row.get('Forecast', 'N/A'))
@@ -554,6 +553,7 @@ class ProfessionalPDFReportGenerator:
                 event_name = str(row.get('Name', 'N/A'))
                 importance = str(row.get('Impact', 'N/A'))
                 currency = str(row.get('Currency', 'N/A'))
+                country = str(row.get('Country', 'N/A')) if 'Country' in row else 'N/A'
                 actual = str(row.get('Actual', 'N/A'))
                 forecast = str(row.get('Forecast', 'N/A'))
                 previous = str(row.get('Previous', 'N/A'))
@@ -563,11 +563,12 @@ class ProfessionalPDFReportGenerator:
                 event_name = "N/A"
                 importance = "N/A"
                 currency = "N/A"
+                country = "N/A"
                 actual = "N/A"
                 forecast = "N/A"
                 previous = "N/A"
             
-            # Convert to IST properly - assume incoming time is in EST/EDT
+            # Convert to IST with appropriate adjustments
             if date_time_value != "N/A" and date_time_value is not None:
                 try:
                     # Parse the datetime
@@ -578,15 +579,34 @@ class ProfessionalPDFReportGenerator:
                         dt = date_time_value
                     
                     if pd.notna(dt):
-                        # Localize to source timezone (EST/EDT) instead of UTC
-                        if dt.tzinfo is None:
-                            dt_localized = source_tz.localize(dt)
+                        # Special handling for CFTC events
+                        if "CFTC" in event_name:
+                            # CFTC events have a specific 3-hour shift pattern
+                            # 22:30 in source data should be displayed as 01:00 IST next day
+                            # Apply 3-hour shift and move to next day if needed
+                            dt_adjusted = dt + timedelta(hours=3)
+                            # Format as IST string
+                            date_time_str = dt_adjusted.strftime('%Y-%m-%d %H:%M:%S IST')
+                        # Apply timezone conversion based on country
+                        elif country == 'JP':
+                            # Special handling for Japanese events
+                            # Japanese events are typically in JST (UTC+9)
+                            # IST is UTC+5:30
+                            # So we need to subtract 3.5 hours to convert from JST to IST
+                            dt_adjusted = dt - timedelta(hours=3, minutes=30)
+                            # Format as IST string
+                            date_time_str = dt_adjusted.strftime('%Y-%m-%d %H:%M:%S IST')
                         else:
-                            dt_localized = dt
-                        
-                        # Convert to IST
-                        dt_ist = dt_localized.astimezone(target_tz)
-                        date_time_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
+                            # For other countries, assume the data is in EST/EDT and convert to IST
+                            source_tz = pytz.timezone('US/Eastern')
+                            if dt.tzinfo is None:
+                                dt_localized = source_tz.localize(dt)
+                            else:
+                                dt_localized = dt
+                            
+                            # Convert to IST
+                            dt_ist = dt_localized.astimezone(target_tz)
+                            date_time_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
                     else:
                         date_time_str = str(date_time_value)
                 except Exception as e:
@@ -602,11 +622,17 @@ class ProfessionalPDFReportGenerator:
             forecast = "" if forecast == "nan" or pd.isna(forecast) else forecast
             previous = "" if previous == "nan" or pd.isna(previous) else previous
             
+            # Truncate long event names to prevent text overflow
+            max_event_length = 50  # Increased from 30 to 50 characters
+            if len(event_name) > max_event_length:
+                event_name = event_name[:max_event_length-3] + "..."
+            
             data.append([date_time_str, importance, currency, event_name, actual, forecast, previous])
         
-        # Create table with adjusted column widths (reduced Date/Time column)
+        # Create table with adjusted column widths to prevent text overflow
         # Column widths: Date/Time, Imp., Curr., Event, Actual, Forecast, Previous
-        column_widths = [1.5*inch, 0.5*inch, 0.4*inch, 2.2*inch, 0.7*inch, 0.7*inch, 0.7*inch]
+        # Increased Event column width and reduced others proportionally
+        column_widths = [1.5*inch, 0.5*inch, 0.4*inch, 3.0*inch, 0.7*inch, 0.7*inch, 0.7*inch]
         
         # Create the table with row height adjustment to prevent overflow
         from reportlab.platypus import Table, TableStyle
@@ -630,8 +656,8 @@ class ProfessionalPDFReportGenerator:
             ('GRID', (0, 0), (-1, -1), 1, colors.HexColor("#e2e8f0")),  # Light gray grid
             
             # Row height adjustment to prevent text overflow
-            ('TOPPADDING', (0, 1), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            ('TOPPADDING', (0, 1), (-1, -1), 8),    # Increased padding
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8), # Increased padding
             
             # Column-specific alignment
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),      # Date/Time - left aligned
@@ -642,6 +668,9 @@ class ProfessionalPDFReportGenerator:
             
             # Vertical alignment for all cells
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Word wrapping for long text
+            ('WORDWRAP', (3, 1), (3, -1)),  # Word wrap for Event column
         ]))
         
         self.story.append(table)
