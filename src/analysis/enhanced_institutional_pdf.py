@@ -25,6 +25,14 @@ logger = logging.getLogger(__name__)
 class EnhancedInstitutionalPDFReportGenerator:
     """Enhanced PDF generator with institutional-grade formatting"""
     
+    SYMBOL_MAP = {
+        "US500Roll": "S&P 500",
+        "US30Roll": "Dow Jones 30",
+        "UT100Roll": "Nasdaq 100",
+        "DE40Roll": "DAX 40",
+        "UK100Roll": "FTSE 100",
+    }
+
     def __init__(self, filename: str):
         """
         Initialize PDF generator with institutional styling
@@ -417,6 +425,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             table_data = [['Index', 'Last', 'Chg', 'Chg %']]
             for _, row in indices_data.head(8).iterrows():
                 name = str(row.get('name', 'N/A'))
+                display_name = self.SYMBOL_MAP.get(name, name)
+
                 ask = float(row.get('ask', 0))
                 bid = float(row.get('bid', 0))
                 last = (ask + bid) / 2
@@ -434,9 +444,15 @@ class EnhancedInstitutionalPDFReportGenerator:
                     change_color = 'black'
                     pct_color = 'black'
                 
+                # Format Nasdaq 100 as a whole number
+                if "Nasdaq 100" in display_name:
+                    last_formatted = f"{int(last)}"
+                else:
+                    last_formatted = f"{last:.2f}"
+
                 table_data.append([
-                    name,
-                    f"{last:.2f}",
+                    display_name,
+                    last_formatted,
                     f'<font color="{change_color}">{change:+.2f}</font>',
                     f'<font color="{pct_color}">{pct_change:+.2f}%</font>'
                 ])
@@ -479,14 +495,27 @@ class EnhancedInstitutionalPDFReportGenerator:
         
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.SYMBOL_MAP.get(name, name)
             description = str(row.get('description', 'N/A'))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
-            # Format numbers with appropriate precision
+            # Calculate price from ask and bid if 'Price' column is not available
+            if 'Price' in row and pd.notna(row['Price']):
+                price = row['Price']
+            else:
+                ask = float(row.get('ask', 0))
+                bid = float(row.get('bid', 0))
+                price = (ask + bid) / 2
+
+            # Format Nasdaq 100 as a whole number
+            if "Nasdaq 100" in display_name:
+                price_formatted = f"{int(price)}"
+            else:
+                price_formatted = f"{price:.2f}"
+
             table_data.append([
-                name,
+                display_name,
                 description[:30] + "..." if len(description) > 30 else description,
-                price
+                price_formatted
             ])
         
         table = Table(table_data)
@@ -719,8 +748,24 @@ class EnhancedInstitutionalPDFReportGenerator:
         
         for _, row in top_movers.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.SYMBOL_MAP.get(name, name)
             symbol = str(row.get('symbol', name))
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            display_symbol = self.SYMBOL_MAP.get(symbol, symbol)
+
+            # Calculate price from ask and bid if 'Price' column is not available
+            if 'Price' in row and pd.notna(row['Price']):
+                price = row['Price']
+            else:
+                ask = float(row.get('ask', 0))
+                bid = float(row.get('bid', 0))
+                price = (ask + bid) / 2
+
+            # Format Nasdaq 100 as a whole number
+            if "Nasdaq 100" in display_name:
+                price_formatted = f"{int(price)}"
+            else:
+                price_formatted = f"{price:.2f}"
+
             pct_change = float(row.get('pct_change', 0))
             volume = float(row.get('volume', 0))
             
@@ -742,9 +787,9 @@ class EnhancedInstitutionalPDFReportGenerator:
                 confidence = "Low"
             
             table_data.append([
-                symbol,
-                name[:20] + "..." if len(name) > 20 else name,
-                price,
+                display_symbol,
+                display_name[:20] + "..." if len(display_name) > 20 else display_name,
+                price_formatted,
                 f"{pct_change:+.2f}%",
                 f"{volume:,.0f}",
                 attribution,
@@ -772,6 +817,31 @@ class EnhancedInstitutionalPDFReportGenerator:
         self.story.append(table)
         self.story.append(Spacer(1, 20))
     
+    def add_financial_news_section(self, headlines: List[Dict]):
+        """Adds a section for financial market news."""
+        self._add_section_header("FINANCIAL MARKET NEWS")
+
+        if not headlines:
+            self.story.append(Paragraph("No financial news available at this time.", self.body_text_style))
+            return
+
+        for article in headlines:
+            title = article.get('title', 'No Title')
+            source = article.get('source', {}).get('name', 'No Source')
+            published_at = article.get('publishedAt', 'N/A')
+
+            # Format the date for better readability
+            try:
+                published_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                date_str = published_date.strftime('%Y-%m-%d %H:%M')
+            except (ValueError, TypeError):
+                date_str = "N/A"
+
+            # Create a paragraph for each headline
+            headline_text = f"<b>{title}</b><br/><font size='8'><i>Source: {source} | Published: {date_str}</i></font>"
+            self.story.append(Paragraph(headline_text, self.body_text_style))
+            self.story.append(Spacer(1, 12))
+
     def add_market_regime_analysis(self, regime_info: Dict):
         """
         Add market regime analysis section
@@ -1161,6 +1231,9 @@ class EnhancedInstitutionalPDFReportGenerator:
             "buy any securities, nor shall it be deemed to be investment advice. Past performance is not indicative "
             "of future results. Investment decisions should be made based on your own research and risk tolerance. "
             "This document contains confidential information and may not be reproduced or distributed without prior consent."
+            "<br/><br/>"
+            "All prices for indices and commodities are based on CFD (Contract for Difference) instruments and may not "
+            "reflect the exact cash market value."
         )
         
         self.story.append(Paragraph(disclaimer_text, self.disclaimer_style))
