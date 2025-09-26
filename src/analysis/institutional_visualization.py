@@ -12,7 +12,6 @@ from matplotlib.gridspec import GridSpec
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import pandas_ta as ta
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import logging
@@ -111,25 +110,33 @@ class EnhancedInstitutionalVisualizer:
                     color=self.color_palettes[self.config.color_scheme][0], 
                     linewidth=1.5, label=f"{symbol} Close")
         
-        # Calculate and add SMAs
-        data.ta.sma(length=50, append=True)
-        data.ta.sma(length=200, append=True)
-        ax1.plot(data.index, data['SMA_50'], color='orange', linewidth=1.2, alpha=0.8, label='50-period SMA')
-        ax1.plot(data.index, data['SMA_200'], color='purple', linewidth=1.2, alpha=0.8, label='200-period SMA')
+        # Add moving averages if available
+        if 'sma_20' in data.columns:
+            ax1.plot(data.index, data['sma_20'],
+                    color='#2c5282', linewidth=1, alpha=0.8, label='20-day SMA')
+        if 'sma_50' in data.columns:
+            ax1.plot(data.index, data['sma_50'],
+                    color='#4299e1', linewidth=1, alpha=0.8, label='50-day SMA')
 
         # Add volume subplot
         ax2 = fig.add_subplot(gs[1], sharex=ax1)
-        ax2.bar(data.index, data['volume'], color='grey', alpha=0.6, width=0.8)
-        ax2.set_ylabel('Volume', fontsize=self.config.axis_label_font_size)
+        if 'volume' in data.columns:
+            ax2.bar(data.index, data['volume'],
+                   color=self.color_palettes[self.config.color_scheme][2],
+                   alpha=0.6, width=0.8)
+            ax2.set_ylabel('Volume', fontsize=self.config.axis_label_font_size)
         
-        # Calculate and add RSI subplot
-        data.ta.rsi(length=14, append=True)
+        # Add technical indicators subplot
         ax3 = fig.add_subplot(gs[2], sharex=ax1)
-        ax3.plot(data.index, data['RSI_14'], color='green', linewidth=1, label='RSI (14)')
-        ax3.axhline(y=70, color='r', linestyle='--', alpha=0.5, linewidth=0.8)
-        ax3.axhline(y=30, color='g', linestyle='--', alpha=0.5, linewidth=0.8)
-        ax3.set_ylabel('RSI', fontsize=self.config.axis_label_font_size)
-        ax3.set_ylim(0, 100)
+        if 'rsi' in data.columns:
+            ax3.plot(data.index, data['rsi'],
+                    color=self.color_palettes[self.config.color_scheme][3],
+                    linewidth=1, label='RSI')
+            # Add RSI overbought/oversold levels
+            ax3.axhline(y=70, color='r', linestyle='--', alpha=0.5, linewidth=0.8)
+            ax3.axhline(y=30, color='g', linestyle='--', alpha=0.5, linewidth=0.8)
+            ax3.set_ylabel('RSI', fontsize=self.config.axis_label_font_size)
+            ax3.set_ylim(0, 100)
         
         # Add annotations
         self._add_professional_annotations(ax1, annotations)

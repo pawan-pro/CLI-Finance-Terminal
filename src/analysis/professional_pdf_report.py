@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 class ProfessionalPDFReportGenerator:
     """Class to generate professional PDF reports in bulge-bracket investment firm style"""
     
+    SYMBOL_MAP = {
+        "US500Roll": "S&P 500",
+        "US30Roll": "Dow Jones 30",
+        "UT100Roll": "Nasdaq 100",
+        "DE40Roll": "DAX 40",
+        "UK100Roll": "FTSE 100",
+    }
+
     def __init__(self, filename: str):
         """Initialize PDF generator with professional styling"""
         self.filename = filename
@@ -169,6 +177,7 @@ class ProfessionalPDFReportGenerator:
             "Commodities",
             "Volatility Analysis",
             "Top Market Movers",
+            "Financial Market News",
             "Economic Calendar",
             "Risk Metrics",
             "Market Charts"
@@ -273,16 +282,17 @@ class ProfessionalPDFReportGenerator:
             self.add_paragraph("Key market indices performance:")
             indices_summary = []
             for _, row in key_indices.head(5).iterrows():
-                name = row.get('name', 'N/A')
+                name = str(row.get('name', 'N/A'))
+                display_name = self.SYMBOL_MAP.get(name, name)
                 price = row.get('Price', 0)
-                # Show integer values for indices, decimal for others
-                if any(index_name in name for index_name in ['US', 'JP', 'DE', 'UK', 'FR', 'IT', 'ES', 'AU', 'NZ', 'CA']):
-                    # Format as integer for indices
-                    price_formatted = f"{price:.0f}" if isinstance(price, (int, float)) else str(price)
+
+                # Format Nasdaq 100 as a whole number, others as float
+                if "Nasdaq 100" in display_name:
+                    price_formatted = f"{int(price)}"
                 else:
-                    # Format with decimals for currencies and others
-                    price_formatted = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
-                indices_summary.append(f"• {name}: {price_formatted}")
+                    price_formatted = f"{price:.2f}"
+
+                indices_summary.append(f"• {display_name}: {price_formatted}")
             
             for summary in indices_summary:
                 self.add_paragraph(summary)
@@ -298,19 +308,14 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            # Show integer values for indices
+            display_name = self.SYMBOL_MAP.get(name, name)
             price_value = row.get('Price', 'N/A')
-            if isinstance(price_value, (int, float)):
-                # Check if this is an index symbol
-                index_symbols = ['US', 'JP', 'DE', 'UK', 'FR', 'IT', 'ES', 'AU', 'NZ', 'CA']
-                if any(index_name in name for index_name in index_symbols):
-                    # Format as integer for indices
-                    price = f"{price_value:.0f}"
-                else:
-                    # Format with decimals for others
-                    price = f"{price_value:.2f}"
+
+            # Format Nasdaq 100 as a whole number, others as float
+            if "Nasdaq 100" in display_name:
+                price = f"{int(price_value)}" if isinstance(price_value, (int, float)) else str(price_value)
             else:
-                price = str(price_value)
+                price = f"{price_value:.2f}" if isinstance(price_value, (int, float)) else str(price_value)
                 
             # Add 24H % change if available
             pct_change_24h = row.get('pct_change_24h', 0)
@@ -320,7 +325,7 @@ class ProfessionalPDFReportGenerator:
             else:
                 change_text = "N/A"
             
-            data.append([name, price, change_text])
+            data.append([display_name, price, change_text])
 
         self.add_rich_table(data, ["Index", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
@@ -446,40 +451,48 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in top_movers.iterrows():
             name = str(row.get('name', 'N/A'))
-            # Show integer values for indices
+            display_name = self.SYMBOL_MAP.get(name, name)
             price_value = row.get('Price', 'N/A')
-            if isinstance(price_value, (int, float)):
-                # Check if this is an index symbol by looking for exact matches
-                # rather than partial matches to avoid false positives with currencies
-                name = str(row.get('name', ''))
-                is_index = False
-                index_symbols = ['US30', 'US500', 'US30Roll', 'US500Roll', 'UT100', 'UT100Roll', 
-                               'DE30', 'DE40', 'DE30Roll', 'DE40Roll', 'UK100', 'UK100Roll',
-                               'JP225', 'FR40', 'IT50', 'ES35', 'AU200', 'NZ50', 'CA60']
-                
-                # Check if the name matches any index symbol exactly or as a prefix
-                for index_symbol in index_symbols:
-                    if name.startswith(index_symbol):
-                        is_index = True
-                        break
-                
-                if is_index:
-                    # Format as integer for indices
-                    price = f"{price_value:.0f}"
-                else:
-                    # Format with decimals for others (currencies, commodities, etc.)
-                    price = f"{price_value:.2f}"
+
+            # Format Nasdaq 100 as a whole number, others as float
+            if "Nasdaq 100" in display_name:
+                price = f"{int(price_value)}" if isinstance(price_value, (int, float)) else str(price_value)
             else:
-                price = str(price_value)
+                price = f"{price_value:.2f}" if isinstance(price_value, (int, float)) else str(price_value)
+
             pct_change = row.get('pct_change', 0)
             direction = "+" if pct_change >= 0 else ""
             change_text = f"{direction}{pct_change:.2f}%"
             
             # Color coding for changes
-            data.append([name, price, change_text])
+            data.append([display_name, price, change_text])
         
         self.add_rich_table(data, ["Symbol", "Price", "24h Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
+    def add_financial_news_section(self, headlines: List[Dict]):
+        """Adds a section for financial market news."""
+        self.add_section("Financial Market News")
+
+        if not headlines:
+            self.add_paragraph("No financial news available at this time.")
+            return
+
+        for article in headlines:
+            title = article.get('title', 'No Title')
+            source = article.get('source', {}).get('name', 'No Source')
+            published_at = article.get('publishedAt', 'N/A')
+
+            # Format the date for better readability
+            try:
+                published_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                date_str = published_date.strftime('%Y-%m-%d %H:%M')
+            except (ValueError, TypeError):
+                date_str = "N/A"
+
+            # Create a paragraph for each headline
+            headline_text = f"<b>{title}</b><br/><font size='8'><i>Source: {source} | Published: {date_str}</i></font>"
+            self.add_paragraph(headline_text)
+
     def add_calendar_events(self, calendar_data: pd.DataFrame):
         """Add economic calendar events with professional styling"""
         if calendar_data.empty:
@@ -715,21 +728,14 @@ class ProfessionalPDFReportGenerator:
         self.add_section("Market Charts")
         self.add_paragraph(f"This section includes {len(chart_files)} key market charts for technical analysis.")
         
-        # Add charts in pairs per page for better layout
-        for i in range(0, min(len(chart_files), 6), 2):  # Limit to first 6 charts
-            chart_row = chart_files[i:i+2]
-            
-            # Add first chart
-            if len(chart_row) >= 1:
-                chart_path = chart_row[0]
-                symbol = os.path.basename(chart_path).replace("_matplotlib.png", "")
-                self.add_image(chart_path, width=5.5*inch, height=2.5*inch, caption=f"{symbol} - Price Action")
-            
-            # Add second chart if available
-            if len(chart_row) >= 2:
-                chart_path = chart_row[1]
-                symbol = os.path.basename(chart_path).replace("_matplotlib.png", "")
-                self.add_image(chart_path, width=5.5*inch, height=2.5*inch, caption=f"{symbol} - Price Action")
+        # Add each chart to the report
+        for chart_path in chart_files:
+            if os.path.exists(chart_path):
+                # Extract symbol from filename, which is cleaner now
+                symbol = os.path.basename(chart_path).replace("_candlestick.png", "").replace("_", " ")
+                self.add_image(chart_path, width=6*inch, height=4*inch, caption=f"{symbol} Technical Analysis")
+            else:
+                logger.warning(f"Chart file not found, cannot add to PDF: {chart_path}")
             
             self.story.append(Spacer(1, 15))
     
@@ -740,7 +746,9 @@ class ProfessionalPDFReportGenerator:
             "This report is for informational purposes only and should not be considered as investment advice. "
             "The information provided is based on data available at the time of report generation and may not "
             "reflect current market conditions. Past performance is not indicative of future results. "
-            "Investment decisions should be made based on your own research and risk tolerance."
+            "Investment decisions should be made based on your own research and risk tolerance. "
+            "All prices for indices and commodities are based on CFD (Contract for Difference) instruments and may not "
+            "reflect the exact cash market value."
         )
         self.add_paragraph(disclaimer_text)
     

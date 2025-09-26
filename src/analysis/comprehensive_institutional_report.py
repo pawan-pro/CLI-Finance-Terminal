@@ -15,12 +15,6 @@ import os
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-import matplotlib.pyplot as plt
-
-try:
-    import MetaTrader5 as mt5
-except (ImportError, ModuleNotFoundError):
-    from src.data.providers import mock_mt5 as mt5
 
 # Local imports
 from src.analysis.institutional_analytics import InstitutionalMarketAnalytics
@@ -30,7 +24,6 @@ from src.analysis.institutional_visualization import EnhancedInstitutionalVisual
 from src.analysis.enhanced_institutional_pdf import EnhancedInstitutionalPDFReportGenerator
 from src.data.providers.mt5_data import MT5DataFetcher
 from src.data.providers.wine_mt5_connector import WineMT5Connector
-from src.data.providers.news import NewsAPI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -66,12 +59,6 @@ class InstitutionalReportConfig:
 class ComprehensiveInstitutionalReportGenerator:
     """Comprehensive institutional report generator with all enhanced features"""
     
-    TIMEFRAME_MAP = {
-        "15M": mt5.TIMEFRAME_M15,
-        "4H": mt5.TIMEFRAME_H4,
-        "1D": mt5.TIMEFRAME_D1,
-    }
-
     def __init__(self, config: Optional[InstitutionalReportConfig] = None):
         """
         Initialize comprehensive institutional report generator
@@ -143,9 +130,6 @@ class ComprehensiveInstitutionalReportGenerator:
         # 6. Add top market movers
         self._add_top_movers_analysis(pdf_generator, market_data)
         
-        # Add Financial Market News section
-        self._add_financial_news_section(pdf_generator)
-
         # 7. Add economic calendar analysis
         if self.config.include_calendar_analysis:
             self._add_calendar_analysis(pdf_generator, market_data)
@@ -201,7 +185,7 @@ class ComprehensiveInstitutionalReportGenerator:
         
         # Define default symbols by asset class
         default_symbols = {
-            'indices': ['US500Roll', 'US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll'],
+            'indices': ['US500Roll.sd', 'US30Roll.sd', 'UT100Roll.sd', 'DE30Roll.sd', 'UK100Roll.sd'],
             'currencies': ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD'],
             'commodities': ['XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL'],
             'bonds': ['TLT', 'IEF', 'SHY', 'LQD'],
@@ -511,29 +495,6 @@ class ComprehensiveInstitutionalReportGenerator:
             # Add to PDF
             pdf_generator.add_top_movers_table(all_market_data)
     
-    def _fetch_financial_news(self) -> Optional[List[Dict]]:
-        """Fetches financial news using the NewsAPI provider."""
-        logger.info("Fetching financial news...")
-        try:
-            news_api = NewsAPI()
-            headlines = news_api.get_financial_news()
-            if headlines:
-                logger.info(f"Successfully fetched {len(headlines)} financial news headlines.")
-                return headlines
-            else:
-                logger.warning("No financial news headlines received.")
-                return None
-        except Exception as e:
-            logger.error(f"Error fetching financial news: {e}")
-            return None
-
-    def _add_financial_news_section(self, pdf_generator):
-        """Adds the financial news section to the report."""
-        logger.info("Adding financial news section to the report...")
-        headlines = self._fetch_financial_news()
-        if headlines:
-            pdf_generator.add_financial_news_section(headlines)
-
     def _add_calendar_analysis(self, pdf_generator, market_data: Dict):
         """
         Add economic calendar analysis to report
@@ -627,89 +588,78 @@ class ComprehensiveInstitutionalReportGenerator:
     
     def _generate_institutional_charts(self, market_data: Dict) -> List[str]:
         """
-        Generate institutional-quality technical charts for specified symbols.
+        Generate institutional-quality technical charts
         
         Args:
-            market_data: Market data dictionary (not directly used but kept for interface consistency)
+            market_data: Market data dictionary
             
         Returns:
             List of generated chart file paths
         """
         chart_files = []
+        generated_count = 0
         
         # Define chart directory
         chart_dir = os.path.join(self.config.output_directory, "charts")
         os.makedirs(chart_dir, exist_ok=True)
         
-        # Define symbols for which to generate charts to meet requirements
-        symbols_to_chart = [
-            'US500Roll', 'US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll', # Major Indices
-            'GBPUSD', 'USDJPY', # New Currencies
-            'XAUUSD', 'XAGUSD'  # New Commodities
-        ]
+        # Generate charts for major symbols across asset classes
+        asset_classes = ['indices', 'currencies', 'commodities']
         
-        # Generate charts for the defined symbols
-        for symbol in symbols_to_chart:
-            try:
-                # Using a standard timeframe for all required charts
-                timeframe, interval = ("1M", "1D")
+        for asset_class in asset_classes:
+            if asset_class in market_data and not market_data[asset_class].empty:
+                # Limit to top 3 symbols per asset class
+                for _, row in market_data[asset_class].head(3).iterrows():
+                    symbol = row.get('name', 'Unknown')
+                    try:
+                        # Generate multiple chart types for each symbol
+                        for timeframe, interval in self.config.chart_timeframes:
+                            chart_file = self._generate_single_chart(
+                                symbol, timeframe, interval, chart_dir
+                            )
+                            if chart_file and os.path.exists(chart_file):
+                                chart_files.append(chart_file)
+                                generated_count += 1
 
-                chart_file = self._generate_single_chart(
-                    symbol, timeframe, interval, chart_dir
-                )
-                if chart_file and os.path.exists(chart_file):
-                    chart_files.append(chart_file)
+                                if generated_count >= 12:  # Limit to 12 charts
+                                    break
 
-            except Exception as e:
-                logger.warning(f"Error generating chart for {symbol}: {e}")
-                continue
+                        if generated_count >= 12:
+                            break
+
+                    except Exception as e:
+                        logger.warning(f"Error generating chart for {symbol}: {e}")
+                        continue
         
         logger.info(f"Generated {len(chart_files)} institutional charts")
         return chart_files
     
     def _generate_single_chart(self, symbol: str, timeframe: str, interval: str, chart_dir: str) -> str:
         """
-        Generate a single institutional-quality chart.
+        Generate a single institutional-quality chart
 
         Args:
-            symbol: Symbol name.
-            timeframe: Timeframe string (e.g., "1M" for 1 month).
-            interval: Interval string (e.g., "1D" for 1 day).
-            chart_dir: Directory to save the chart.
+            symbol: Symbol name
+            timeframe: Timeframe (1D, 1W, 1M)
+            interval: Interval (15M, 4H, 1D)
+            chart_dir: Chart directory
 
         Returns:
-            Path to the generated chart file or an empty string if failed.
+            Path to generated chart file or empty string if failed
         """
         try:
-            # Create filename, ensuring it's valid for all OS
-            filename = f"{symbol.replace('.', '_').replace('/', '_')}_{timeframe}_{interval}.png"
+            # Create filename
+            filename = f"{symbol}_{timeframe}_{interval}.png"
             filepath = os.path.join(chart_dir, filename)
             
-            # Define time range for historical data
-            end_time = datetime.now()
-            time_deltas = {"1M": timedelta(days=30), "1W": timedelta(days=7), "1D": timedelta(days=1)}
-            start_time = end_time - time_deltas.get(timeframe, timedelta(days=365))
-
-            # Fetch historical data
-            mt5_timeframe = self.TIMEFRAME_MAP.get(interval, mt5.TIMEFRAME_D1)
-            data = self.data_fetcher.fetch_historical_data(symbol, mt5_timeframe, start_time, end_time)
-
-            if data is None or data.empty:
-                logger.warning(f"No data for {symbol}, cannot generate chart.")
-                return ""
-
-            # Generate chart using the visualizer
-            fig = self.visualizer.create_professional_price_chart(data, symbol)
+            # In a real implementation, this would fetch historical data and generate charts
+            # For now, we'll create a placeholder file
+            with open(filepath, 'w') as f:
+                f.write(f"Demo chart for {symbol} - {timeframe} timeframe with {interval} interval")
             
-            # Save the chart
-            self.visualizer.save_institutional_chart(fig, os.path.splitext(filepath)[0])
-            plt.close(fig)
-
-            logger.info(f"Generated chart for {symbol} at {filepath}")
             return filepath
-
         except Exception as e:
-            logger.error(f"Failed to generate chart for {symbol}: {e}", exc_info=True)
+            logger.warning(f"Error generating chart {symbol}_{timeframe}_{interval}: {e}")
             return ""
     
     def _add_portfolio_impact_analysis(self, pdf_generator, market_data: Dict):

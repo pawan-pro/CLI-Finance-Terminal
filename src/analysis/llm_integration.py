@@ -54,7 +54,10 @@ class LLMExecutiveSummaryGenerator:
     def _load_api_key(self) -> str:
         """Load API key from the LLM directory"""
         try:
-            api_key_path = "/Users/pawan/CLI-Finance-Terminal/LLM/api key.txt"
+            # Construct path relative to the project root
+            from pathlib import Path
+            BASE_DIR = Path(__file__).resolve().parent.parent.parent
+            api_key_path = BASE_DIR / "LLM" / "api key.txt"
             with open(api_key_path, 'r') as f:
                 api_key = f.read().strip()
             return api_key

@@ -11,6 +11,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import logging
 from typing import Dict, List, Optional, Any
+import time
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -29,72 +30,70 @@ class WineMT5Connector:
         self.wine_prefix = wine_prefix or os.environ.get('WINEPREFIX', os.path.expanduser('~/.wine'))
         logger.info("Wine MT5 connector initialized")
     
-    def _run_wine_python_script(self, script: str) -> str:
+    def _run_wine_python_script(self, script: str, retries: int = 3, delay: int = 2) -> str:
         """
-        Run a Python script in Wine Python environment
+        Run a Python script in Wine Python environment with retry logic.
         
         Args:
             script: Python script to execute
+            retries: Number of times to retry on failure.
+            delay: Delay in seconds between retries.
             
         Returns:
             Output from the script
         """
+        temp_script = None
+        last_exception = None
         try:
             # Create temporary script file
             temp_dir = os.path.expanduser('~/.cache')
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
-            
             temp_script = os.path.join(temp_dir, 'temp_wine_mt5_connector.py')
-            
             with open(temp_script, 'w') as f:
                 f.write(script)
-            
-            # Log the script path for debugging
             logger.debug(f"Created temporary script at: {temp_script}")
-            
-            # Run the script in Wine Python
-            # Fix the path construction - we need to make sure we're using the correct path format for Wine
-            wine_path = temp_script.replace('/', '\\\\')
-            # Make sure we're using the correct drive mapping for Wine
-            if wine_path.startswith('\\\\Users'):
-                # Already has the correct format
-                cmd = ['wine', 'python.exe', 'Z:' + wine_path]
+
+            for attempt in range(retries):
+                try:
+                    # Convert the path to Windows format for Wine
+                    wine_path = 'Z:' + temp_script.replace('/', '\\')
+
+                    cmd = ['wine', 'python.exe', wine_path]
+                    logger.debug(f"Attempt {attempt + 1}/{retries}: Running command: {' '.join(cmd)}")
+
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30,
+                                          env={**os.environ, 'MVK_CONFIG_LOG_LEVEL': '0'})
+
+                    logger.debug(f"Command result - return code: {result.returncode}")
+                    logger.debug(f"Command stdout: {result.stdout}")
+                    if result.stderr:
+                        logger.debug(f"Command stderr: {result.stderr}")
+
+                    if result.returncode != 0:
+                        raise Exception(f"Script execution failed with return code {result.returncode}: {result.stderr}")
+
+                    # Success
+                    return result.stdout.strip()
+
+                except subprocess.TimeoutExpired as e:
+                    logger.warning(f"Attempt {attempt + 1}/{retries}: Timeout expired. Retrying in {delay}s...")
+                    last_exception = e
+                    time.sleep(delay)
+                except Exception as e:
+                    logger.warning(f"Attempt {attempt + 1}/{retries}: Error running script: {e}. Retrying in {delay}s...")
+                    last_exception = e
+                    time.sleep(delay)
+
+            logger.error(f"All {retries} attempts failed to run Wine Python script.")
+            if last_exception:
+                raise last_exception
             else:
-                # Need to add the drive mapping
-                cmd = ['wine', 'python.exe', 'Z:\\\\' + wine_path]
-            logger.debug(f"Running command: {' '.join(cmd)}")
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=15,
-                                  env={**os.environ, 'MVK_CONFIG_LOG_LEVEL': '0'})
-            
-            # Log the result for debugging
-            logger.debug(f"Command result - return code: {result.returncode}")
-            logger.debug(f"Command stdout: {result.stdout}")
-            if result.stderr:
-                logger.debug(f"Command stderr: {result.stderr}")
-            
-            # Clean up
-            if os.path.exists(temp_script):
+                raise Exception("Unknown error after all retries.")
+        finally:
+            # Clean up the temporary script file
+            if temp_script and os.path.exists(temp_script):
                 os.remove(temp_script)
-            
-            if result.returncode != 0:
-                raise Exception(f"Script execution failed: {result.stderr}")
-            
-            return result.stdout.strip()
-        except subprocess.TimeoutExpired:
-            logger.warning(f"Timeout expired while running Wine Python script. This is expected for some operations.")
-            # Clean up
-            if os.path.exists(temp_script):
-                os.remove(temp_script)
-            # Return empty result instead of raising exception
-            return ""
-        except Exception as e:
-            logger.error(f"Error running Wine Python script: {e}")
-            # Clean up
-            if os.path.exists(temp_script):
-                os.remove(temp_script)
-            # Re-raise the exception
-            raise
     
     def initialize(self) -> bool:
         """Initialize MT5 connection"""
@@ -486,81 +485,6 @@ except Exception as e:
         return []
     except Exception as e:
         logger.error(f"Error getting calendar events: {e}")
-        return []
-
-def symbols_get() -> Optional[List[Any]]:
-    """Get all available symbols"""
-    connector = WineMT5Connector()
-    script = '''
-import json
-import MetaTrader5 as mt5
-
-try:
-    if mt5.initialize():
-        symbols = mt5.symbols_get()
-        if symbols is not None and len(symbols) > 0:
-            symbols_list = []
-            for symbol in symbols:
-                # Convert symbol object to dictionary
-                # Handle both object and tuple formats
-                if hasattr(symbol, 'name'):
-                    # Object format
-                    symbol_dict = {
-                        'name': symbol.name,
-                        'path': getattr(symbol, 'path', ''),
-                        'description': getattr(symbol, 'description', ''),
-                        'ask': float(getattr(symbol, 'ask', 0)),
-                        'bid': float(getattr(symbol, 'bid', 0)),
-                        'last': float(getattr(symbol, 'last', 0)),
-                        'volume': int(getattr(symbol, 'volume', 0)),
-                        'spread': int(getattr(symbol, 'spread', 0)),
-                        'digits': int(getattr(symbol, 'digits', 0)),
-                        'high': float(getattr(symbol, 'high', 0)),
-                        'low': float(getattr(symbol, 'low', 0)),
-                        'time': int(getattr(symbol, 'time', 0)) if getattr(symbol, 'time', None) else 0
-                    }
-                else:
-                    # Tuple format (index-based)
-                    symbol_dict = {
-                        'name': symbol[0] if len(symbol) > 0 else '',
-                        'path': symbol[1] if len(symbol) > 1 else '',
-                        'description': symbol[13] if len(symbol) > 13 else '',
-                        'ask': float(symbol[2]) if len(symbol) > 2 else 0,
-                        'bid': float(symbol[3]) if len(symbol) > 3 else 0,
-                        'last': float(symbol[4]) if len(symbol) > 4 else 0,
-                        'volume': int(symbol[5]) if len(symbol) > 5 else 0,
-                        'spread': int(symbol[6]) if len(symbol) > 6 else 0,
-                        'digits': int(symbol[7]) if len(symbol) > 7 else 0,
-                        'high': float(symbol[8]) if len(symbol) > 8 else 0,
-                        'low': float(symbol[9]) if len(symbol) > 9 else 0,
-                        'time': int(symbol[10]) if len(symbol) > 10 else 0
-                    }
-                symbols_list.append(symbol_dict)
-            print("RESULT:" + json.dumps(symbols_list))
-        else:
-            print("RESULT:[]")
-        mt5.shutdown()
-    else:
-        print("RESULT:[]")
-except Exception as e:
-    print("RESULT:[]")
-'''
-
-    try:
-        result = connector._run_wine_python_script(script)
-        # Extract only the RESULT line
-        lines = result.split('\n')
-        json_line = None
-        for line in lines:
-            if line.startswith("RESULT:"):
-                json_line = line[7:]  # Remove "RESULT:" prefix
-                break
-
-        if json_line and json_line != "[]":
-            return json.loads(json_line)
-        return []
-    except Exception as e:
-        logger.error(f"Error getting symbols: {e}")
         return []
 
 # Export the connector

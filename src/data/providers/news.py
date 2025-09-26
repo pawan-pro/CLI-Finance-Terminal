@@ -4,7 +4,7 @@ from src.data.cache_manager import cache_manager
 
 class NewsAPI:
     def __init__(self):
-        self.api_key = settings["api_keys"]["newsapi"]
+        self.api_key = settings["api_keys"].get("newsapi")
         if not self.api_key:
             raise ValueError("NewsAPI key not found. Please set it in your .env file.")
         self.base_url = "https://newsapi.org/v2/everything"
@@ -18,8 +18,7 @@ class NewsAPI:
             "pageSize": page_size,
             "apiKey": self.api_key,
         }
-        # Simplified cache key for financial news
-        cache_key = "financial_news"
+        cache_key = f"financial_news_{query}_{page_size}"
 
         cached_data = cache_manager.get(cache_key)
         if cached_data:
@@ -27,7 +26,7 @@ class NewsAPI:
 
         try:
             response = requests.get(self.base_url, params=params)
-            response.raise_for_status()  # Raise an exception for bad status codes
+            response.raise_for_status()
             data = response.json()
             if data.get("status") == "ok" and "articles" in data:
                 articles = data["articles"]

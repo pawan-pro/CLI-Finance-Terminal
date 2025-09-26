@@ -1,23 +1,14 @@
 # Try to import real MT5, fallback to mock if not available
 try:
     # First try direct import (for Windows or Wine with proper setup)
-    import MetaTrader5
-    mt5 = MetaTrader5
+    import MetaTrader5 as mt5
     MT5_AVAILABLE = True
     print("Using real MT5 connection")
 except ImportError:
-    try:
-        # Try importing Wine MT5 connector as mt5
-        from src.data.providers.wine_mt5_connector import WineMT5Connector
-        # Create a wrapper to make it compatible with MT5 API
-        import src.data.providers.wine_mt5_connector as mt5
-        MT5_AVAILABLE = True
-        print("Using real MT5 connection (Wine connector)")
-    except ImportError:
-        # Use mock MT5 for development/testing
-        import src.data.providers.mock_mt5 as mt5
-        MT5_AVAILABLE = False
-        print("Warning: Using mock MT5. For production with Wine, ensure MT5 Python package is properly installed in Wine environment.")
+    # Use mock MT5 for development/testing if native is not found
+    from src.data.providers import mock_mt5 as mt5
+    MT5_AVAILABLE = False
+    print("Warning: Using mock MT5. For production with Wine, ensure MT5 Python package is properly installed in Wine environment.")
 import pandas as pd
 from datetime import datetime, timedelta
 import pytz
