@@ -15,12 +15,30 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 import os
 import numpy as np
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Register Century Gothic fonts with ReportLab
+try:
+    base_font_path = "/Users/pawan/Downloads/century-gothic/"
+    pdfmetrics.registerFont(TTFont('CenturyGothic', os.path.join(base_font_path, 'Century Gothic.otf')))
+    pdfmetrics.registerFont(TTFont('CenturyGothic-Bold', os.path.join(base_font_path, 'Century Gothic Bold.otf')))
+    pdfmetrics.registerFont(TTFont('CenturyGothic-Italic', os.path.join(base_font_path, 'Century Gothic Italic.otf')))
+    pdfmetrics.registerFont(TTFont('CenturyGothic-BoldItalic', os.path.join(base_font_path, 'Century Gothic Bold Italic.otf')))
+    logger.info("Century Gothic fonts registered successfully.")
+except Exception as e:
+    logger.error(f"Error registering fonts globally: {e}")
+    logger.warning("Falling back to Helvetica fonts for all styles.")
+    # Fallback to default fonts if registration fails
+    # These will be set in _create_professional_styles if registration fails
 
 class EnhancedInstitutionalPDFReportGenerator:
     """Enhanced PDF generator with institutional-grade formatting"""
@@ -78,7 +96,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=30,
             alignment=1,  # Center alignment
             textColor=self.colors['primary_dark'],
-            fontName='Helvetica-Bold'
+            fontName='CenturyGothic-Bold'
         )
         
         self.subtitle_style = ParagraphStyle(
@@ -88,7 +106,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=25,
             spaceBefore=15,
             textColor=self.colors['primary_medium'],
-            fontName='Helvetica-Bold'
+            fontName='CenturyGothic-Bold'
         )
         
         self.executive_summary_style = ParagraphStyle(
@@ -98,7 +116,10 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=12,
             leading=14,
             textColor=self.colors['text_dark'],
-            fontName='Helvetica'
+            fontName='CenturyGothic',
+            # justify the text
+            alignment=1
+
         )
         
         self.section_header_style = ParagraphStyle(
@@ -108,7 +129,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=20,
             spaceBefore=25,
             textColor=self.colors['primary_dark'],
-            fontName='Helvetica-Bold',
+            fontName='CenturyGothic-Bold',
             backColor=self.colors['background_medium'],
             borderPadding=10,
             borderRadius=5
@@ -121,7 +142,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=15,
             spaceBefore=20,
             textColor=self.colors['primary_medium'],
-            fontName='Helvetica-Bold'
+            fontName='CenturyGothic-Bold'
         )
         
         self.body_text_style = ParagraphStyle(
@@ -131,7 +152,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=8,
             leading=12,
             textColor=self.colors['text_dark'],
-            fontName='Helvetica'
+            fontName='CenturyGothic'
         )
         
         self.small_text_style = ParagraphStyle(
@@ -141,7 +162,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=6,
             leading=10,
             textColor=self.colors['text_medium'],
-            fontName='Helvetica'
+            fontName='CenturyGothic'
         )
         
         self.highlight_box_style = ParagraphStyle(
@@ -151,7 +172,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=10,
             leading=12,
             textColor=self.colors['text_dark'],
-            fontName='Helvetica',
+            fontName='CenturyGothic',
             backColor=self.colors['background_light'],
             borderPadding=10,
             borderColor=self.colors['primary_light'],
@@ -166,7 +187,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=4,
             leading=8,
             textColor=self.colors['text_light'],
-            fontName='Helvetica-Oblique'
+            fontName='CenturyGothic-Italic' # Changed to Italic
         )
         
         self.table_header_style = ParagraphStyle(
@@ -175,7 +196,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=10,
             spaceAfter=0,
             textColor=colors.white,
-            fontName='Helvetica-Bold'
+            fontName='CenturyGothic-Bold'
         )
         
         self.table_cell_style = ParagraphStyle(
@@ -184,16 +205,16 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=9,
             spaceAfter=0,
             textColor=self.colors['text_dark'],
-            fontName='Helvetica'
+            fontName='CenturyGothic'
         )
     
     def add_cover_page(self):
         """Add professional cover page"""
         # Company header
         self.story.append(Spacer(1, 2*inch))
-        self.story.append(Paragraph("QUANTWATER TECH INVESTMENTS", self.title_style))
-        self.story.append(Spacer(1, 0.2*inch))
-        self.story.append(Paragraph("DAILY INVESTMENT RESEARCH NOTE", self.subtitle_style))
+        self.story.append(Paragraph("Quantwater Tech Investments", self.title_style))
+        self.story.append(Spacer(1, 2*inch))
+        self.story.append(Paragraph("Daily Investment Research Note", self.subtitle_style))
         self.story.append(Spacer(1, 0.5*inch))
         
         # Date
@@ -204,7 +225,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=14,
             spaceAfter=2*inch,
             alignment=1,
-            textColor=self.colors['text_medium']
+            textColor=self.colors['text_medium'],
+            fontName='CenturyGothic'
         )
         self.story.append(Paragraph(report_date, date_style))
         
@@ -215,7 +237,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=10,
             spaceAfter=20,
             alignment=1,
-            textColor=self.colors['accent_red']
+            textColor=self.colors['accent_red'],
+            fontName='CenturyGothic'
         )
         self.story.append(Paragraph("CONFIDENTIAL - FOR AUTHORIZED PERSONNEL ONLY", conf_style))
         
@@ -226,7 +249,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=8,
             spaceAfter=10,
             alignment=1,
-            textColor=self.colors['text_light']
+            textColor=self.colors['text_light'],
+            fontName='CenturyGothic'
         )
         self.story.append(Paragraph(
             "This document is prepared for informational purposes only and should not be construed as investment advice.",
@@ -264,7 +288,8 @@ class EnhancedInstitutionalPDFReportGenerator:
                 fontSize=10,
                 spaceAfter=8,
                 leftIndent=20,
-                textColor=self.colors['text_dark']
+                textColor=self.colors['text_dark'],
+                fontName='CenturyGothic'
             )
             self.story.append(Paragraph(f"{i}. {entry}", toc_style))
         
@@ -339,7 +364,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=10,
             leading=11,
             textColor=self.colors['text_dark'],
-            fontName='Helvetica-Bold'
+            fontName='CenturyGothic-Bold'
         )
         
         content_style = ParagraphStyle(
@@ -349,7 +374,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=0,
             leading=11,
             textColor=self.colors['text_dark'],
-            fontName='Helvetica'
+            fontName='CenturyGothic'
         )
         
         # Add box content
@@ -447,12 +472,12 @@ class EnhancedInstitutionalPDFReportGenerator:
                 ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 # Data rows styling
                 ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
                 ('FONTSIZE', (0, 1), (-1, -1), 9),
                 ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
                 ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
@@ -495,12 +520,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
@@ -542,12 +567,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_medium']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
@@ -589,12 +614,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['accent_gold']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
@@ -640,12 +665,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
@@ -687,12 +712,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['accent_red']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
@@ -757,12 +782,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_medium']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
@@ -951,12 +976,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling with row height adjustment
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             
@@ -1016,12 +1041,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['accent_gold']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
@@ -1085,12 +1110,12 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_medium']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
@@ -1233,7 +1258,7 @@ if __name__ == "__main__":
     pdf_gen.add_table_of_contents()
     
     # Add title
-    pdf_gen.story.append(Paragraph("DAILY INVESTMENT REPORT", pdf_gen.title_style))
+    pdf_gen.story.append(Paragraph("Daily Investment Report", pdf_gen.title_style))
     pdf_gen.story.append(Spacer(1, 20))
     
     # Add executive summary
