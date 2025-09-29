@@ -19,8 +19,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import os
 import numpy as np
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+from src.data.providers.mt5_data import MT5DataFetcher
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +59,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             bottomMargin=36
         )
         
+        self.mt5_data_fetcher = MT5DataFetcher()
+        
         # Define institutional color palette
         self.colors = {
             'primary_dark': colors.HexColor("#1a3c6c"),      # Deep navy blue
@@ -84,6 +85,25 @@ class EnhancedInstitutionalPDFReportGenerator:
         # Track section headers for TOC
         self.section_headers = []
         
+        # Symbol mapping for user-friendly names
+        self.symbol_map = {
+            "US500Roll": "S&P 500 (CFD)",
+            "US30Roll": "Dow Jones 30 (CFD)",
+            "UT100Roll": "Nasdaq 100 (CFD)",
+            "DE40Roll": "DAX 40 (CFD)",
+            "UK100Roll": "FTSE 100 (CFD)",
+            "EURUSD": "EUR/USD",
+            "GBPUSD": "GBP/USD",
+            "USDJPY": "USD/JPY",
+            "USDCHF": "USD/CHF",
+            "AUDUSD": "AUD/USD",
+            "XAUUSD": "Gold (Spot)",
+            "XAGUSD": "Silver (Spot)",
+            "USOIL": "WTI Crude Oil",
+            "UKOIL": "Brent Crude Oil",
+            "VIX": "VIX Volatility Index"
+        }
+        
     def _create_professional_styles(self):
         """Create professional styling for institutional reports"""
         self.styles = getSampleStyleSheet()
@@ -106,7 +126,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=25,
             spaceBefore=15,
             textColor=self.colors['primary_medium'],
-            fontName='CenturyGothic-Bold'
+            fontName='CenturyGothic-Bold',
+            alignment=1 # Center alignment
         )
         
         self.executive_summary_style = ParagraphStyle(
@@ -118,8 +139,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             textColor=self.colors['text_dark'],
             fontName='CenturyGothic',
             # justify the text
-            alignment=1
-
+            alignment=4  # Justified alignment
         )
         
         self.section_header_style = ParagraphStyle(
@@ -212,9 +232,9 @@ class EnhancedInstitutionalPDFReportGenerator:
         """Add professional cover page"""
         # Company header
         self.story.append(Spacer(1, 2*inch))
-        self.story.append(Paragraph("Quantwater Tech Investments", self.title_style))
-        self.story.append(Spacer(1, 2*inch))
-        self.story.append(Paragraph("Daily Investment Research Note", self.subtitle_style))
+        self.story.append(Paragraph("QUANTWATER TECH INVESTMENTS", self.title_style))
+        self.story.append(Spacer(1, 0.2*inch))
+        self.story.append(Paragraph("DAILY INVESTMENT RESEARCH NOTE", self.subtitle_style))
         self.story.append(Spacer(1, 0.5*inch))
         
         # Date
@@ -229,18 +249,6 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontName='CenturyGothic'
         )
         self.story.append(Paragraph(report_date, date_style))
-        
-        # Confidentiality notice
-        conf_style = ParagraphStyle(
-            'Confidentiality',
-            parent=self.styles['Normal'],
-            fontSize=10,
-            spaceAfter=20,
-            alignment=1,
-            textColor=self.colors['accent_red'],
-            fontName='CenturyGothic'
-        )
-        self.story.append(Paragraph("CONFIDENTIAL - FOR AUTHORIZED PERSONNEL ONLY", conf_style))
         
         # Disclaimer
         disclaimer_style = ParagraphStyle(
@@ -297,7 +305,7 @@ class EnhancedInstitutionalPDFReportGenerator:
     
     def add_title(self, title: str):
         """Add title to the report"""
-        self.story.append(Paragraph(title, self.title_style))
+        self.story.append(Paragraph(title.title(), self.title_style)) # Convert to title case
         self.story.append(Spacer(1, 12))
     
     def add_executive_summary(self, summary_points: List[str]):
@@ -312,32 +320,36 @@ class EnhancedInstitutionalPDFReportGenerator:
         # Add summary box
         summary_content = []
         for point in summary_points:
-            summary_content.append(f"• {point}")
+            summary_content.append(Paragraph(f"• {point}", self.executive_summary_style))
+            summary_content.append(Spacer(1, 6)) # Add a small gap between points
         
-        summary_text = "<br/>".join(summary_content)
-        self.story.append(Paragraph(summary_text, self.executive_summary_style))
+        # Remove the last spacer if it exists
+        if summary_content and isinstance(summary_content[-1], Spacer):
+            summary_content.pop()
+            
+        self.story.extend(summary_content)
         self.story.append(Spacer(1, 15))
         
         # Add key insights boxes with more sophisticated institutional commentary
         insights_boxes = [
             {
                 "title": "KEY MARKET INSIGHT",
-                "content": "Market exhibiting strong risk-on sentiment with continued inflows to growth assets. Favorable for equity positioning with emphasis on quality cyclicals.",
+                "content": "Proprietary trading desks are observing strong directional conviction in technology and growth sectors, driven by robust earnings and favorable macro indicators. Day traders should focus on intraday breakouts in high-volume tech stocks. Swing traders may find opportunities in sector rotation plays, while position traders could consider long-term exposure to AI and renewable energy. Portfolio managers are advised to maintain diversified exposure with a tactical overweight in innovation-driven equities.",
                 "color": self.colors['accent_green']
             },
             {
                 "title": "BIGGEST RISK",
-                "content": "Potential policy pivot uncertainty as central banks navigate inflation dynamics. Monitoring key central bank communications for directional guidance.",
+                "content": "The primary risk for proprietary trading is unexpected central bank hawkishness, potentially leading to sharp market corrections. Day traders face heightened volatility around economic data releases. Swing traders must manage event risk from geopolitical developments. Position traders should monitor long-term inflation trends and their impact on bond yields. Portfolio managers need to stress-test portfolios against stagflationary scenarios and geopolitical escalations.",
                 "color": self.colors['accent_red']
             },
             {
                 "title": "CONVICTION TRADE",
-                "content": "Overweight technology sector with selective duration exposure in high-grade credit. Tactical long volatility positioning recommended.",
+                "content": "Proprietary trading favors long positions in large-cap technology with defined risk parameters. Day traders are targeting quick scalps on momentum plays. Swing traders are looking for mean-reversion opportunities in oversold quality names. Position traders are building core long positions in undervalued defensive sectors. Portfolio managers are increasing allocations to alternative assets for diversification and inflation hedging.",
                 "color": self.colors['accent_gold']
             },
             {
                 "title": "PORTFOLIO IMPLICATION",
-                "content": "Constructive bias for risk assets with emphasis on active management and dynamic hedging. Maintain diversified exposure across asset classes.",
+                "content": "For proprietary trading, dynamic hedging strategies are crucial to manage tail risk. Day trading requires strict risk-reward ratios and rapid execution. Swing trading benefits from technical analysis and pattern recognition. Position trading emphasizes fundamental analysis and long-term trend identification. Portfolio management focuses on strategic asset allocation, risk budgeting, and active rebalancing to optimize returns and minimize drawdowns.",
                 "color": self.colors['primary_medium']
             }
         ]
@@ -442,11 +454,11 @@ class EnhancedInstitutionalPDFReportGenerator:
             table_data = [['Index', 'Last', 'Chg', 'Chg %']]
             for _, row in indices_data.head(8).iterrows():
                 name = str(row.get('name', 'N/A'))
+                display_name = self.symbol_map.get(name, name)
                 ask = float(row.get('ask', 0))
                 bid = float(row.get('bid', 0))
                 last = (ask + bid) / 2
-                change = ask - bid
-                pct_change = (change / bid * 100) if bid != 0 else 0
+                change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
                 
                 # Color code based on performance
                 if pct_change > 0:
@@ -460,7 +472,7 @@ class EnhancedInstitutionalPDFReportGenerator:
                     pct_color = 'black'
                 
                 table_data.append([
-                    name,
+                    display_name,
                     f"{last:.2f}",
                     f'<font color="{change_color}">{change:+.2f}</font>',
                     f'<font color="{pct_color}">{pct_change:+.2f}%</font>'
@@ -500,18 +512,22 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("MAJOR INDICES PERFORMANCE")
         
         # Create comprehensive indices table
-        table_data = [['Index', 'Description', 'Price']]
+        table_data = [['Index', 'Description', 'Price', '24h Change', '24h Change %']]
         
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.symbol_map.get(name, name)
             description = str(row.get('description', 'N/A'))
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
             
             # Format numbers with appropriate precision
             table_data.append([
-                name,
+                display_name,
                 description[:30] + "..." if len(description) > 30 else description,
-                price
+                price,
+                f"{change:+.2f}",
+                f"{pct_change:+.2f}%"
             ])
         
         table = Table(table_data)
@@ -526,10 +542,9 @@ class EnhancedInstitutionalPDFReportGenerator:
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
             ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
-            ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
         ]))
         
         self.story.append(table)
@@ -548,17 +563,21 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("CURRENCY MARKETS")
         
         # Create currencies table
-        table_data = [['Pair', 'Description', 'Price']]
+        table_data = [['Pair', 'Description', 'Price', '24h Change', '24h Change %']]
         
         for _, row in currency_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.symbol_map.get(name, name)
             description = str(row.get('description', 'N/A'))
             price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
 
             table_data.append([
-                name,
+                display_name,
                 description[:25] + "..." if len(description) > 25 else description,
-                price
+                price,
+                f"{change:+.4f}",
+                f"{pct_change:+.2f}%"
             ])
         
         table = Table(table_data)
@@ -595,17 +614,21 @@ class EnhancedInstitutionalPDFReportGenerator:
         self._add_section_header("COMMODITIES")
         
         # Create commodities table
-        table_data = [['Commodity', 'Description', 'Price']]
+        table_data = [['Commodity', 'Description', 'Price', '24h Change', '24h Change %']]
         
         for _, row in commodities_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.symbol_map.get(name, name)
             description = str(row.get('description', 'N/A'))
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
+            change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
             
             table_data.append([
-                name,
+                display_name,
                 description[:25] + "..." if len(description) > 25 else description,
-                price
+                price,
+                f"{change:+.2f}",
+                f"{pct_change:+.2f}%"
             ])
         
         table = Table(table_data)
@@ -1273,7 +1296,7 @@ if __name__ == "__main__":
     # Add market overview
     market_status = {
         'status': 'Open',
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'timestamp': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), # Use UTC time
         'timezone': 'UTC'
     }
     pdf_gen.add_market_overview(market_status, sample_indices)

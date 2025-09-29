@@ -337,6 +337,37 @@ class MT5DataFetcher:
         
         return df
     
+    def get_24h_change(self, symbol: str) -> Tuple[float, float]:
+        """Calculate the 24-hour change and percentage change for a symbol."""
+        current_info = self.get_symbol_info(symbol)
+        if not current_info or current_info.get('ask', 0) == 0:
+            logger.warning(f"Could not get current info or ask price for {symbol}")
+            return 0.0, 0.0
+
+        current_price = current_info['ask']
+        
+        end_time = datetime.now(pytz.utc)
+        start_time = end_time - timedelta(days=1)
+
+        historical_data = self.fetch_historical_data(symbol, mt5.TIMEFRAME_H1, start_time, end_time)
+        
+        if historical_data.empty:
+            logger.warning(f"No historical data available for {symbol} in the last 24 hours.")
+            return 0.0, 0.0
+
+        # Find the closest data point to 24 hours ago
+        # Sort by time to ensure correct order
+        historical_data = historical_data.sort_values(by='time').reset_index(drop=True)
+        
+        # Get the first available open price in the 24-hour window
+        # This will be the price closest to 24 hours ago
+        old_price = historical_data.iloc[0]['open']
+
+        change = current_price - old_price
+        pct_change = (change / old_price * 100) if old_price != 0 else 0.0
+
+        return change, pct_change
+
     def get_market_watch(self) -> pd.DataFrame:
         """Get current market watch data for all available symbols"""
         cache_key = self._get_cache_key("market_watch")
@@ -414,6 +445,11 @@ if __name__ == "__main__":
             )
             print(f"\nHistorical data for {symbols[0]}:")
             print(data.head())
+        
+        # Get 24h change for a symbol
+        if symbols:
+            change, pct_change = fetcher.get_24h_change(symbols[0])
+            print(f"\n24h change for {symbols[0]}: {change} ({pct_change}%)")
         
         fetcher.shutdown()
         
