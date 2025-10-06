@@ -92,7 +92,7 @@ class MT5DataFetcher:
         
         return symbol_names
     
-    def get_symbol_info(self, symbol: str) -> Optional[Dict]:
+    def get_symbol_info(self, symbol: str, check_suffixes: bool = True) -> Optional[Dict]:
         """Fetches information about a specific symbol, using cache."""
         cache_key = self._get_cache_key("symbol_info", symbol)
         
@@ -102,6 +102,14 @@ class MT5DataFetcher:
             if cached is not None:
                 logger.info(f"Returning info for {symbol} from cache")
                 return cached
+        
+        # Log data fetch attempt
+        logger.info(f"Attempting to fetch symbol info for: {symbol}")
+        
+        # Get available symbols for debugging
+        available_symbols = self.get_available_symbols()
+        logger.info(f"Symbol attempted: {symbol}")
+        logger.info(f"Available symbols in MT5: {available_symbols[:20]}... ({len(available_symbols)} total symbols)")
         
         # If using Wine MT5, we need to handle this differently
         if self.use_wine_mt5:
@@ -135,15 +143,146 @@ class MT5DataFetcher:
                     if self.use_cache:
                         cache_manager.set(cache_key, info_dict)
                     
+                    logger.info(f"Found symbol {symbol} in MT5: SUCCESS")
                     return info_dict
             except Exception as e:
                 logger.error(f"Error getting symbol info for {symbol} from Wine MT5: {e}")
                 return None
         
+        # First try the exact symbol
         symbol_info = mt5.symbol_info(symbol)
-        if symbol_info is None:
+        if symbol_info is not None:
+            logger.info(f"Found symbol {symbol} in MT5: SUCCESS")
+        else:
             logger.warning(f"Failed to get symbol info for {symbol}")
-            return None
+            # If the exact symbol doesn't exist and check_suffixes is True, try common suffixes
+            if check_suffixes:
+                # Common broker-specific suffixes
+                suffixes = ['.sd', '.USD', '.eur', '.gbp', '.jpy', '.chf', '.aud', '.nzd', '.cad']  # Added more suffixes
+                for suffix in suffixes:
+                    test_symbol = symbol + suffix
+                    logger.info(f"Trying alternative symbol: {test_symbol}")
+                    symbol_info = mt5.symbol_info(test_symbol)
+                    if symbol_info is not None:
+                        logger.info(f"Found symbol {test_symbol} in MT5: SUCCESS")
+                        logger.info(f"Using {test_symbol} instead of {symbol}")
+                        # Update the returned symbol name to reflect the original symbol
+                        if isinstance(symbol_info, dict):
+                            symbol_info['name'] = symbol  # Keep the original symbol name
+                        else:
+                            # If it's an object, we'll need to modify it differently
+                            # Create a new dict with the original symbol name
+                            info_dict = {
+                                'name': symbol,
+                                'path': getattr(symbol_info, 'path', ''),
+                                'description': getattr(symbol_info, 'description', ''),
+                                'ask': getattr(symbol_info, 'ask', 0),
+                                'bid': getattr(symbol_info, 'bid', 0),
+                                'last': getattr(symbol_info, 'last', 0),
+                                'volume': getattr(symbol_info, 'volume', 0),
+                                'spread': getattr(symbol_info, 'spread', 0),
+                                'digits': getattr(symbol_info, 'digits', 0),
+                                'trade_mode': getattr(symbol_info, 'trade_mode', 0),
+                                'trade_stops_level': getattr(symbol_info, 'trade_stops_level', 0),
+                                'trade_freeze_level': getattr(symbol_info, 'trade_freeze_level', 0),
+                                'point': getattr(symbol_info, 'point', 0),
+                                'high': getattr(symbol_info, 'high', 0),
+                                'low': getattr(symbol_info, 'low', 0),
+                                'time': getattr(symbol_info, 'time', None),
+                                'time_msc': getattr(symbol_info, 'time_msc', 0),
+                                'session_open': getattr(symbol_info, 'session_open', 0),
+                                'session_close': getattr(symbol_info, 'session_close', 0),
+                            }
+                            # Cache the result using the original symbol name
+                            cache_key = self._get_cache_key("symbol_info", symbol)
+                            if self.use_cache:
+                                cache_manager.set(cache_key, info_dict)
+                            return info_dict
+                    else:
+                        logger.info(f"Symbol {test_symbol} not found in MT5")
+            
+            # If still not found, try known alternative symbol mappings
+            if symbol_info is None:
+                # Define common mappings between different broker naming conventions
+                symbol_mappings = {
+                    # Major indices
+                    'US500Roll': 'SPX500',
+                    'US500': 'SPX500',
+                    'SPX': 'SPX500',
+                    'ES': 'SPX500',
+                    'US30Roll': 'DJI30',
+                    'US30': 'DJI30',
+                    'DJI': 'DJI30',
+                    'YM': 'DJI30',
+                    'UT100Roll': 'NDX100',
+                    'UT100': 'NDX100',
+                    'NDX': 'NDX100',
+                    'NQ': 'NDX100',
+                    'DE40Roll': 'DAX30',
+                    'DE40': 'DAX30',
+                    'DAX': 'DAX30',
+                    'UK100Roll': 'FTSE100',
+                    'UK100': 'FTSE100',
+                    'FTSE': 'FTSE100',
+                    # Commodities
+                    'USOIL': 'OIL',
+                    'UKOIL': 'UKOIL',  # This one is already in the list
+                    'XAUUSD': 'XAUUSD',  # This one is already in the list
+                    'XAGUSD': 'XAGUSD',  # This one is already in the list
+                    # Currencies
+                    'EURUSD': 'EURUSD',  # This one is already in the list
+                    'GBPUSD': 'GBPUSD',  # This one is already in the list
+                    'USDJPY': 'USDJPY',  # This one is already in the list
+                    'USDCHF': 'USDCHF',  # This one is already in the list
+                    'AUDUSD': 'AUDUSD',  # This one is already in the list
+                }
+                
+                # Check if there's a known mapping for this symbol
+                if symbol in symbol_mappings:
+                    mapped_symbol = symbol_mappings[symbol]
+                    logger.info(f"Trying mapped symbol: {mapped_symbol} for original symbol: {symbol}")
+                    symbol_info = mt5.symbol_info(mapped_symbol)
+                    if symbol_info is not None:
+                        logger.info(f"Found mapped symbol {mapped_symbol} in MT5: SUCCESS")
+                        logger.info(f"Using {mapped_symbol} (mapped from {symbol})")
+                        # Update the returned symbol name to reflect the original symbol
+                        if isinstance(symbol_info, dict):
+                            symbol_info['name'] = symbol  # Keep the original symbol name
+                        else:
+                            # Create a new dict with the original symbol name
+                            info_dict = {
+                                'name': symbol,
+                                'path': getattr(symbol_info, 'path', ''),
+                                'description': getattr(symbol_info, 'description', ''),
+                                'ask': getattr(symbol_info, 'ask', 0),
+                                'bid': getattr(symbol_info, 'bid', 0),
+                                'last': getattr(symbol_info, 'last', 0),
+                                'volume': getattr(symbol_info, 'volume', 0),
+                                'spread': getattr(symbol_info, 'spread', 0),
+                                'digits': getattr(symbol_info, 'digits', 0),
+                                'trade_mode': getattr(symbol_info, 'trade_mode', 0),
+                                'trade_stops_level': getattr(symbol_info, 'trade_stops_level', 0),
+                                'trade_freeze_level': getattr(symbol_info, 'trade_freeze_level', 0),
+                                'point': getattr(symbol_info, 'point', 0),
+                                'high': getattr(symbol_info, 'high', 0),
+                                'low': getattr(symbol_info, 'low', 0),
+                                'time': getattr(symbol_info, 'time', None),
+                                'time_msc': getattr(symbol_info, 'time_msc', 0),
+                                'session_open': getattr(symbol_info, 'session_open', 0),
+                                'session_close': getattr(symbol_info, 'session_close', 0),
+                            }
+                            # Cache the result using the original symbol name
+                            cache_key = self._get_cache_key("symbol_info", symbol)
+                            if self.use_cache:
+                                cache_manager.set(cache_key, info_dict)
+                            return info_dict
+                    else:
+                        logger.info(f"Mapped symbol {mapped_symbol} not found in MT5")
+            
+            # If we still haven't found the symbol
+            if symbol_info is None:
+                logger.error(f"Failed to find symbol {symbol} or any alternate versions in MT5")
+                return None
         
         # Handle both dict and object formats
         if isinstance(symbol_info, dict):
@@ -353,7 +492,65 @@ class MT5DataFetcher:
         
         if historical_data.empty:
             logger.warning(f"No historical data available for {symbol} in the last 24 hours.")
-            return 0.0, 0.0
+            # If no data is available, try with symbol suffixes
+            available_symbols = self.get_available_symbols()
+            suffixes = ['.sd', '.USD', '.eur', '.gbp', '.jpy', '.chf', '.aud', '.nzd', '.cad']
+            for suffix in suffixes:
+                test_symbol = symbol + suffix
+                if test_symbol in available_symbols:
+                    logger.info(f"Trying alternative symbol for historical data: {test_symbol}")
+                    historical_data = self.fetch_historical_data(test_symbol, mt5.TIMEFRAME_H1, start_time, end_time)
+                    if not historical_data.empty:
+                        logger.info(f"Found historical data for {test_symbol}")
+                        break
+            
+            # If still no data, try known symbol mappings
+            if historical_data.empty:
+                # Define common mappings between different broker naming conventions
+                symbol_mappings = {
+                    # Major indices
+                    'US500Roll': 'SPX500',
+                    'US500': 'SPX500',
+                    'SPX': 'SPX500',
+                    'ES': 'SPX500',
+                    'US30Roll': 'DJI30',
+                    'US30': 'DJI30',
+                    'DJI': 'DJI30',
+                    'YM': 'DJI30',
+                    'UT100Roll': 'NDX100',
+                    'UT100': 'NDX100',
+                    'NDX': 'NDX100',
+                    'NQ': 'NDX100',
+                    'DE40Roll': 'DAX30',
+                    'DE40': 'DAX30',
+                    'DAX': 'DAX30',
+                    'UK100Roll': 'FTSE100',
+                    'UK100': 'FTSE100',
+                    'FTSE': 'FTSE100',
+                    # Commodities
+                    'USOIL': 'OIL',
+                    'UKOIL': 'UKOIL',  # This one is already in the list
+                    'XAUUSD': 'XAUUSD',  # This one is already in the list
+                    'XAGUSD': 'XAGUSD',  # This one is already in the list
+                    # Currencies
+                    'EURUSD': 'EURUSD',  # This one is already in the list
+                    'GBPUSD': 'GBPUSD',  # This one is already in the list
+                    'USDJPY': 'USDJPY',  # This one is already in the list
+                    'USDCHF': 'USDCHF',  # This one is already in the list
+                    'AUDUSD': 'AUDUSD',  # This one is already in the list
+                }
+                
+                # Check if there's a known mapping for this symbol
+                if symbol in symbol_mappings:
+                    mapped_symbol = symbol_mappings[symbol]
+                    if mapped_symbol in available_symbols:
+                        logger.info(f"Trying mapped symbol for historical data: {mapped_symbol} for original symbol: {symbol}")
+                        historical_data = self.fetch_historical_data(mapped_symbol, mt5.TIMEFRAME_H1, start_time, end_time)
+                        if not historical_data.empty:
+                            logger.info(f"Found historical data for mapped symbol {mapped_symbol}")
+            
+            if historical_data.empty:
+                return 0.0, 0.0
 
         # Find the closest data point to 24 hours ago
         # Sort by time to ensure correct order

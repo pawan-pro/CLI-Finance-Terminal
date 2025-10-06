@@ -7,6 +7,10 @@ from typing import Dict, List, Optional
 import logging
 from scipy import stats
 
+# adding mt5 path    
+mt5_path = os.getenv("MT5_PATH")
+
+
 # Add the project root to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -76,11 +80,47 @@ class DailyInvestmentReportGenerator:
         self.llm_generator = LLMExecutiveSummaryGenerator()
         
         # Define default symbols to track with available symbols from MT5
-        self.major_indices = ['US500Roll', 'US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll']
-        self.major_currencies = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD']
-        self.commodities = ['XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL']
+        self.major_indices = ['US500Roll', 'US30Roll', 'UK100Roll', 'DE40Roll', 'FRA40Roll', 'JP225Roll', 'HK50Roll', 'CHINA50Roll']
+        self.major_currencies = ['EURUSD.sd', 'GBPUSD.sd', 'USDJPY.sd', 'AUDUSD.sd', 'USDCAD.sd', 'USDCHF.sd', 'NZDUSD.sd', 'USDCNH.sd']
+        self.commodities = ['XAUUSD', 'XAGUSD', 'XPTUSD', 'USOILRoll', 'BRENT', 'NGAS']
         self.bonds = ['TLT', 'IEF', 'SHY', 'LQD']
-        self.volatility_symbols = ['VIX', 'VXN', 'VXD']
+        self.crypto = ['BTCUSD.lv', 'ETHUSD.lv', 'XRPUSD.lv', 'LTCUSD.lv', 'BCHUSD.lv', 'EOSUSD.lv']
+        self.volatility_symbols = ['VIXRoll']
+
+    def _get_data_from_csv(self, symbols: List[str], asset_class: str) -> pd.DataFrame:
+        """Get data from CSV files for a given asset class."""
+        data_list = []
+        
+        for symbol in symbols:
+            try:
+                folder = ''
+                if asset_class == 'currencies':
+                    folder = 'forex'
+                elif asset_class == 'volatility':
+                    folder = 'other'
+                else:
+                    folder = asset_class
+                
+                csv_filename = f"/Users/pawan/CLI-Finance-Terminal/data/{folder}/{symbol}_data.csv"
+                if os.path.exists(csv_filename):
+                    df = pd.read_csv(csv_filename)
+                    if not df.empty:
+                        latest_data = df.iloc[-1]
+                        info = {
+                            'name': symbol,
+                            'ask': latest_data.get('close', 0),
+                            'bid': latest_data.get('open', 0),
+                            'last': latest_data.get('close', 0),
+                            'volume': latest_data.get('tick_volume', 0),
+                            'pct_change_24h': self._calculate_24h_percentage_change(symbol)
+                        }
+                        info['Price'] = (info.get('ask', 0) + info.get('bid', 0)) / 2 if info.get('ask') and info.get('bid') else info.get('last', 0)
+                        data_list.append(info)
+            except Exception as e:
+                logger.warning(f"Error reading CSV for {symbol}: {e}")
+                continue
+        
+        return pd.DataFrame(data_list)
 
     def _get_wine_symbol_info(self, symbol: str) -> Optional[Dict]:
         """Get symbol info from Wine MT5"""
@@ -121,8 +161,25 @@ class DailyInvestmentReportGenerator:
             if self.use_wine_mt5:
                 historical_data = self._get_wine_historical_data(symbol, mt5.TIMEFRAME_M15, start_time, end_time)
             else:
-                historical_data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_M15, start_time, end_time)
-            
+                folder = ''
+                if '.sd' in symbol:
+                    folder = 'forex'
+                elif '.lv' in symbol:
+                    folder = 'crypto'
+                elif 'Roll' in symbol:
+                    if 'VIX' in symbol:
+                        folder = 'other'
+                    else:
+                        folder = 'indices'
+                else:
+                    folder = 'commodities'
+                
+                csv_filename = f"/Users/pawan/CLI-Finance-Terminal/data/{folder}/{symbol}_data.csv"
+                if os.path.exists(csv_filename):
+                    historical_data = pd.read_csv(csv_filename)
+                else:
+                    historical_data = pd.DataFrame()
+
             if not historical_data.empty and len(historical_data) > 1:
                 first_price = historical_data['close'].iloc[0]
                 last_price = historical_data['close'].iloc[-1]
@@ -143,40 +200,19 @@ class DailyInvestmentReportGenerator:
 
     def get_major_indices_data(self) -> pd.DataFrame:
         """Get data for major indices"""
-        indices_data = []
-        for symbol in self.major_indices:
-            info = self.mt5_fetcher.get_symbol_info(symbol)
-            if info:
-                info['pct_change_24h'] = self._calculate_24h_percentage_change(symbol)
-                indices_data.append(info)
-        df = pd.DataFrame(indices_data)
-        for item in indices_data:
-            item['Price'] = (item.get('ask', 0) + item.get('bid', 0)) / 2 if item.get('ask') and item.get('bid') else item.get('last', 0)
-        return pd.DataFrame(indices_data)
+        return self._get_data_from_csv(self.major_indices, 'indices')
 
     def get_currency_data(self) -> pd.DataFrame:
         """Get data for major currencies"""
-        currency_data = []
-        for symbol in self.major_currencies:
-            info = self.mt5_fetcher.get_symbol_info(symbol)
-            if info:
-                info['pct_change_24h'] = self._calculate_24h_percentage_change(symbol)
-                currency_data.append(info)
-        for item in currency_data:
-            item['Price'] = (item.get('ask', 0) + item.get('bid', 0)) / 2 if item.get('ask') and item.get('bid') else item.get('last', 0)
-        return pd.DataFrame(currency_data)
+        return self._get_data_from_csv(self.major_currencies, 'currencies')
 
     def get_commodities_data(self) -> pd.DataFrame:
         """Get data for commodities"""
-        commodities_data = []
-        for symbol in self.commodities:
-            info = self.mt5_fetcher.get_symbol_info(symbol)
-            if info:
-                info['pct_change_24h'] = self._calculate_24h_percentage_change(symbol)
-                commodities_data.append(info)
-        for item in commodities_data:
-            item['Price'] = (item.get('ask', 0) + item.get('bid', 0)) / 2 if item.get('ask') and item.get('bid') else item.get('last', 0)
-        return pd.DataFrame(commodities_data)
+        return self._get_data_from_csv(self.commodities, 'commodities')
+
+    def get_crypto_data(self) -> pd.DataFrame:
+        """Get data for crypto"""
+        return self._get_data_from_csv(self.crypto, 'crypto')
 
     def get_bonds_data(self) -> pd.DataFrame:
         """Get data for bonds (using ETF proxies)"""
@@ -192,14 +228,7 @@ class DailyInvestmentReportGenerator:
 
     def get_volatility_data(self) -> pd.DataFrame:
         """Get volatility indices data"""
-        volatility_data = []
-        for symbol in self.volatility_symbols:
-            info = self.mt5_fetcher.get_symbol_info(symbol)
-            if info:
-                volatility_data.append(info)
-        for item in volatility_data:
-            item['Price'] = (item.get('ask', 0) + item.get('bid', 0)) / 2 if item.get('ask') and item.get('bid') else item.get('last', 0)
-        return pd.DataFrame(volatility_data)
+        return self._get_data_from_csv(self.volatility_symbols, 'volatility')
 
     def get_top_movers(self, data: pd.DataFrame, top_n: int = 5) -> pd.DataFrame:
         """Get top gainers and losers based on 24-hour price change."""
@@ -210,32 +239,78 @@ class DailyInvestmentReportGenerator:
         return data.nlargest(top_n, 'abs_pct_change')
 
     def generate_charts(self, save_dir: str = "./reports/charts") -> List[str]:
-        """Generate key market charts for a predefined list of symbols."""
+        """Generate key market charts for all major asset classes using CSV data."""
         chart_files = []
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        symbols_to_chart = [
-            'US500Roll', 'US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll',
-            'GBPUSD', 'USDJPY', 'XAUUSD', 'XAGUSD'
-        ]
+        # Define symbols for all major asset classes
+        all_symbols = {
+            'indices': ['US500Roll', 'US30Roll', 'UK100Roll', 'DE40Roll', 'FRA40Roll', 'JP225Roll', 'HK50Roll', 'CHINA50Roll'],
+            'forex': ['EURUSD.sd', 'GBPUSD.sd', 'USDJPY.sd', 'AUDUSD.sd', 'USDCAD.sd', 'USDCHF.sd', 'NZDUSD.sd', 'USDCNH.sd'],
+            'commodities': ['XAUUSD', 'XAGUSD', 'XPTUSD', 'USOILRoll', 'BRENT', 'NGAS'],
+            'crypto': ['BTCUSD.lv', 'ETHUSD.lv', 'XRPUSD.lv', 'LTCUSD.lv', 'BCHUSD.lv', 'EOSUSD.lv'],
+            'volatility': ['VIXRoll']
+        }
+        
+        # Flatten all symbols for processing
+        symbols_to_chart = []
+        for category, symbols in all_symbols.items():
+            symbols_to_chart.extend(symbols)
 
         for symbol in symbols_to_chart:
             try:
-                end_time = datetime.now()
-                start_time = end_time - timedelta(days=365)
-                data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_D1, start_time, end_time)
-
-                if not data.empty and all(col in data.columns for col in ['open', 'high', 'low', 'close']):
-                    chart_path = os.path.join(save_dir, f"{symbol.replace('/', '_')}_candlestick.png")
-                    chart_file = self.chart_generator.generate_candlestick_chart(data, symbol, chart_path)
-                    if chart_file:
-                        chart_files.append(chart_file)
+                # Determine the folder based on symbol category
+                folder = ''
+                if '.sd' in symbol:
+                    folder = 'forex'
+                elif '.lv' in symbol:
+                    folder = 'crypto'
+                elif 'Roll' in symbol:
+                    if 'VIX' in symbol:
+                        folder = 'other'
+                    elif 'OIL' in symbol:
+                        folder = 'commodities'
+                    else:
+                        folder = 'indices'
+                elif symbol in ['XAUUSD', 'XAGUSD', 'XPTUSD']:
+                    folder = 'commodities'
                 else:
-                    logger.warning(f"Could not generate chart for {symbol} due to missing data.")
+                    folder = 'commodities'  # Default for other symbols
+                
+                csv_filename = f"/Users/pawan/CLI-Finance-Terminal/data/{folder}/{symbol}_data.csv"
+                
+                # Check if CSV file exists
+                if os.path.exists(csv_filename):
+                    logger.info(f"Found CSV data for {symbol} at {csv_filename}")
+                    data = pd.read_csv(csv_filename)
+                else:
+                    logger.warning(f"CSV file not found for {symbol} at {csv_filename}")
+                    continue
+
+                # Check if the data has the required columns for candlestick chart
+                required_columns = ['time', 'open', 'high', 'low', 'close']
+                if not all(col in data.columns for col in required_columns):
+                    logger.warning(f"Missing required columns for candlestick chart for {symbol}")
+                    continue
+
+                # Generate chart if we have valid data
+                if not data.empty and len(data) > 1:  # Need at least 2 data points for a meaningful chart
+                    chart_path = os.path.join(save_dir, f"{symbol.replace('/', '_')}_candlestick.png")
+                    logger.info(f"Generating candlestick chart for {symbol} -> {chart_path}")
+                    chart_file = self.chart_generator.generate_candlestick_chart(data, symbol, chart_path)
+                    if chart_file and os.path.exists(chart_file):
+                        chart_files.append(chart_file)
+                        logger.info(f"Successfully generated chart for {symbol}")
+                    else:
+                        logger.warning(f"Failed to generate chart for {symbol}")
+                else:
+                    logger.warning(f"Insufficient data for chart generation for {symbol}")
+                    
             except Exception as e:
                 logger.error(f"Failed to generate chart for {symbol}: {e}", exc_info=True)
         
+        logger.info(f"Generated {len(chart_files)} charts out of {len(symbols_to_chart)} attempted")
         return chart_files
 
     def get_economic_calendar(self) -> pd.DataFrame:
@@ -304,10 +379,11 @@ class DailyInvestmentReportGenerator:
         indices_data = self.get_major_indices_data()
         currency_data = self.get_currency_data()
         commodities_data = self.get_commodities_data()
+        crypto_data = self.get_crypto_data()
         bonds_data = self.get_bonds_data()
         volatility_data = self.get_volatility_data()
         
-        all_data = pd.concat([indices_data, currency_data, commodities_data, bonds_data], ignore_index=True)
+        all_data = pd.concat([indices_data, currency_data, commodities_data, crypto_data, bonds_data], ignore_index=True)
         top_movers = self.get_top_movers(all_data) if not all_data.empty else pd.DataFrame()
         
         calendar_data = self.get_economic_calendar()

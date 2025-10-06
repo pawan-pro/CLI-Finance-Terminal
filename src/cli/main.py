@@ -1,7 +1,6 @@
 import typer
 from rich.console import Console
 from src.cli.commands.quote import quote
-from src.cli.commands.chart import chart
 from src.cli.commands.news import news
 from src.cli.commands.calendar import calendar
 from src.cli.commands.status import status
@@ -21,7 +20,6 @@ console = Console()
 
 # Add commands
 app.command("quote")(quote)
-app.command("chart")(chart)
 app.command("news")(news)
 app.command("calendar")(calendar)
 app.command("status")(status)

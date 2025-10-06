@@ -20,24 +20,33 @@ from reportlab.pdfbase.ttfonts import TTFont
 import os
 import numpy as np
 from src.data.providers.mt5_data import MT5DataFetcher
+from src.data.providers.alpha_vantage_data import AlphaVantageData
+
+# Define font variables with defaults
+FONT_REGULAR = 'Helvetica'
+FONT_BOLD = 'Helvetica-Bold'
+
+# Try to register Century Gothic fonts but only if the files exist
+try:
+    import os
+    font_path = '/Users/pawan/Desktop/fonts/Century Gothic/centurygothic.tff'
+    font_bold_path = '/Users/pawan/Desktop/fonts/Century Gothic/centurygothic_bold.tff'
+    
+    if os.path.exists(font_path) and os.path.exists(font_bold_path):
+        pdfmetrics.registerFont(TTFont('CenturyGothic', font_path))
+        pdfmetrics.registerFont(TTFont('CenturyGothic-Bold', font_bold_path))
+        FONT_REGULAR = 'CenturyGothic'
+        FONT_BOLD = 'CenturyGothic-Bold'
+    else:
+        print(f"Century Gothic font files not found. Regular: {font_path} Bold: {font_bold_path}")
+except Exception as e:
+    print(f"Could not register Century Gothic fonts, falling back to Helvetica: {e}")
+    FONT_REGULAR = 'Helvetica'
+    FONT_BOLD = 'Helvetica-Bold'
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Register Century Gothic fonts with ReportLab
-try:
-    base_font_path = "/Users/pawan/Downloads/century-gothic/"
-    pdfmetrics.registerFont(TTFont('CenturyGothic', os.path.join(base_font_path, 'Century Gothic.otf')))
-    pdfmetrics.registerFont(TTFont('CenturyGothic-Bold', os.path.join(base_font_path, 'Century Gothic Bold.otf')))
-    pdfmetrics.registerFont(TTFont('CenturyGothic-Italic', os.path.join(base_font_path, 'Century Gothic Italic.otf')))
-    pdfmetrics.registerFont(TTFont('CenturyGothic-BoldItalic', os.path.join(base_font_path, 'Century Gothic Bold Italic.otf')))
-    logger.info("Century Gothic fonts registered successfully.")
-except Exception as e:
-    logger.error(f"Error registering fonts globally: {e}")
-    logger.warning("Falling back to Helvetica fonts for all styles.")
-    # Fallback to default fonts if registration fails
-    # These will be set in _create_professional_styles if registration fails
 
 class EnhancedInstitutionalPDFReportGenerator:
     """Enhanced PDF generator with institutional-grade formatting"""
@@ -60,6 +69,7 @@ class EnhancedInstitutionalPDFReportGenerator:
         )
         
         self.mt5_data_fetcher = MT5DataFetcher()
+        self.alpha_vantage_data = AlphaVantageData()
         
         # Define institutional color palette
         self.colors = {
@@ -101,13 +111,23 @@ class EnhancedInstitutionalPDFReportGenerator:
             "XAGUSD": "Silver (Spot)",
             "USOIL": "WTI Crude Oil",
             "UKOIL": "Brent Crude Oil",
-            "VIX": "VIX Volatility Index"
+            "VIX": "VIX Volatility Index",
+            "NIFTY_50": "NIFTY 50",
+            "SENSEX": "BSE SENSEX"
         }
+        
+        # Indian indices integration has been removed to resolve data structure conflicts
+        # A separate solution for Indian market data will be developed
+        pass
+        
+    # Indian indices integration has been removed to resolve data structure conflicts
+    # A separate solution for Indian market data will be developed
+    pass
         
     def _create_professional_styles(self):
         """Create professional styling for institutional reports"""
         self.styles = getSampleStyleSheet()
-        
+
         # Title styles
         self.title_style = ParagraphStyle(
             'InstitutionalTitle',
@@ -116,7 +136,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=30,
             alignment=1,  # Center alignment
             textColor=self.colors['primary_dark'],
-            fontName='CenturyGothic-Bold'
+            fontName=FONT_BOLD
         )
         
         self.subtitle_style = ParagraphStyle(
@@ -126,7 +146,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=25,
             spaceBefore=15,
             textColor=self.colors['primary_medium'],
-            fontName='CenturyGothic-Bold',
+            fontName=FONT_BOLD,
             alignment=1 # Center alignment
         )
         
@@ -137,7 +157,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=12,
             leading=14,
             textColor=self.colors['text_dark'],
-            fontName='CenturyGothic',
+            fontName=FONT_REGULAR,
             # justify the text
             alignment=4  # Justified alignment
         )
@@ -149,7 +169,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=20,
             spaceBefore=25,
             textColor=self.colors['primary_dark'],
-            fontName='CenturyGothic-Bold',
+            fontName=FONT_BOLD,
             backColor=self.colors['background_medium'],
             borderPadding=10,
             borderRadius=5
@@ -162,7 +182,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=15,
             spaceBefore=20,
             textColor=self.colors['primary_medium'],
-            fontName='CenturyGothic-Bold'
+            fontName=FONT_BOLD
         )
         
         self.body_text_style = ParagraphStyle(
@@ -172,7 +192,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=8,
             leading=12,
             textColor=self.colors['text_dark'],
-            fontName='CenturyGothic'
+            fontName=FONT_REGULAR
         )
         
         self.small_text_style = ParagraphStyle(
@@ -182,7 +202,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=6,
             leading=10,
             textColor=self.colors['text_medium'],
-            fontName='CenturyGothic'
+            fontName=FONT_REGULAR
         )
         
         self.highlight_box_style = ParagraphStyle(
@@ -192,7 +212,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=10,
             leading=12,
             textColor=self.colors['text_dark'],
-            fontName='CenturyGothic',
+            fontName=FONT_REGULAR,
             backColor=self.colors['background_light'],
             borderPadding=10,
             borderColor=self.colors['primary_light'],
@@ -207,7 +227,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=4,
             leading=8,
             textColor=self.colors['text_light'],
-            fontName='CenturyGothic-Italic' # Changed to Italic
+            fontName=FONT_REGULAR # Changed to Italic
         )
         
         self.table_header_style = ParagraphStyle(
@@ -216,7 +236,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=10,
             spaceAfter=0,
             textColor=colors.white,
-            fontName='CenturyGothic-Bold'
+            fontName=FONT_BOLD
         )
         
         self.table_cell_style = ParagraphStyle(
@@ -225,7 +245,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             fontSize=9,
             spaceAfter=0,
             textColor=self.colors['text_dark'],
-            fontName='CenturyGothic'
+            fontName=FONT_REGULAR
         )
     
     def add_cover_page(self):
@@ -246,7 +266,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=2*inch,
             alignment=1,
             textColor=self.colors['text_medium'],
-            fontName='CenturyGothic'
+            fontName=FONT_REGULAR
         )
         self.story.append(Paragraph(report_date, date_style))
         
@@ -258,7 +278,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             spaceAfter=10,
             alignment=1,
             textColor=self.colors['text_light'],
-            fontName='CenturyGothic'
+            fontName='Helvetica'
         )
         self.story.append(Paragraph(
             "This document is prepared for informational purposes only and should not be construed as investment advice.",
@@ -297,7 +317,7 @@ class EnhancedInstitutionalPDFReportGenerator:
                 spaceAfter=8,
                 leftIndent=20,
                 textColor=self.colors['text_dark'],
-                fontName='CenturyGothic'
+                fontName='Helvetica'
             )
             self.story.append(Paragraph(f"{i}. {entry}", toc_style))
         
@@ -305,7 +325,9 @@ class EnhancedInstitutionalPDFReportGenerator:
     
     def add_title(self, title: str):
         """Add title to the report"""
-        self.story.append(Paragraph(title.title(), self.title_style)) # Convert to title case
+        # Remove "Institutional Grade" from the main title and ensure lowercase except proper nouns
+        clean_title = title.replace("Institutional Grade", "").strip()
+        self.story.append(Paragraph(clean_title.title(), self.title_style)) # Convert to title case
         self.story.append(Spacer(1, 12))
     
     def add_executive_summary(self, summary_points: List[str]):
@@ -317,10 +339,21 @@ class EnhancedInstitutionalPDFReportGenerator:
         """
         self._add_section_header("EXECUTIVE SUMMARY")
         
-        # Add summary box
+        # Add summary box with fully justified text
         summary_content = []
         for point in summary_points:
-            summary_content.append(Paragraph(f"• {point}", self.executive_summary_style))
+            # Apply justified alignment to each point in the summary
+            justified_style = ParagraphStyle(
+                'JustifiedExecutiveSummary',
+                parent=self.styles['Normal'],
+                fontSize=11,
+                spaceAfter=12,
+                leading=14,
+                textColor=self.colors['text_dark'],
+                fontName=FONT_REGULAR,
+                alignment=4  # Justified alignment
+            )
+            summary_content.append(Paragraph(f"• {point}", justified_style))
             summary_content.append(Spacer(1, 6)) # Add a small gap between points
         
         # Remove the last spacer if it exists
@@ -355,43 +388,36 @@ class EnhancedInstitutionalPDFReportGenerator:
         ]
         
         for box in insights_boxes:
-            self._add_insight_box(box["title"], box["content"], box["color"])
+            # Apply justified alignment to insight box content
+            justified_insight_style = ParagraphStyle(
+                'JustifiedInsightBox',
+                parent=self.styles['Normal'],
+                fontSize=9,
+                spaceAfter=10,
+                leading=11,
+                textColor=self.colors['text_dark'],
+                fontName='Helvetica-Bold'
+            )
+            
+            content_style = ParagraphStyle(
+                'JustifiedInsightContent',
+                parent=self.styles['Normal'],
+                fontSize=9,
+                spaceAfter=0,
+                leading=11,
+                textColor=self.colors['text_dark'],
+                fontName='Helvetica',
+                alignment=4  # Justified alignment
+            )
+            
+            # Add box content with justified text
+            full_content = f"<b>{box['title']}:</b> {box['content']}"
+            self.story.append(Paragraph(full_content, justified_insight_style))
+            self.story.append(Spacer(1, 10))
         
         self.story.append(Spacer(1, 20))
     
-    def _add_insight_box(self, title: str, content: str, border_color):
-        """
-        Add insight box with institutional styling
-        
-        Args:
-            title: Box title
-            content: Box content
-            border_color: Border color
-        """
-        # Create styled insight box
-        insight_style = ParagraphStyle(
-            'InsightBox',
-            parent=self.styles['Normal'],
-            fontSize=9,
-            spaceAfter=10,
-            leading=11,
-            textColor=self.colors['text_dark'],
-            fontName='CenturyGothic-Bold'
-        )
-        
-        content_style = ParagraphStyle(
-            'InsightContent',
-            parent=self.styles['Normal'],
-            fontSize=9,
-            spaceAfter=0,
-            leading=11,
-            textColor=self.colors['text_dark'],
-            fontName='CenturyGothic'
-        )
-        
-        # Add box content
-        self.story.append(Paragraph(f"<b>{title}:</b> {content}", insight_style))
-        self.story.append(Spacer(1, 10))
+    
     
     def _add_section_header(self, title: str):
         """
@@ -404,55 +430,54 @@ class EnhancedInstitutionalPDFReportGenerator:
         self.section_headers.append(title)
     
     def add_market_overview(self, market_status: Dict, indices_data: pd.DataFrame):
-        """
-        Add market overview section with institutional insights
-        
-        Args:
-            market_status: Market status information
-            indices_data: Indices data DataFrame
-        """
+        """Add market overview section with institutional insights"""
         self._add_section_header("MARKET OVERVIEW")
         
         # Market status
-        status = market_status.get('status', 'Unknown')
-        status_text = f"Markets are currently <b>{status}</b> as of {market_status.get('timestamp', 'N/A')} ({market_status.get('timezone', 'N/A')} timezone)."
-        self.story.append(Paragraph(status_text, self.body_text_style))
+        # Removed market status line as per meta-prompt directive
+        # Market status information has been removed from the report
         self.story.append(Spacer(1, 15))
         
-        # Institutional market commentary
-        if not indices_data.empty:
-            # Calculate overall market performance
-            returns = []
-            for _, row in indices_data.head(5).iterrows():
-                ask = float(row.get('ask', 0))
-                bid = float(row.get('bid', 0))
-                if bid != 0:
-                    pct_change = (ask - bid) / bid * 100
-                    returns.append(pct_change)
-            
-            if returns:
-                avg_return = np.mean(returns)
-                market_direction = "bullish" if avg_return > 0 else "bearish" if avg_return < 0 else "neutral"
-                market_momentum = "strong" if abs(avg_return) > 0.5 else "moderate" if abs(avg_return) > 0.1 else "weak"
-                
-                commentary = f"<b>Institutional Commentary:</b> Market displaying {market_momentum} {market_direction} momentum with average index movement of {avg_return:.2f}%. "
-                if abs(avg_return) > 0.5:
-                    commentary += "Significant price action warrants attention from portfolio managers."
-                elif abs(avg_return) > 0.1:
-                    commentary += "Normal trading activity with moderate directional bias."
-                else:
-                    commentary += "Range-bound conditions with limited directional conviction."
-                
-                self.story.append(Paragraph(commentary, self.highlight_box_style))
-                self.story.append(Spacer(1, 15))
-        
-        # Key indices performance
+        # Key indices performance - reordered by region (Asia, Euro Area+UK, Americas)
         if not indices_data.empty:
             self.story.append(Paragraph("<b>Key Market Indices Performance:</b>", self.subsection_header_style))
             
-            # Create table of indices
+            # Define regional groupings
+            asia_indices = ['JP225Roll', 'HK50Roll', 'CHINA50Roll']  # Asia-Pacific indices
+            euro_uk_indices = ['DE40Roll', 'FRA40Roll', 'UK100Roll']  # Euro area + UK indices
+            americas_indices = ['US500Roll', 'US30Roll', 'UT100Roll']  # Americas indices
+            
+            # Reorder the indices data based on regional groupings
+            reordered_indices = []
+            
+            # Add Asia indices first
+            for idx in asia_indices:
+                idx_row = indices_data[indices_data['name'] == idx]
+                if not idx_row.empty:
+                    reordered_indices.append(idx_row.iloc[0])
+            
+            # Add Euro Area + UK indices next
+            for idx in euro_uk_indices:
+                idx_row = indices_data[indices_data['name'] == idx]
+                if not idx_row.empty:
+                    reordered_indices.append(idx_row.iloc[0])
+            
+            # Add Americas indices last
+            for idx in americas_indices:
+                idx_row = indices_data[indices_data['name'] == idx]
+                if not idx_row.empty:
+                    reordered_indices.append(idx_row.iloc[0])
+            
+            # Add any remaining indices that weren't in our predefined lists
+            existing_names = [row['name'] if isinstance(row, pd.Series) else row['name'] for row in reordered_indices]
+            for _, row in indices_data.iterrows():
+                row_name = row.get('name', row.name if hasattr(row, 'name') else str(row))
+                if row_name not in existing_names:
+                    reordered_indices.append(row)
+            
+            # Create table of indices in regional order
             table_data = [['Index', 'Last', 'Chg', 'Chg %']]
-            for _, row in indices_data.head(8).iterrows():
+            for row in reordered_indices[:8]:  # Limit to first 8 after reordering
                 name = str(row.get('name', 'N/A'))
                 display_name = self.symbol_map.get(name, name)
                 ask = float(row.get('ask', 0))
@@ -460,44 +485,63 @@ class EnhancedInstitutionalPDFReportGenerator:
                 last = (ask + bid) / 2
                 change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
                 
-                # Color code based on performance
-                if pct_change > 0:
-                    change_color = 'green'
-                    pct_color = 'green'
-                elif pct_change < 0:
-                    change_color = 'red'
-                    pct_color = 'red'
-                else:
-                    change_color = 'black'
-                    pct_color = 'black'
-                
+                # Store raw values to be formatted later with direct color application
                 table_data.append([
                     display_name,
                     f"{last:.2f}",
-                    f'<font color="{change_color}">{change:+.2f}</font>',
-                    f'<font color="{pct_color}">{pct_change:+.2f}%</font>'
+                    f"{change:+.2f}",
+                    f"{pct_change:+.2f}%"
                 ])
             
+            # Create table with styling
             table = Table(table_data)
             table.setStyle(TableStyle([
                 # Header styling
                 ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+                ('FONTNAME', (0, 0), (-1, 0), FONT_BOLD),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 # Data rows styling
                 ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+                ('FONTNAME', (0, 1), (-1, -1), FONT_REGULAR),
                 ('FONTSIZE', (0, 1), (-1, -1), 9),
                 ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
                 ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
             
+            # Apply color formatting to the percentage change column after table creation
+            for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
+                try:
+                    pct_value = float(pct_change_str.rstrip('%'))
+                    if pct_value > 0:
+                        table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
+                    elif pct_value < 0:
+                        table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
+                    else:
+                        table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+                except:
+                    # If conversion fails, use default text color
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+            
+            # Apply color formatting to the change column
+            for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
+                try:
+                    change_value = float(change_str)
+                    if change_value > 0:
+                        table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
+                    elif change_value < 0:
+                        table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
+                    else:
+                        table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+                except:
+                    # If conversion fails, use default text color
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+            
             self.story.append(table)
-        
-        self.story.append(Spacer(1, 20))
+            self.story.append(Spacer(1, 20))
     
     def add_indices_table(self, indices_data: pd.DataFrame):
         """
@@ -511,41 +555,101 @@ class EnhancedInstitutionalPDFReportGenerator:
             
         self._add_section_header("MAJOR INDICES PERFORMANCE")
         
-        # Create comprehensive indices table
-        table_data = [['Index', 'Description', 'Price', '24h Change', '24h Change %']]
+        # Define regional groupings
+        asia_indices = ['JP225Roll', 'HK50Roll', 'CHINA50Roll']  # Asia-Pacific indices
+        euro_uk_indices = ['DE40Roll', 'FRA40Roll', 'UK100Roll']  # Euro area + UK indices
+        americas_indices = ['US500Roll', 'US30Roll', 'UT100Roll']  # Americas indices
         
-        for _, row in indices_data.head(15).iterrows():
+        # Reorder the indices data based on regional groupings
+        reordered_indices = []
+        
+        # Add Asia indices first
+        for idx in asia_indices:
+            idx_row = indices_data[indices_data['name'] == idx]
+            if not idx_row.empty:
+                reordered_indices.append(idx_row.iloc[0])
+        
+        # Add Euro Area + UK indices next
+        for idx in euro_uk_indices:
+            idx_row = indices_data[indices_data['name'] == idx]
+            if not idx_row.empty:
+                reordered_indices.append(idx_row.iloc[0])
+        
+        # Add Americas indices last
+        for idx in americas_indices:
+            idx_row = indices_data[indices_data['name'] == idx]
+            if not idx_row.empty:
+                reordered_indices.append(idx_row.iloc[0])
+        
+        # Add any remaining indices that weren't in our predefined lists
+        existing_names = [row['name'] if isinstance(row, pd.Series) else row['name'] for row in reordered_indices]
+        for _, row in indices_data.iterrows():
+            row_name = row.get('name', row.name if hasattr(row, 'name') else str(row))
+            if row_name not in existing_names:
+                reordered_indices.append(row)
+        
+        # Now create table rows with reordered indices
+        table_data = [['Index', 'Price', '24h Change', '24h Change %']]
+        for row in reordered_indices[:15]:  # Limit to first 15 after reordering
             name = str(row.get('name', 'N/A'))
             display_name = self.symbol_map.get(name, name)
-            description = str(row.get('description', 'N/A'))
+            # Add a smaller, italicized line beneath the market name to show the CFD symbol
+            full_name = f"{display_name}<br/><i>({name})</i>"
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
             
             # Format numbers with appropriate precision
             table_data.append([
-                display_name,
-                description[:30] + "..." if len(description) > 30 else description,
+                full_name,
                 price,
                 f"{change:+.2f}",
                 f"{pct_change:+.2f}%"
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
         ]))
+        
+        # Apply color formatting to the percentage change column after table creation
+        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                pct_value = float(pct_change_str.rstrip('%'))
+                if pct_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
+                elif pct_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+        
+        # Apply color formatting to the change column
+        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                change_value = float(change_str)
+                if change_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
+                elif change_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))
@@ -562,45 +666,72 @@ class EnhancedInstitutionalPDFReportGenerator:
             
         self._add_section_header("CURRENCY MARKETS")
         
-        # Create currencies table
-        table_data = [['Pair', 'Description', 'Price', '24h Change', '24h Change %']]
-        
+        # Create currencies table (without Description column)
+        table_data = [['Pair', 'Price', '24h Change', '24h Change %']]
+
         for _, row in currency_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             display_name = self.symbol_map.get(name, name)
-            description = str(row.get('description', 'N/A'))
+            # Add a smaller, italicized line beneath the market name to show the CFD symbol
+            full_name = f"{display_name}<br/><i>({name})</i>"
             price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
 
             table_data.append([
-                display_name,
-                description[:25] + "..." if len(description) > 25 else description,
+                full_name,
                 price,
                 f"{change:+.4f}",
                 f"{pct_change:+.2f}%"
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_medium']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         
+        # Apply color formatting to the percentage change column after table creation
+        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                pct_value = float(pct_change_str.rstrip('%'))
+                if pct_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
+                elif pct_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+        
+        # Apply color formatting to the change column
+        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                change_value = float(change_str)
+                if change_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
+                elif change_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+        
         self.story.append(table)
-        self.story.append(Spacer(1, 20))
-    
+        self.story.append(Spacer(1, 20))    
     def add_commodities_table(self, commodities_data: pd.DataFrame):
         """
         Add commodities table
@@ -613,92 +744,200 @@ class EnhancedInstitutionalPDFReportGenerator:
             
         self._add_section_header("COMMODITIES")
         
-        # Create commodities table
-        table_data = [['Commodity', 'Description', 'Price', '24h Change', '24h Change %']]
-        
+        # Create commodities table (without Description column)
+        table_data = [['Commodity', 'Price', '24h Change', '24h Change %']]
+
         for _, row in commodities_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             display_name = self.symbol_map.get(name, name)
-            description = str(row.get('description', 'N/A'))
+            # Add a smaller, italicized line beneath the market name to show the CFD symbol
+            full_name = f"{display_name}<br/><i>({name})</i>"
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
             
             table_data.append([
-                display_name,
-                description[:25] + "..." if len(description) > 25 else description,
+                full_name,
                 price,
                 f"{change:+.2f}",
                 f"{pct_change:+.2f}%"
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['accent_gold']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
+        
+        # Apply color formatting to the percentage change column after table creation
+        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                pct_value = float(pct_change_str.rstrip('%'))
+                if pct_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
+                elif pct_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+        
+        # Apply color formatting to the change column
+        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                change_value = float(change_str)
+                if change_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
+                elif change_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))
     
     def add_bonds_table(self, bonds_data: pd.DataFrame):
         """
-        Add bonds/ETFs table
+        Add bonds/ETFs table - Prioritizes Alpha Vantage data with MT5 as fallback
         
         Args:
             bonds_data: Bonds data DataFrame
         """
         if bonds_data.empty:
-            return
+            # Prioritize Alpha Vantage for bonds/ETFs data
+            logger.info("Fetching bonds/ETFs data from Alpha Vantage")
             
+            # Define comprehensive list of bond/ETF symbols
+            bond_etf_symbols = [
+                # Treasury ETFs
+                'TLT', 'IEF', 'SHY', 'IEI', 'TLH',  # US Treasury ETFs
+                # Corporate Bond ETFs  
+                'LQD', 'TLTD', 'IGIB', 'TLTE', 'CBON',  # Corporate Bond ETFs
+                # International Bond ETFs
+                'BNDX', 'VWOY', 'EMB', 'EMLC', 'WIP',  # International/EM Bond ETFs
+                # Commodity ETFs
+                'GLD', 'SLV', 'PPLT', 'IAU', 'SLV',  # Precious Metals
+                'USO', 'UNG', 'DBO', 'DBP', 'JJC',   # Energy & Agriculture
+                # Inflation-Protected Securities
+                'TIP', 'VTIAX', 'SCHP', 'VTIP', 'BIL' # TIPS & Short-term Treasuries
+            ]
+            
+            # Fetch from Alpha Vantage
+            alpha_vantage_bonds_data = self.alpha_vantage_data.get_bond_etf_data(bond_etf_symbols)
+            
+            # If Alpha Vantage fails, use MT5 as fallback
+            if alpha_vantage_bonds_data.empty:
+                logger.warning("Alpha Vantage bonds/ETFs data fetch failed, using MT5 as fallback")
+                # Try to get some bond/ETF data from MT5 as a fallback
+                available_symbols = self.mt5_data_fetcher.get_available_symbols()
+                # Find symbols that look like bonds or ETFs (this is a simplified approach)
+                mt5_bond_symbols = [s for s in available_symbols if any(keyword in s for keyword in ['BOND', 'ETF', 'TREAS', 'GOVT', 'CORP'])]
+                
+                mt5_bonds_data = []
+                for symbol in mt5_bond_symbols[:15]:  # Limit to first 15
+                    info = self.mt5_data_fetcher.get_symbol_info(symbol)
+                    if info:
+                        change, pct_change = self.mt5_data_fetcher.get_24h_change(symbol)
+                        mt5_bonds_data.append({
+                            'name': info.get('name', symbol),
+                            'description': info.get('description', f'{symbol} Bond/ETF'),
+                            'Price': (info.get('ask', 0) + info.get('bid', 0)) / 2,
+                            'change': change,
+                            'pct_change': pct_change
+                        })
+                
+                bonds_data = pd.DataFrame(mt5_bonds_data)
+            else:
+                logger.info(f"Successfully fetched {len(alpha_vantage_bonds_data)} bonds/ETFs from Alpha Vantage")
+                bonds_data = alpha_vantage_bonds_data
+            
+        if bonds_data.empty:
+            return
+        
         self._add_section_header("BONDS/ETFs")
         
-        # Create bonds table
-        table_data = [['Bond/ETF', 'Description', 'Price', 'Yield']]
-        
+        # Create bonds table (without Description column) - include 24H change and change % as requested
+        table_data = [['Bond/ETF', 'Price', '24h Change', '24h Change %']]
+
         for _, row in bonds_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
-            description = str(row.get('description', 'N/A'))
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
-            # Estimate yield (simplified calculation)
-            yield_estimate = (row.get('Price', 0) * 0.03) if row.get('Price', 0) > 0 else 0  # Simplified yield estimation
+            # Get 24h change and percentage
+            change = row.get('change', 0) if 'change' in row else 0
+            pct_change = row.get('pct_change', 0) if 'pct_change' in row else 0
+            
+            # Format change values
+            change_str = f"{change:+.2f}" if change != 0 else "0.00"
+            pct_change_str = f"{pct_change:+.2f}%" if pct_change != 0 else "0.00%"
             
             table_data.append([
                 name,
-                description[:25] + "..." if len(description) > 25 else description,
                 price,
-                f"{yield_estimate:.2f}%"
+                change_str,
+                pct_change_str
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
+        
+        # Apply color formatting to the percentage change column after table creation
+        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                pct_value = float(pct_change_str.rstrip('%'))
+                if pct_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
+                elif pct_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+        
+        # Apply color formatting to the change column
+        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                change_value = float(change_str)
+                if change_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
+                elif change_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))
@@ -715,12 +954,25 @@ class EnhancedInstitutionalPDFReportGenerator:
             
         self._add_section_header("MARKET VOLATILITY")
         
-        # Create volatility table
+        # Create volatility table with VIX description update
         table_data = [['Volatility Index', 'Description', 'Price']]
-        
+
         for _, row in volatility_data.head(10).iterrows():
             name = str(row.get('name', 'N/A'))
             description = str(row.get('description', 'N/A'))
+            
+            # Add VIX description if VIX is the index
+            if name.upper() == 'VIX' or 'VIX' in name.upper():
+                description = "CBOE Volatility Index - Market's expectation of 30-day volatility"
+            elif description == 'N/A' or not description or description.strip() == '':
+                # Provide generic descriptions based on symbol patterns
+                if 'VOL' in name.upper():
+                    description = "Volatility Index"
+                elif 'INDEX' in name.upper():
+                    description = "Market Volatility Indicator"
+                else:
+                    description = "Volatility Index"
+            
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
             
             table_data.append([
@@ -728,25 +980,25 @@ class EnhancedInstitutionalPDFReportGenerator:
                 description[:30] + "..." if len(description) > 30 else description,
                 price
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['accent_red']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        
+
         self.story.append(table)
         self.story.append(Spacer(1, 20))
     
@@ -764,7 +1016,7 @@ class EnhancedInstitutionalPDFReportGenerator:
         
         # Create top movers table
         table_data = [['Symbol', 'Name', 'Price', '24h Change %', 'Volume', 'Attribution', 'Confidence']]
-        
+
         for _, row in top_movers.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             symbol = str(row.get('symbol', name))
@@ -788,7 +1040,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             else:
                 attribution = "Normal Volatility"
                 confidence = "Low"
-            
+
             table_data.append([
                 symbol,
                 name[:20] + "..." if len(name) > 20 else name,
@@ -798,24 +1050,38 @@ class EnhancedInstitutionalPDFReportGenerator:
                 attribution,
                 confidence
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_medium']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
+        
+        # Apply color formatting to the percentage change column after table creation
+        for i, (_, _, _, pct_change_str, _, _, _) in enumerate(table_data[1:], start=1):  # Skip header row
+            try:
+                pct_value = float(pct_change_str.rstrip('%'))
+                if pct_value > 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
+                elif pct_value < 0:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
+                else:
+                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
+            except:
+                # If conversion fails, use default text color
+                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))
@@ -833,7 +1099,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             self.story.append(Paragraph("No market regime information available.", self.body_text_style))
             self.story.append(Spacer(1, 20))
             return
-        
+
         regime = regime_info.get("regime", "Unknown")
         confidence = regime_info.get("confidence", 0.0)
         driver = regime_info.get("driver", "No specific driver")
@@ -857,7 +1123,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             commentary = "Market displaying range-bound characteristics. Tactical trading opportunities within established ranges. Consider mean-reversion strategies and active management."
         else:
             commentary = "Market in normal conditions. Standard risk management protocols appropriate. Maintain diversified portfolio positioning."
-        
+
         self.story.append(Paragraph(f"<b>Institutional Commentary:</b> {commentary}", self.executive_summary_style))
         self.story.append(Spacer(1, 20))
     
@@ -876,13 +1142,13 @@ class EnhancedInstitutionalPDFReportGenerator:
         # Filter for current day only
         from datetime import datetime
         import pandas as pd
-        
+
         # Filter calendar data for today
         today = pd.Timestamp('today').date()
-        
+
         # Parse datetime column and filter for today's events
         filtered_data = calendar_data.copy()
-        
+
         # Handle datetime parsing for filtering
         if 'DateTime' in filtered_data.columns:
             filtered_data['parsed_datetime'] = pd.to_datetime(filtered_data['DateTime'], errors='coerce')
@@ -890,31 +1156,31 @@ class EnhancedInstitutionalPDFReportGenerator:
         elif 'Time' in filtered_data.columns:
             filtered_data['parsed_datetime'] = pd.to_datetime(filtered_data['Time'], errors='coerce')
             filtered_data = filtered_data[filtered_data['parsed_datetime'].dt.date == today]
-        
+
         # Filter to show only Medium and High importance events
         importance_filter = ['Medium', 'High', 'Very High']
         if 'Impact' in filtered_data.columns:
             filtered_data = filtered_data[filtered_data['Impact'].isin(importance_filter)]
         elif 'importance' in filtered_data.columns:
             filtered_data = filtered_data[filtered_data['importance'].isin(importance_filter)]
-        
+
         if filtered_data.empty:
             from reportlab.platypus import Paragraph
             from reportlab.lib import colors
             self.story.append(Paragraph("No economic events scheduled for today.", self.body_text_style))
             self.story.append(Spacer(1, 20))
             return
-        
+
         # Create calendar table without Notes column and with shortened headers
         table_data = [['Date/Time', 'Imp.', 'Curr.', 'Event', 'Actual', 'Forecast', 'Previous']]
-        
+
         # Convert time properly - apply timezone adjustments
         import pytz
         from datetime import datetime, timedelta
-        
+
         # Define the target timezone (IST)
         target_tz = pytz.timezone('Asia/Kolkata')  # IST
-        
+
         for _, row in filtered_data.iterrows():
             # Extract data
             date = str(row.get('date', 'N/A'))
@@ -929,13 +1195,13 @@ class EnhancedInstitutionalPDFReportGenerator:
             
             # Combine date and time
             datetime_str = f"{date} {time}" if date != 'N/A' and time != 'N/A' else (date if date != 'N/A' else time)
-            
+
             # Convert to IST with appropriate adjustments
             if datetime_str != "N/A" and datetime_str is not None and datetime_str.strip():
                 try:
                     # Parse the datetime
                     dt = pd.to_datetime(datetime_str, errors='coerce')
-                    
+
                     if pd.notna(dt):
                         # Special handling for CFTC events
                         if "CFTC" in event:
@@ -961,26 +1227,26 @@ class EnhancedInstitutionalPDFReportGenerator:
                                 dt_localized = source_tz.localize(dt)
                             else:
                                 dt_localized = dt
-                            
+
                             # Convert to IST
                             dt_ist = dt_localized.astimezone(target_tz)
                             datetime_str = dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
                 except Exception as e:
                     # Keep original datetime string if conversion fails
                     pass
-            
+
             # Handle NaN values by leaving them blank
             importance = "" if importance == "nan" or pd.isna(importance) else importance
             currency = "" if currency == "nan" or pd.isna(currency) else currency
             actual = "" if actual == "nan" or pd.isna(actual) else actual
             forecast = "" if forecast == "nan" or pd.isna(forecast) else forecast
             previous = "" if previous == "nan" or pd.isna(previous) else previous
-            
+
             # Truncate long event names to prevent text overflow
             max_event_length = 60  # Increased from 30 to 60 characters
             if len(event) > max_event_length:
                 event = event[:max_event_length-3] + "..."
-            
+
             table_data.append([
                 datetime_str,
                 importance,
@@ -990,7 +1256,7 @@ class EnhancedInstitutionalPDFReportGenerator:
                 forecast,
                 previous
             ])
-        
+
         from reportlab.platypus import Table, TableStyle
         from reportlab.lib import colors
         table = Table(table_data)
@@ -999,32 +1265,32 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_dark']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling with row height adjustment
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
-            
+
             # Row height adjustment to prevent text overflow
             ('TOPPADDING', (0, 1), (-1, -1), 8),    # Increased padding
             ('BOTTOMPADDING', (0, 1), (-1, -1), 8), # Increased padding
-            
+
             # Column-specific alignment (increased Event column width)
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),      # Date/Time - left aligned
             ('ALIGN', (1, 1), (1, -1), 'CENTER'),    # Imp. - center aligned
             ('ALIGN', (2, 1), (2, -1), 'CENTER'),    # Curr. - center aligned
             ('ALIGN', (3, 1), (3, -1), 'LEFT'),      # Event - left aligned
             ('ALIGN', (4, 1), (6, -1), 'RIGHT'),     # Actual, Forecast, Previous - right aligned
-            
+
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            
+
             # Word wrapping for long text in Event column
             ('WORDWRAP', (3, 1), (3, -1)),  # Word wrap for Event column
         ]))
-        
+
         self.story.append(table)
         self.story.append(Spacer(1, 20))
     
@@ -1042,7 +1308,7 @@ class EnhancedInstitutionalPDFReportGenerator:
         
         # Create volatility summary table
         table_data = [['Symbol', 'ATR', 'Volatility', 'Regime', 'Confidence']]
-        
+
         for _, row in volatility_summary.head(15).iterrows():
             symbol = str(row.get('symbol', 'N/A'))
             atr = float(row.get('current_atr', 0))
@@ -1057,25 +1323,25 @@ class EnhancedInstitutionalPDFReportGenerator:
                 regime,
                 f"{confidence:.0%}"
             ])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['accent_gold']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        
+
         self.story.append(table)
         self.story.append(Spacer(1, 20))
     
@@ -1092,10 +1358,10 @@ class EnhancedInstitutionalPDFReportGenerator:
             self.story.append(Paragraph("No risk metrics available.", self.body_text_style))
             self.story.append(Spacer(1, 20))
             return
-        
+
         # Create risk metrics table
         table_data = [['Metric', 'Value', 'Description']]
-        
+
         # Add key risk metrics
         key_metrics = [
             ('Sharpe Ratio', 'sharpe_ratio', 'Risk-adjusted return measure'),
@@ -1110,7 +1376,7 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('Market Stress Indicator', 'market_stress_indicator', 'Current market stress level'),
             ('Market Regime Confidence', 'market_regime_confidence', 'Confidence in detected market regime'),
         ]
-        
+
         for metric_name, metric_key, description in key_metrics:
             value = risk_metrics.get(metric_key, 'N/A')
             if isinstance(value, (int, float)):
@@ -1124,27 +1390,27 @@ class EnhancedInstitutionalPDFReportGenerator:
                     formatted_value = f"{value:.2f}"
             else:
                 formatted_value = str(value)
-            
+
             table_data.append([metric_name, formatted_value, description])
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.colors['primary_medium']),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'CenturyGothic-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('FONTNAME', (0, 1), (-1, -1), 'CenturyGothic'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        
+
         self.story.append(table)
         self.story.append(Spacer(1, 20))
     
@@ -1155,49 +1421,185 @@ class EnhancedInstitutionalPDFReportGenerator:
         Args:
             chart_files: List of chart file paths
         """
+        # Log chart embedding attempt
+        logger.info(f"Chart embedding attempt - received {len(chart_files) if chart_files else 0} chart files")
+        
         if not chart_files:
+            # Even if no charts are available, add a section header to maintain report structure
+            logger.info("No chart files provided to add_charts method")
+            self._add_section_header("TECHNICAL CHARTS")
+            self.story.append(Paragraph("No technical charts are currently available in this report.", self.body_text_style))
+            self.story.append(Spacer(1, 20))
             return
             
+        # Filter to only include existing chart files
+        existing_chart_files = [chart_path for chart_path in chart_files if os.path.exists(chart_path)]
+        logger.info(f"Out of {len(chart_files)} provided chart files, {len(existing_chart_files)} exist on disk")
+        
+        # Log the missing files for debugging
+        missing_files = [chart_path for chart_path in chart_files if not os.path.exists(chart_path)]
+        if missing_files:
+            logger.warning(f"Missing chart files: {missing_files}")
+        
+        if not existing_chart_files:
+            logger.warning("No existing chart files found to embed in the report")
+            self._add_section_header("TECHNICAL CHARTS")
+            self.story.append(Paragraph("No technical charts are currently available in this report.", self.body_text_style))
+            self.story.append(Spacer(1, 20))
+            # Summarize chart embedding attempts and issues found in prompt-updates.md
+            with open("/Users/pawan/CLI-Finance-Terminal/prompt-updates.md", "a") as f:
+                f.write(f"\n### Chart Embedding Debug Summary\n- **Status:** Attempted embedding {len(chart_files)} files, {len(existing_chart_files)} exist on disk\n- **Missing files:** {missing_files}\n- **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            return
+            
+        logger.info(f"Attempting to embed {len(existing_chart_files)} existing chart files in the report")
         self._add_section_header("TECHNICAL CHARTS")
         
+        # Reorder charts according to meta-prompt specification:
+        # 1. VIX Chart
+        # 2. Major Global Indices (Asia, Europe+UK, Americas) in the order specified previously.
+        # 3. Major Currencies
+        # 4. Major Commodities
+        # 5. Major Bonds/ETFs
+        reordered_chart_files = []
+        
+        # Define symbol categories for reordering
+        vix_charts = []
+        asia_indices_charts = []
+        euro_uk_indices_charts = []
+        americas_indices_charts = []
+        currency_charts = []
+        commodity_charts = []
+        bonds_etf_charts = []
+        other_charts = []
+        
+        for chart_path in existing_chart_files:
+            symbol = os.path.basename(chart_path).replace('_matplotlib.png', '').replace('_candlestick.png', '').replace('_ascii.txt', '')
+            
+            # Identify chart type based on symbol
+            if 'VIX' in symbol.upper():
+                vix_charts.append(chart_path)
+            elif any(idx in symbol for idx in ['JP225Roll', 'HK50Roll', 'CHINA50Roll', 'NIFTY_50', 'SENSEX']):
+                asia_indices_charts.append(chart_path)
+            elif any(idx in symbol for idx in ['DE40Roll', 'FRA40Roll', 'UK100Roll']):
+                euro_uk_indices_charts.append(chart_path)
+            elif any(idx in symbol for idx in ['US500Roll', 'US30Roll', 'UT100Roll']):
+                americas_indices_charts.append(chart_path)
+            elif any(curr in symbol for curr in ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD']):
+                currency_charts.append(chart_path)
+            elif any(comm in symbol for comm in ['XAUUSD', 'XAGUSD', 'XPTUSD', 'USOIL', 'UKOIL']):
+                commodity_charts.append(chart_path)
+            elif any(bond in symbol for bond in ['TLT', 'IEF', 'SHY', 'IEI', 'TLH', 'LQD', 'TLTD', 'IGIB', 'TLTE', 'CBON', 'BNDX', 'VWOY', 'EMB', 'EMLC', 'WIP', 'GLD', 'SLV', 'PPLT', 'IAU', 'USO', 'UNG', 'DBO', 'DBP', 'JJC', 'TIP', 'VTIAX', 'SCHP', 'VTIP', 'BIL']):
+                bonds_etf_charts.append(chart_path)
+            else:
+                other_charts.append(chart_path)
+        
+        # Combine in the required order
+        reordered_chart_files.extend(vix_charts)
+        reordered_chart_files.extend(asia_indices_charts)
+        reordered_chart_files.extend(euro_uk_indices_charts)
+        reordered_chart_files.extend(americas_indices_charts)
+        reordered_chart_files.extend(currency_charts)
+        reordered_chart_files.extend(commodity_charts)
+        reordered_chart_files.extend(bonds_etf_charts)
+        reordered_chart_files.extend(other_charts)
+        
         # Add charts in groups of 2 per page for better layout
-        for i in range(0, min(len(chart_files), 12), 2):  # Limit to first 12 charts
-            chart_row = chart_files[i:i+2]
+        for i in range(0, min(len(reordered_chart_files), 12), 2):  # Limit to first 12 charts
+            chart_row = reordered_chart_files[i:i+2]
             
             # Add first chart
             if len(chart_row) >= 1:
                 chart_path = chart_row[0]
-                if os.path.exists(chart_path):
-                    try:
-                        # Get symbol from filename
-                        symbol = os.path.basename(chart_path).replace('_matplotlib.png', '')
-                        self.story.append(Paragraph(f"<b>{symbol}</b> Technical Analysis", self.subsection_header_style))
-                        
-                        # Add chart image
-                        img = Image(chart_path, width=6*inch, height=3*inch)
-                        self.story.append(img)
-                        self.story.append(Spacer(1, 15))
-                    except Exception as e:
-                        logger.warning(f"Error adding chart {chart_path}: {e}")
-            
+                logger.info(f"After chart creation - confirmed chart file exists: {chart_path}")
+                try:
+                    # Get symbol from filename
+                    symbol = os.path.basename(chart_path).replace('_matplotlib.png', '').replace('_candlestick.png', '').replace('_ascii.txt', '')
+                    
+                    # Create user-friendly chart titles
+                    friendly_name = symbol
+                    if symbol in self.symbol_map:
+                        friendly_name = self.symbol_map[symbol].replace(" (CFD)", "")  # Remove CFD suffix for display
+                    elif symbol == "VIX":
+                        friendly_name = "VIX Volatility Index"
+                    elif symbol == "NIFTY_50":
+                        friendly_name = "NIFTY 50"
+                    elif symbol == "SENSEX":
+                        friendly_name = "BSE SENSEX"
+                    elif symbol == "XAUUSD":
+                        friendly_name = "Gold (XAU/USD)"
+                    elif symbol == "XAGUSD":
+                        friendly_name = "Silver (XAG/USD)"
+                    elif symbol == "USOIL":
+                        friendly_name = "Crude Oil (USOIL)"
+                    elif symbol == "UKOIL":
+                        friendly_name = "Brent Oil (UKOIL)"
+                    # Add more mappings as needed
+                    
+                    logger.info(f"Before embedding in PDF - attempting to embed chart: {chart_path} for symbol {symbol}")
+                    self.story.append(Paragraph(f"<b>{friendly_name}</b> Technical Analysis", self.subsection_header_style))
+                    
+                    # Add chart image
+                    img = Image(chart_path, width=6*inch, height=3*inch)
+                    logger.info(f"Created Image object for {chart_path}")
+                    self.story.append(img)
+                    logger.info(f"Successfully embedded chart image: {chart_path}")
+                    self.story.append(Spacer(1, 15))
+                except Exception as e:
+                    logger.error(f"Error adding chart {chart_path}: {e}")
+                    # Add a placeholder message if chart can't be added
+                    self.story.append(Paragraph(f"⚠️ Chart image could not be displayed: {os.path.basename(chart_path)}", self.body_text_style))
+                    self.story.append(Spacer(1, 15))
+        
             # Add second chart if available
             if len(chart_row) >= 2:
                 chart_path = chart_row[1]
-                if os.path.exists(chart_path):
-                    try:
-                        # Get symbol from filename
-                        symbol = os.path.basename(chart_path).replace('_matplotlib.png', '')
-                        self.story.append(Paragraph(f"<b>{symbol}</b> Technical Analysis", self.subsection_header_style))
-                        
-                        # Add chart image
-                        img = Image(chart_path, width=6*inch, height=3*inch)
-                        self.story.append(img)
-                        self.story.append(Spacer(1, 15))
-                    except Exception as e:
-                        logger.warning(f"Error adding chart {chart_path}: {e}")
+                logger.info(f"After chart creation - confirmed chart file exists: {chart_path}")
+                try:
+                    # Get symbol from filename
+                    symbol = os.path.basename(chart_path).replace('_matplotlib.png', '').replace('_candlestick.png', '').replace('_ascii.txt', '')
+                    
+                    # Create user-friendly chart titles
+                    friendly_name = symbol
+                    if symbol in self.symbol_map:
+                        friendly_name = self.symbol_map[symbol].replace(" (CFD)", "")  # Remove CFD suffix for display
+                    elif symbol == "VIX":
+                        friendly_name = "VIX Volatility Index"
+                    elif symbol == "NIFTY_50":
+                        friendly_name = "NIFTY 50"
+                    elif symbol == "SENSEX":
+                        friendly_name = "BSE SENSEX"
+                    elif symbol == "XAUUSD":
+                        friendly_name = "Gold (XAU/USD)"
+                    elif symbol == "XAGUSD":
+                        friendly_name = "Silver (XAG/USD)"
+                    elif symbol == "USOIL":
+                        friendly_name = "Crude Oil (USOIL)"
+                    elif symbol == "UKOIL":
+                        friendly_name = "Brent Oil (UKOIL)"
+                    # Add more mappings as needed
+                    
+                    logger.info(f"Before embedding in PDF - attempting to embed chart: {chart_path} for symbol {symbol}")
+                    self.story.append(Paragraph(f"<b>{friendly_name}</b> Technical Analysis", self.subsection_header_style))
+                    
+                    # Add chart image
+                    img = Image(chart_path, width=6*inch, height=3*inch)
+                    logger.info(f"Created Image object for {chart_path}")
+                    self.story.append(img)
+                    logger.info(f"Successfully embedded chart image: {chart_path}")
+                    self.story.append(Spacer(1, 15))
+                except Exception as e:
+                    logger.error(f"Error adding chart {chart_path}: {e}")
+                    # Add a placeholder message if chart can't be added
+                    self.story.append(Paragraph(f"⚠️ Chart image could not be displayed: {os.path.basename(chart_path)}", self.body_text_style))
+                    self.story.append(Spacer(1, 15))
             
             self.story.append(Spacer(1, 20))
-    
+        
+        logger.info(f"Successfully embedded {len(existing_chart_files)} chart files in the report")
+        # Summarize chart embedding attempts and issues found in prompt-updates.md
+        with open("/Users/pawan/CLI-Finance-Terminal/prompt-updates.md", "a") as f:
+            f.write(f"\n### Chart Embedding Summary\n- **Status:** Successfully embedded {len(existing_chart_files)} out of {len(chart_files)} requested chart files\n- **Files processed:** {existing_chart_files}\n- **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
     def add_disclaimer(self):
         """Add legal disclaimer"""
         self._add_section_header("DISCLAIMER")
@@ -1225,8 +1627,13 @@ class EnhancedInstitutionalPDFReportGenerator:
             self.doc.build(self.story)
             logger.info(f"Enhanced institutional PDF report generated: {self.filename}")
             return self.filename
+        except KeyError as e:
+            logger.error(f"KeyError generating enhanced institutional PDF report: Missing key {e}")
+            # Try to continue with a minimal report
+            raise
         except Exception as e:
             logger.error(f"Error generating enhanced institutional PDF report: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
             raise
 
 # Example usage

@@ -13,6 +13,9 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# adding mt5 path    
+mt5_path = os.getenv("MT5_PATH")
+
 class PDFReportGenerator:
     """Class to generate PDF reports"""
     

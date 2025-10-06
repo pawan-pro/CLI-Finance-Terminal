@@ -6,6 +6,7 @@ visualization, and reporting components to create world-class
 investment research reports.
 """
 
+from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -15,6 +16,7 @@ import os
 import json
 from dataclasses import dataclass, field
 from enum import Enum
+from reportlab.platypus import Paragraph, Spacer
 
 # Local imports
 from src.analysis.institutional_analytics import InstitutionalMarketAnalytics
@@ -28,6 +30,9 @@ from src.data.providers.wine_mt5_connector import WineMT5Connector
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# adding mt5 path    
+mt5_path = os.getenv("MT5_PATH")
 
 class ReportType(Enum):
     """Types of institutional reports"""
@@ -185,22 +190,24 @@ class ComprehensiveInstitutionalReportGenerator:
         
         # Define default symbols by asset class
         default_symbols = {
-            'indices': ['US500Roll.sd', 'US30Roll.sd', 'UT100Roll.sd', 'DE30Roll.sd', 'UK100Roll.sd'],
-            'currencies': ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD'],
-            'commodities': ['XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL'],
+            'indices': ['US500Roll', 'US30Roll', 'UK100Roll', 'DE40Roll', 'FRA40Roll', 'JP225Roll', 'HK50Roll', 'CHINA50Roll'],
+            'currencies': ['EURUSD.sd', 'GBPUSD.sd', 'USDJPY.sd', 'AUDUSD.sd', 'USDCAD.sd', 'USDCHF.sd', 'NZDUSD.sd', 'USDCNH.sd'],
+            'commodities': ['XAUUSD', 'XAGUSD', 'XPTUSD', 'USOILRoll', 'BRENT', 'NGAS'],
             'bonds': ['TLT', 'IEF', 'SHY', 'LQD'],
-            'volatility': ['VIX', 'VXN', 'VXD']
+            'crypto': ['BTCUSD.lv', 'ETHUSD.lv', 'XRPUSD.lv', 'LTCUSD.lv', 'BCHUSD.lv', 'EOSUSD.lv'],
+            'volatility': ['VIXRoll']
         }
         
         # Override with provided symbols if specified
         if symbols:
             # Categorize symbols by asset class (simplified approach)
             categorized_symbols = {
-                'indices': [s for s in symbols if any(idx in s.upper() for idx in ['SPX', 'DJI', 'NDX', 'DAX', 'FTSE'])],
-                'currencies': [s for s in symbols if '/' in s],
-                'commodities': [s for s in symbols if any(com in s.upper() for com in ['XAU', 'XAG', 'OIL'])],
+                'indices': [s for s in symbols if any(idx in s.upper() for idx in ['US500', 'US30', 'UK100', 'DE40', 'FRA40', 'JP225', 'HK50', 'CHINA50'])],
+                'currencies': [s for s in symbols if '.sd' in s or '.lv' in s],
+                'commodities': [s for s in symbols if any(com in s.upper() for com in ['XAU', 'XAG', 'XPT', 'USOIL', 'BRENT', 'NGAS'])],
                 'bonds': [s for s in symbols if any(bond in s.upper() for bond in ['TLT', 'IEF', 'SHY', 'LQD'])],
-                'volatility': [s for s in symbols if any(vol in s.upper() for vol in ['VIX', 'VXN', 'VXD'])]
+                'crypto': [s for s in symbols if '.lv' in s],
+                'volatility': [s for s in symbols if 'VIX' in s.upper()]
             }
         else:
             categorized_symbols = default_symbols
@@ -208,7 +215,10 @@ class ComprehensiveInstitutionalReportGenerator:
         # Fetch data for each asset class
         for asset_class, symbol_list in categorized_symbols.items():
             if symbol_list:
-                market_data[asset_class] = self._fetch_asset_class_data(symbol_list, asset_class)
+                if asset_class == 'bonds':
+                    market_data[asset_class] = self._fetch_asset_class_data(symbol_list, asset_class)
+                else:
+                    market_data[asset_class] = self._fetch_asset_class_data_from_csv(symbol_list, asset_class)
         
         # Fetch calendar data
         market_data['calendar'] = self._fetch_calendar_data()
@@ -262,6 +272,52 @@ class ComprehensiveInstitutionalReportGenerator:
         
         return pd.DataFrame(data_list)
     
+    def _fetch_asset_class_data_from_csv(self, symbols: List[str], asset_class: str) -> pd.DataFrame:
+        """
+        Fetch data for a specific asset class from CSV files.
+        
+        Args:
+            symbols: List of symbols
+            asset_class: Asset class identifier
+            
+        Returns:
+            DataFrame with asset class data
+        """
+        data_list = []
+        
+        for symbol in symbols:
+            try:
+                folder = ''
+                if asset_class == 'currencies':
+                    folder = 'forex'
+                else:
+                    folder = asset_class
+                
+                csv_filename = f"/Users/pawan/CLI-Finance-Terminal/data/{folder}/{symbol}_data.csv"
+                if os.path.exists(csv_filename):
+                    df = pd.read_csv(csv_filename)
+                    if not df.empty:
+                        latest_data = df.iloc[-1]
+                        data_list.append({
+                            'name': symbol,
+                            'description': '',
+                            'ask': latest_data.get('close', 0),
+                            'bid': latest_data.get('open', 0),
+                            'last': latest_data.get('close', 0),
+                            'volume': latest_data.get('tick_volume', 0),
+                            'spread': latest_data.get('spread', 0),
+                            'digits': 5, # Assuming 5 digits for forex
+                            'high': latest_data.get('high', 0),
+                            'low': latest_data.get('low', 0),
+                            'time': pd.to_datetime(latest_data.get('time')),
+                            'asset_class': asset_class
+                        })
+            except Exception as e:
+                logger.warning(f"Error reading CSV for {symbol}: {e}")
+                continue
+        
+        return pd.DataFrame(data_list)
+
     def _fetch_calendar_data(self) -> pd.DataFrame:
         """
         Fetch economic calendar data
