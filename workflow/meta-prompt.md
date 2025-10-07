@@ -1,143 +1,140 @@
-# Report Generation Workflow - Meta-Prompt
 
-This document outlines the state and instructions for generating the "Daily Investment Research Note." This meta-prompt is updated upon the completion of each task, allowing for seamless continuation or error recovery.
 
----
+# meta-prompt.md  
+**Report Generation Workflow — Meta-Prompt: Data Source Migration to Alpha Vantage API**
 
-## Current Task Status:
+This document outlines the state and instructions for migrating the CLI-Finance-Terminal’s data source from Finnhub (or MetaTrader 5) to the **Alpha Vantage API**. This meta-prompt is the primary directive for the development agent and will be used to track the overall migration progress.
 
-- **Last Completed Task:** Report generated.
-- **Next Planned Task:** Apply global formatting and content structure adjustments.
-- **Errors/Notes from Last Run:** None.
+***
 
----
+## Primary Objective:  
+**Replace Finnhub (or MT5) with Alpha Vantage API as the Primary Data Provider**  
+All system reliance on Finnhub/MT5 for market data (quotes, historical data), news, and economic events needs to be replaced with a robust, API-first integration with Alpha Vantage. This will simplify the setup process and maximize free tier usage (within 25 request/day limits).
 
-## Global Formatting and Content Directives:
+***
 
-1.  **Font:**
-    *   Use "Century Gothic" for all text.
-    *   **Bold:** `/Users/pawan/Desktop/fonts/Century Gothic/centurygothic_bold.tff`
-    *   **Regular:** `/Users/pawan/Desktop/fonts/Century Gothic/centurygothic.tff`
+### Current Task Status:  
+**Last Completed Task:** Project initialization; ready to begin Alpha Vantage migration.  
+**Next Planned Task:** Stage 1: Foundational Setup & Configuration. Skeleton for new Alpha Vantage data provider.
 
-2.  **Case:** Do not use uppercase letters anywhere in the report, except where proper nouns or initialisms (like "ETF," "CPI," "API") naturally require them.
-3.  **Title/Header:**
-    *   Remove "Institutional Grade" from the main title. The quality is *implied* as institutional grade, not explicitly stated in the title.
-    *   Update the main title on page 1 to reflect this change.
+### Errors/Notes from Last Run:  
+N/A
 
-4.  **Market Status Line:** Remove the line indicating whether markets are open or closed (e.g., "Markets are currently Closed as of...").
+***
 
-5.  **Text Justification:** All textual content (executive summary, key market insight, biggest risk, conviction trade, portfolio implication) must be fully justified.
+## Global Directives & Migration Plan:
 
-6.  **Color Coding for % Change:**
-    *   Implement color coding for all percentage change values across the report (e.g., green for positive, red for negative, black/gray for no change).
-    *   Ensure the actual numerical value is displayed, not `<font color="red">-0.17</font>`. The color should be applied to the text itself.
+**1. API Key Management**
 
----
+**Action:** The system must manage an `ALPHAVANTAGE_API_KEY`.
 
-## Section-Specific Directives:
+**Implementation:**
+- Modify config loader to read `ALPHAVANTAGE_API_KEY` from .env file.
+- Update README.md with instructions for getting and setting an Alpha Vantage API key.
 
-### 1. Executive Summary (Page 3)
 
-*   **Content Justification:** Ensure all bullet points and paragraphs are fully justified.
+**2. Symbol Naming Convention & Mapping**
 
-### 2. Market Overview (Page 4)
+**Critical:** Alpha Vantage uses specific ticker formats differing from Finnhub (e.g., symbol, exchange, etc).
+**Action:** Build a centralized symbol mapping utility (`src/config/symbol_map.py` or JSON).
+**Implementation:**
+- The map must translate app symbols to Alpha Vantage format.
+- Example mappings:
+    - `^GSPC` → S&P 500 → `SPY` or `^GSPC`
+    - `EURUSD` → `EURUSD`
+    - `XAUUSD` → `XAUUSD`
+    - `CL=F` → WTI Crude
+    - Index/ETF differentiation as needed.
+- Data provider must use this symbol map for all API calls. User-facing reports should retain common names (“S&P 500” etc).
 
-*   **Market Indices Order:**
-    *   Reorder the "Key Market Indices Performance" table and the "MAJOR INDICES PERFORMANCE" table.
-    *   Group indices by region: Asia first, then Euro Area + UK, then Americas.
-    *   Add Indian market indices (e.g., Nifty 50, Sensex) by fetching data from a public API, as they are not available on MT5. Integrate them into the "Asia" grouping.
 
-*   **Major Indices Performance Table:**
-    *   Remove the "Description" column.
-    *   Rename CFD symbols to their common market names (e.g., "US500Roll" -> "S&P 500", "FRA40Roll" -> "CAC 40").
-    *   Add a smaller, italicized line beneath the market name to show the CFD symbol (e.g., "CAC 40 *FRA40Roll*").
-    *   Ensure "24h Change" and "24h Change %" values are correctly calculated using current price and the corresponding 24-hour prior price from MT5 data, considering timezone differences between local laptop time and MT5 server time. (Refer to the `data-mt5.py` script for data fetching logic).
+**3. Data Provider Abstraction**
 
-### 3. Currency Markets (Page 4)
+**Action:** Create a new, dedicated Alpha Vantage data provider to replace Finnhub code (`src/data/providers/finnhub_data.py`).
+**Implementation:**
+- Create: `src/data/providers/alphavantage_data.py`
+- Inside, define class `AlphaVantageDataFetcher`
+- Handles all API requests, including key management, symbol mapping, parsing, and Alpha Vantage rate limits.
+- Must integrate with existing cache manager (to minimize API calls).
 
-*   **Formatting:** Apply the same formatting rules as for "Major Indices Performance" to the "Currency Markets" table.
-    *   Remove `<font color="...">` tags and apply color directly to the text for % change.
-    *   Calculate "24h Change" and "24h Change %" accurately.
 
-### 4. Commodities (Page 5)
+**4. Removal of Obsolete Finnhub/MT5 Code**
 
-*   **Formatting:** Apply the same formatting rules as for "Major Indices Performance" to the "Commodities" table.
-    *   Remove `<font color="...">` tags and apply color directly to the text for % change.
-    *   Calculate "24h Change" and "24h Change %" accurately.
+**Action:** After stable Alpha Vantage integration, remove Finnhub/MT5 code, configs, and CLI args.
+**Implementation:**
+- Delete `src/data/providers/finnhub_data.py` and/or `mt5_data.py`
+- Remove all Finnhub/MT5 CLI arguments from `src/cli/main.py`
+- Update README.md to remove references to Finnhub/MT5 and document Alpha Vantage setup.
 
-### 5. Bonds/ETFs (Page 5)
+***
 
-*   **Description:** Update the "Description" column to include a concise explanation of each bond/ETF (e.g., "TLT ETF/Bond" -> "TLT (20+ Year US Treasury Bond ETF)"). The tool should research and provide appropriate descriptions where currently vague.
-*   **Formatting:** Apply the same formatting rules as for "Major Indices Performance" to the "Bonds/ETFs" table.
-    *   Remove `<font color="...">` tags and apply color directly to the text for % change.
-    *   Calculate "24h Change" and "24h Change %" accurately.
+## Section-Specific Directives (Implementation Plan):
 
-### 6. Market Volatility (Page 5-6)
+**1. New Data Provider (`src/data/providers/alphavantage_data.py`)**
+- Methods to implement:
+    - `get_quote(symbol)`: Fetch latest price
+    - `get_historical_data(symbol, days, interval)`: Fetch historical OHLCV, must match previous provider’s DataFrame structure
+    - `get_24h_change(symbol)`: Calculate 24-hour pct change using Alpha Vantage historical data
+    - `get_financial_news()`: Fetch general financial news — use Alpha Vantage news endpoints if available, else NewsAPI fallback
+    - `get_economic_calendar()`: Fetch economic events (Alpha Vantage supports US, some macro indicators)
 
-*   **VIX Description:** Add a description for the VIX index in the "Volatility Index" table.
+**2. Report Orchestrator (`src/analysis/daily_report.py`)**
+- Change import from Finnhub provider to Alpha Vantage
+- In main report generator init, instantiate `AlphaVantageDataFetcher`
+- Review upstream data access; ensure all calls and structures match new provider
 
-### 7. Top Market Movers (Page 6)
+**3. PDF Generators (`professional_pdf_report.py`, `enhanced_institutional_pdf.py`)**
+- Verify data formats (DataFrames, dicts) are kept consistent by new provider
+- If formats match, no changes needed; perform post-integration check
 
-*   **Color Coding:** Apply color coding to the "24h Change %" column (green for positive, red for negative).
+**4. Top Market Movers (`src/analysis/enhanced_top_movers.py`)**
+- Update logic to source symbol universe from new map file
+- Update to call `get_24h_change` from Alpha Vantage
+- Ensure percent change logic matches old structure
 
-### 8. Economic Calendar (Page 6)
+**5. CLI & Configuration (`src/cli/main.py` & `config/`)**
+- Remove Finnhub/MT5 user-facing CLI components
+- Remove old CLI arguments
+- Ensure `ALPHAVANTAGE_API_KEY` environment variable is loaded
+- Update help text
 
-*   **Data Source:** Integrate economic calendar data from the provided CSV file: `/Users/pawan/CLI-Finance-Terminal/economic-calendar/ECONOMIC_CALENDAR_DATA.csv`.
-*   **Presentation:** Display the relevant economic events in a clear, formatted table, showing `DateTime`, `EventID`, `Name`, `Country`, `Currency`, `Impact`, `Actual`, `Forecast`, `Previous`.
-
-### 9. Technical Charts (Page 7-12)
-
-*   **Chart Titles:**
-    *   Remove the chart names from being overlaid on the charts themselves.
-    *   Rename chart titles to be more user-friendly (e.g., "S&P 500 Technical Analysis" instead of "US500Roll Technical Analysis").
-    *   Ensure all chart titles follow this convention.
-
-*   **Color Scheme:** Update the color scheme of all charts to use professional and aesthetically pleasing colors. (e.g., muted blues, greens, grays for lines and bars; avoid overly bright or clashing colors).
-*   **Font:** All text within the charts (axis labels, legends, numbers) should use "Century Gothic" font.
-*   **New Chart:** Add a VIX chart.
-*   **Chart Order:** Order the charts logically:
-    1.  VIX Chart
-    2.  Major Global Indices (Asia, Europe+UK, Americas) in the order specified previously.
-    3.  Major Currencies
-    4.  Major Commodities
-    5.  Major Bonds/ETFs
-
----
+***
 
 ## Workflow Tracking:
 
-*   **Stage 1: Data Acquisition & Pre-processing (Completed)**
-    *   `data-mt5.py` script has run.
-    *   Economic calendar CSV is available.
-    *   Initial OCR on report pages is complete.
+### Stage 1: Foundational Setup (To Do)
+- Add ALPHAVANTAGE_API_KEY to environment/config
+- Create `src/data/providers/alphavantage_data.py` with skeleton class
+- Build initial symbol mapping file/dictionary (`src/config/symbol_map.py`)
+- Update README.md for Alpha Vantage instructions
 
-*   **Stage 2: Global Formatting (To Do)**
-    *   Apply Century Gothic font.
-    *   Enforce lowercase rule.
-    *   Update report title.
-    *   Remove market status line.
-    *   Justify text content.
+### Stage 2: Core Provider Implementation (To Do)
+- Implement quote/historical/candle logic in `AlphaVantageDataFetcher`
+- Implement 24h change using historical endpoint
+- Implement news and economic event fetch logic
+- Integrate caching
 
-*   **Stage 3: Section-Specific Content & Formatting (To Do)**
-    *   Update Executive Summary justification.
-    *   Reorder and rename Market Overview tables, add Indian indices, update 24h change.
-    *   Update Currency Markets formatting and 24h change.
-    *   Update Commodities formatting and 24h change.
-    *   Update Bonds/ETFs descriptions, formatting, and 24h change.
-    *   Add VIX description.
-    *   Color-code Top Market Movers % change.
-    *   Integrate Economic Calendar data.
+### Stage 3: Integration & Refactoring (To Do)
+- Wire up report generator to use new provider
+- Test population of all report sections (Indices, FX, Commodities, Movers)
+- Test dynamic Economic Calendar section
 
-*   **Stage 4: Chart Generation & Refinement (To Do)**
-    *   Update chart titles.
-    *   Apply professional color scheme to all charts.
-    *   Set Century Gothic font for all chart text.
-    *   Add VIX chart.
-    
-    *   Reorder all technical charts.
+### Stage 4: Cleanup & Documentation (To Do)
+- Delete Finnhub/MT5 provider scripts
+- Remove Finnhub/MT5 CLI args and logic
+- Clean README.md
 
----
+### Stage 5: Final Verification (To Do)
+- Generate normal & institutional reports to confirm full migration
+- Check for data formatting, symbol mapping, user-facing naming conventions
 
-**Instructions for CLI Tool:**
+***
 
-Process the report page by page, applying the directives above. After completing a logical block of tasks (e.g., all global formatting, or all market overview updates), update the "Current Task Status" and "Last Completed Task" in this `meta-prompt.md` to reflect progress. If an error occurs, update "Errors/Notes from Last Run" with details.
+**Note:**  
+Carefully monitor the Alpha Vantage daily request quota (25/day) and optimize the caching/utilization logic for report generation within free limits.
+
+***
+
+**End meta-prompt.**
+
+[1](https://finnhub.io/docs/api/forex-rates)

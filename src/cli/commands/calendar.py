@@ -12,13 +12,13 @@ def calendar():
     Display the economic calendar.
     """
     try:
-        # Use our MT5 CSV calendar data instead of Quantwater
-        report_gen = DailyInvestmentReportGenerator(use_wine_mt5=True)
+        # Initialize report generator with Alpha Vantage data provider
+        report_gen = DailyInvestmentReportGenerator()
     except Exception as e:
         console.print(f"[bold red]Error initializing report generator: {e}[/bold red]")
         raise typer.Exit(code=1)
 
-    with console.status("[bold green]Fetching economic calendar from MT5...", spinner="dots"):
+    with console.status("[bold green]Fetching economic calendar... (CSV-based data)", spinner="dots"):
         calendar_df = report_gen.get_economic_calendar()
 
     if not calendar_df.empty:

@@ -1,4 +1,4 @@
-# Enhanced Daily Investment Report Generator with Wine MT5 Integration
+# Enhanced Daily Investment Report Generator with Alpha Vantage Integration
 
 ## Summary of Enhancements
 
@@ -6,28 +6,26 @@ We've successfully enhanced the daily investment report generator to include all
 
 ### ✅ Core Features Implemented
 
-1. **Wine MT5 Integration**
-   - Successfully integrated with MT5 running under Wine
-   - Fetches real-time market data from MT5
+1. **Alpha Vantage Integration**
+   - Successfully integrated with Alpha Vantage API for real-time market data
+   - Fetches real-time market data from Alpha Vantage
    - Gets data for currencies, commodities, and other available instruments
+   - Implements rate limiting to respect API constraints
 
 2. **Enhanced Asset Coverage**
-   - **Indices**: Major global indices (SPX500, DJI30, NDX100, DAX30, FTSE100)
+   - **Indices**: Major global indices (SPX, DJI, NDX, DAX, FTSE)
    - **Currencies**: Major currency pairs (EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD)
-   - **Commodities**: Precious metals and energy (XAUUSD, XAGUSD, USOIL, UKOIL)
+   - **Commodities**: Precious metals and energy (XAU, XAG, CL=F, BZ=F)
    - **Bonds**: Bond ETF proxies (TLT, IEF, SHY, LQD) for bond market exposure
-   - **Volatility**: Market volatility indices (VIX, VXN, VXD)
+   - **Volatility**: Market volatility indices (VIX)
 
 3. **Enhanced Charting System**
-   - **Specific Timeframes and Intervals**:
-     - 1 Day charts with 15-minute intervals
-     - 1 Week charts with 4-hour intervals  
-     - 1/3 Month charts with 1-day intervals
    - **Asset Coverage**: Charts for all major asset classes (indices, currencies, commodities, bonds)
    - **Multiple Chart Types**: Technical charts for each asset with specified timeframes
+   - **CSV Fallback**: Charts generated from CSV data when API limits reached
 
 4. **Economic Calendar Integration**
-   - Fetches real economic calendar data from MT5
+   - Fetches economic calendar data from CSV files (API fallback available)
    - Highlights high-impact events
    - Shows actual vs forecast vs previous data where available
 
@@ -43,14 +41,17 @@ We've successfully enhanced the daily investment report generator to include all
 ### ✅ Command-Line Usage
 
 ```bash
-# Generate enhanced report with real MT5 data from Wine
-python -m src.cli.main report --format pdf --wine-mt5
+# Generate enhanced report with Alpha Vantage data
+python -m src.cli.main report --format pdf
 
 # Specify custom save directory
-python -m src.cli.main report --format pdf --wine-mt5 --save-dir ./my_reports
+python -m src.cli.main report --format pdf --save-dir ./my_reports
 
 # Enable verbose output for debugging
-python -m src.cli.main report --format pdf --wine-mt5 --verbose
+python -m src.cli.main report --format pdf --verbose
+
+# Generate institutional-grade report
+python -m src.cli.main report --format pdf --institutional
 ```
 
 ### ✅ Report Structure
@@ -70,55 +71,38 @@ python -m src.cli.main report --format pdf --wine-mt5 --verbose
    - Economic Calendar (High-priority events highlighted)
    - Volatility Summary
    - Risk Metrics
-7. **Charts**: Technical charts for major assets with specified timeframes
+7. **Charts**: Technical charts for major assets
 8. **Disclaimer**: Legal disclaimer for investment advice
-
-### ✅ Specific Chart Requirements Met
-
-For each major asset (indices, currencies, commodities, bonds, and top movers), we generate:
-
-1. **1 Day Chart (15-Minute Interval)**: 
-   - Shows intraday price action
-   - Useful for short-term trading analysis
-   
-2. **1 Week Chart (4-Hour Interval)**:
-   - Shows medium-term trends
-   - Useful for swing trading analysis
-   
-3. **1/3 Month Chart (1-Day Interval)**:
-   - Shows longer-term trends
-   - Useful for position trading and portfolio analysis
 
 ### ✅ Data Sources
 
-1. **Primary Source**: MT5 through Wine for real-time market data
-2. **Fallback**: Mock data when MT5 is not available
-3. **Calendar Data**: Economic calendar from MT5 with high-priority events highlighted
+1. **Primary Source**: Alpha Vantage API for real-time market data
+2. **Fallback**: CSV data when API limits are reached
+3. **Calendar Data**: Economic calendar from CSV files
 4. **Historical Data**: Used for volatility calculations and risk metrics
 
 ### ✅ Technical Implementation
 
-1. **Wine MT5 Connector**: Custom connector to interface with MT5 running under Wine
+1. **Alpha Vantage Connector**: Custom connector to interface with Alpha Vantage API
 2. **Data Fetching**: Robust error handling with fallback mechanisms
 3. **Chart Generation**: Matplotlib-based charting with professional styling
 4. **PDF Generation**: ReportLab-based PDF generation with professional formatting
-5. **Caching**: Efficient caching mechanism to reduce API calls
+5. **Caching**: Efficient caching mechanism to reduce API calls and stay within limits
+6. **Rate Limiting**: Automatic delays to respect API call limits (5 calls per minute)
 
 ## Benefits
 
-- **Real-Time Data**: Access to live market data through MT5
+- **Real-Time Data**: Access to live market data through Alpha Vantage
 - **Professional Quality**: Bulge-bracket investment firm quality reports
 - **Comprehensive Coverage**: All major asset classes covered
 - **Flexible Usage**: Command-line interface with multiple options
 - **Robust Implementation**: Error handling and fallback mechanisms
-- **Performance Optimized**: Caching and efficient data processing
+- **Performance Optimized**: Rate limiting and efficient caching to work within free tier
 
 ## Usage Tips
 
-1. **Ensure MT5 is Running**: MT5 terminal must be running in Wine for real data
-2. **Check Symbol Availability**: Available symbols may vary based on your MT5 setup
-3. **Network Connectivity**: Stable internet connection required for MT5 data
+1. **Alpha Vantage API Key Required**: Ensure your API key is properly configured in .env file
+2. **Rate Limits**: Be aware of 5 calls per minute and 25 calls per day in free tier
+3. **Network Connectivity**: Stable internet connection required for API data
 4. **Regular Updates**: Run reports regularly to stay updated with market changes
-5. **Customization**: Easy to customize symbols and timeframes in the configuration
-
-The system is now fully operational and ready to generate professional daily investment reports with real market data from MT5 through Wine, meeting all the requirements specified for a bulge-bracket investment/asset management firm.
+5. **CSV Fallback**: System automatically uses CSV data when API limits reached

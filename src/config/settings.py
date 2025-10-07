@@ -46,6 +46,7 @@ api_keys = {
     "alpha_vantage": os.getenv("ALPHA_VANTAGE_API_KEY"),
     "polygon": os.getenv("POLYGON_API_KEY"),
     "newsapi": os.getenv("NEWS_API_KEY"),
+    "finnhub": os.getenv("FINNHUB_API_KEY"),
 }
 
 settings["api_keys"] = api_keys

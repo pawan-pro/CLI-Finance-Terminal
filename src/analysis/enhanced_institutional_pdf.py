@@ -19,8 +19,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import os
 import numpy as np
-from src.data.providers.mt5_data import MT5DataFetcher
-from src.data.providers.alpha_vantage_data import AlphaVantageData
+from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
 
 # Define font variables with defaults
 FONT_REGULAR = 'Helvetica'
@@ -68,8 +67,9 @@ class EnhancedInstitutionalPDFReportGenerator:
             bottomMargin=36
         )
         
-        self.mt5_data_fetcher = MT5DataFetcher()
-        self.alpha_vantage_data = AlphaVantageData()
+        from src.config.settings import settings
+        api_key = settings["api_keys"]["alpha_vantage"]
+        self.av_data_fetcher = AlphaVantageDataFetcher(api_key=api_key)
         
         # Define institutional color palette
         self.colors = {
@@ -119,6 +119,23 @@ class EnhancedInstitutionalPDFReportGenerator:
         # Indian indices integration has been removed to resolve data structure conflicts
         # A separate solution for Indian market data will be developed
         pass
+    
+    def _format_pct_change_with_color(self, pct_change):
+        """Format percentage change with appropriate color based on value"""
+        if isinstance(pct_change, (int, float)):
+            direction = "+" if pct_change >= 0 else ""
+            change_text = f"{direction}{pct_change:.2f}%"
+            if pct_change > 0:
+                # Green for positive
+                return f'<font color="green">{change_text}</font>'
+            elif pct_change < 0:
+                # Red for negative
+                return f'<font color="red">{change_text}</font>'
+            else:
+                # Black for neutral
+                return change_text
+        else:
+            return "N/A"
         
     # Indian indices integration has been removed to resolve data structure conflicts
     # A separate solution for Indian market data will be developed
@@ -483,14 +500,14 @@ class EnhancedInstitutionalPDFReportGenerator:
                 ask = float(row.get('ask', 0))
                 bid = float(row.get('bid', 0))
                 last = (ask + bid) / 2
-                change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
+                change, pct_change = self.av_data_fetcher.get_24h_change(name)
                 
                 # Store raw values to be formatted later with direct color application
                 table_data.append([
                     display_name,
                     f"{last:.2f}",
                     f"{change:+.2f}",
-                    f"{pct_change:+.2f}%"
+                    self._format_pct_change_with_color(pct_change)
                 ])
             
             # Create table with styling
@@ -511,34 +528,6 @@ class EnhancedInstitutionalPDFReportGenerator:
                 ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
-            
-            # Apply color formatting to the percentage change column after table creation
-            for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
-                try:
-                    pct_value = float(pct_change_str.rstrip('%'))
-                    if pct_value > 0:
-                        table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
-                    elif pct_value < 0:
-                        table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
-                    else:
-                        table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-                except:
-                    # If conversion fails, use default text color
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-            
-            # Apply color formatting to the change column
-            for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
-                try:
-                    change_value = float(change_str)
-                    if change_value > 0:
-                        table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
-                    elif change_value < 0:
-                        table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
-                    else:
-                        table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
-                except:
-                    # If conversion fails, use default text color
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
             
             self.story.append(table)
             self.story.append(Spacer(1, 20))
@@ -596,14 +585,14 @@ class EnhancedInstitutionalPDFReportGenerator:
             # Add a smaller, italicized line beneath the market name to show the CFD symbol
             full_name = f"{display_name}<br/><i>({name})</i>"
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
+            change, pct_change = self.av_data_fetcher.get_24h_change(name)
             
             # Format numbers with appropriate precision
             table_data.append([
                 full_name,
                 price,
                 f"{change:+.2f}",
-                f"{pct_change:+.2f}%"
+                self._format_pct_change_with_color(pct_change)
             ])
 
         table = Table(table_data)
@@ -622,34 +611,6 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('GRID', (0, 0), (-1, -1), 1, self.colors['background_medium']),
             ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
         ]))
-        
-        # Apply color formatting to the percentage change column after table creation
-        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
-            try:
-                pct_value = float(pct_change_str.rstrip('%'))
-                if pct_value > 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
-                elif pct_value < 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
-                else:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-            except:
-                # If conversion fails, use default text color
-                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-        
-        # Apply color formatting to the change column
-        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
-            try:
-                change_value = float(change_str)
-                if change_value > 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
-                elif change_value < 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
-                else:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
-            except:
-                # If conversion fails, use default text color
-                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))
@@ -675,13 +636,13 @@ class EnhancedInstitutionalPDFReportGenerator:
             # Add a smaller, italicized line beneath the market name to show the CFD symbol
             full_name = f"{display_name}<br/><i>({name})</i>"
             price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
+            change, pct_change = self.av_data_fetcher.get_24h_change(name)
 
             table_data.append([
                 full_name,
                 price,
                 f"{change:+.4f}",
-                f"{pct_change:+.2f}%"
+                self._format_pct_change_with_color(pct_change)
             ])
 
         table = Table(table_data)
@@ -701,34 +662,6 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        
-        # Apply color formatting to the percentage change column after table creation
-        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
-            try:
-                pct_value = float(pct_change_str.rstrip('%'))
-                if pct_value > 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
-                elif pct_value < 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
-                else:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-            except:
-                # If conversion fails, use default text color
-                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-        
-        # Apply color formatting to the change column
-        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
-            try:
-                change_value = float(change_str)
-                if change_value > 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
-                elif change_value < 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
-                else:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
-            except:
-                # If conversion fails, use default text color
-                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))    
@@ -753,13 +686,13 @@ class EnhancedInstitutionalPDFReportGenerator:
             # Add a smaller, italicized line beneath the market name to show the CFD symbol
             full_name = f"{display_name}<br/><i>({name})</i>"
             price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            change, pct_change = self.mt5_data_fetcher.get_24h_change(name)
+            change, pct_change = self.av_data_fetcher.get_24h_change(name)
             
             table_data.append([
                 full_name,
                 price,
                 f"{change:+.2f}",
-                f"{pct_change:+.2f}%"
+                self._format_pct_change_with_color(pct_change)
             ])
 
         table = Table(table_data)
@@ -779,34 +712,6 @@ class EnhancedInstitutionalPDFReportGenerator:
             ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        
-        # Apply color formatting to the percentage change column after table creation
-        for i, (_, _, _, pct_change_str) in enumerate(table_data[1:], start=1):  # Skip header row
-            try:
-                pct_value = float(pct_change_str.rstrip('%'))
-                if pct_value > 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_green'])]))
-                elif pct_value < 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['accent_red'])]))
-                else:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-            except:
-                # If conversion fails, use default text color
-                table.setStyle(TableStyle([('TEXTCOLOR', (3, i), (3, i), self.colors['text_dark'])]))
-        
-        # Apply color formatting to the change column
-        for i, (_, _, change_str, _) in enumerate(table_data[1:], start=1):  # Skip header row
-            try:
-                change_value = float(change_str)
-                if change_value > 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_green'])]))
-                elif change_value < 0:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['accent_red'])]))
-                else:
-                    table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
-            except:
-                # If conversion fails, use default text color
-                table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), self.colors['text_dark'])]))
         
         self.story.append(table)
         self.story.append(Spacer(1, 20))
@@ -838,33 +743,28 @@ class EnhancedInstitutionalPDFReportGenerator:
             ]
             
             # Fetch from Alpha Vantage
-            alpha_vantage_bonds_data = self.alpha_vantage_data.get_bond_etf_data(bond_etf_symbols)
+            # Since AlphaVantageDataFetcher doesn't have get_bond_etf_data, we'll fetch the data individually
+            bonds_data_list = []
+            for symbol in bond_etf_symbols:
+                try:
+                    quote_data = self.av_data_fetcher.get_quote(symbol)
+                    if quote_data:
+                        # Calculate 24h change
+                        change, pct_change = self.av_data_fetcher.get_24h_change(symbol)
+                        quote_data['change'] = change
+                        quote_data['pct_change'] = pct_change
+                        bonds_data_list.append(quote_data)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch data for bond/ETF {symbol}: {e}")
+                    continue
             
-            # If Alpha Vantage fails, use MT5 as fallback
-            if alpha_vantage_bonds_data.empty:
-                logger.warning("Alpha Vantage bonds/ETFs data fetch failed, using MT5 as fallback")
-                # Try to get some bond/ETF data from MT5 as a fallback
-                available_symbols = self.mt5_data_fetcher.get_available_symbols()
-                # Find symbols that look like bonds or ETFs (this is a simplified approach)
-                mt5_bond_symbols = [s for s in available_symbols if any(keyword in s for keyword in ['BOND', 'ETF', 'TREAS', 'GOVT', 'CORP'])]
-                
-                mt5_bonds_data = []
-                for symbol in mt5_bond_symbols[:15]:  # Limit to first 15
-                    info = self.mt5_data_fetcher.get_symbol_info(symbol)
-                    if info:
-                        change, pct_change = self.mt5_data_fetcher.get_24h_change(symbol)
-                        mt5_bonds_data.append({
-                            'name': info.get('name', symbol),
-                            'description': info.get('description', f'{symbol} Bond/ETF'),
-                            'Price': (info.get('ask', 0) + info.get('bid', 0)) / 2,
-                            'change': change,
-                            'pct_change': pct_change
-                        })
-                
-                bonds_data = pd.DataFrame(mt5_bonds_data)
-            else:
+            if bonds_data_list:
+                alpha_vantage_bonds_data = pd.DataFrame(bonds_data_list)
                 logger.info(f"Successfully fetched {len(alpha_vantage_bonds_data)} bonds/ETFs from Alpha Vantage")
                 bonds_data = alpha_vantage_bonds_data
+            else:
+                logger.warning("Alpha Vantage bonds/ETFs data fetch failed, returning empty DataFrame")
+                bonds_data = pd.DataFrame()
             
         if bonds_data.empty:
             return

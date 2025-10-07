@@ -23,7 +23,33 @@ class ProfessionalPDFReportGenerator:
         "UT100Roll": "Nasdaq 100",
         "DE40Roll": "DAX 40",
         "UK100Roll": "FTSE 100",
+        "EURUSD": "EUR/USD",
+        "GBPUSD": "GBP/USD",
+        "USDJPY": "USD/JPY",
+        "USDCHF": "USD/CHF",
+        "AUDUSD": "AUD/USD",
+        "XAUUSD": "Gold",
+        "XAGUSD": "Silver",
+        "USOIL": "WTI Crude",
+        "UKOIL": "Brent Crude"
     }
+    
+    def _format_pct_change_with_color(self, pct_change):
+        """Format percentage change with appropriate color based on value"""
+        if isinstance(pct_change, (int, float)):
+            direction = "+" if pct_change >= 0 else ""
+            change_text = f"{direction}{pct_change:.2f}%"
+            if pct_change > 0:
+                # Green for positive
+                return f'<font color="green">{change_text}</font>'
+            elif pct_change < 0:
+                # Red for negative
+                return f'<font color="red">{change_text}</font>'
+            else:
+                # Black for neutral
+                return change_text
+        else:
+            return "N/A"
 
     def __init__(self, filename: str):
         """Initialize PDF generator with professional styling"""
@@ -309,6 +335,7 @@ class ProfessionalPDFReportGenerator:
         for _, row in indices_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
             display_name = self.SYMBOL_MAP.get(name, name)
+            full_name = f"{display_name}<br/><i>{name}</i>"
             price_value = row.get('Price', 'N/A')
 
             # Format Nasdaq 100 as a whole number, others as float
@@ -317,15 +344,11 @@ class ProfessionalPDFReportGenerator:
             else:
                 price = f"{price_value:.2f}" if isinstance(price_value, (int, float)) else str(price_value)
                 
-            # Add 24H % change if available
+            # Add 24H % change if available with color coding
             pct_change_24h = row.get('pct_change_24h', 0)
-            if isinstance(pct_change_24h, (int, float)):
-                direction = "+" if pct_change_24h >= 0 else ""
-                change_text = f"{direction}{pct_change_24h:.2f}%"
-            else:
-                change_text = "N/A"
+            change_text = self._format_pct_change_with_color(pct_change_24h)
             
-            data.append([display_name, price, change_text])
+            data.append([Paragraph(full_name, self.normal_style), price, change_text])
 
         self.add_rich_table(data, ["Index", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
@@ -338,6 +361,8 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in currency_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.SYMBOL_MAP.get(name, name)
+            full_name = f"{display_name}<br/><i>{name}</i>"
             price_value = row.get('Price', 'N/A')
             if isinstance(price_value, (int, float)):
                 # Format with 4 decimal places for currencies
@@ -345,15 +370,11 @@ class ProfessionalPDFReportGenerator:
             else:
                 price = str(price_value)
                 
-            # Add 24H % change if available
+            # Add 24H % change if available with color coding
             pct_change_24h = row.get('pct_change_24h', 0)
-            if isinstance(pct_change_24h, (int, float)):
-                direction = "+" if pct_change_24h >= 0 else ""
-                change_text = f"{direction}{pct_change_24h:.2f}%"
-            else:
-                change_text = "N/A"
+            change_text = self._format_pct_change_with_color(pct_change_24h)
             
-            data.append([name, price, change_text])
+            data.append([Paragraph(full_name, self.normal_style), price, change_text])
 
         self.add_rich_table(data, ["Currency Pair", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
@@ -366,6 +387,8 @@ class ProfessionalPDFReportGenerator:
         data = []
         for _, row in commodities_data.head(15).iterrows():
             name = str(row.get('name', 'N/A'))
+            display_name = self.SYMBOL_MAP.get(name, name)
+            full_name = f"{display_name}<br/><i>{name}</i>"
             price_value = row.get('Price', 'N/A')
             if isinstance(price_value, (int, float)):
                 # Special handling for gold (XAUUSD) - should show 4 decimal places
@@ -376,15 +399,11 @@ class ProfessionalPDFReportGenerator:
             else:
                 price = str(price_value)
                 
-            # Add 24H % change if available
+            # Add 24H % change if available with color coding
             pct_change_24h = row.get('pct_change_24h', 0)
-            if isinstance(pct_change_24h, (int, float)):
-                direction = "+" if pct_change_24h >= 0 else ""
-                change_text = f"{direction}{pct_change_24h:.2f}%"
-            else:
-                change_text = "N/A"
+            change_text = self._format_pct_change_with_color(pct_change_24h)
             
-            data.append([name, price, change_text])
+            data.append([Paragraph(full_name, self.normal_style), price, change_text])
 
         self.add_rich_table(data, ["Commodity", "Price", "24H Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     
@@ -403,13 +422,9 @@ class ProfessionalPDFReportGenerator:
             else:
                 price = str(price_value)
                 
-            # Add 24H % change if available
+            # Add 24H % change if available with color coding
             pct_change_24h = row.get('pct_change_24h', 0)
-            if isinstance(pct_change_24h, (int, float)):
-                direction = "+" if pct_change_24h >= 0 else ""
-                change_text = f"{direction}{pct_change_24h:.2f}%"
-            else:
-                change_text = "N/A"
+            change_text = self._format_pct_change_with_color(pct_change_24h)
             
             data.append([name, price, change_text])
 
@@ -430,13 +445,9 @@ class ProfessionalPDFReportGenerator:
             else:
                 price = str(price_value)
                 
-            # Add 24H % change if available
+            # Add 24H % change if available with color coding
             pct_change_24h = row.get('pct_change_24h', 0)
-            if isinstance(pct_change_24h, (int, float)):
-                direction = "+" if pct_change_24h >= 0 else ""
-                change_text = f"{direction}{pct_change_24h:.2f}%"
-            else:
-                change_text = "N/A"
+            change_text = self._format_pct_change_with_color(pct_change_24h)
             
             data.append([name, price, change_text])
         
@@ -452,6 +463,7 @@ class ProfessionalPDFReportGenerator:
         for _, row in top_movers.iterrows():
             name = str(row.get('name', 'N/A'))
             display_name = self.SYMBOL_MAP.get(name, name)
+            full_name = f"{display_name}<br/><i>{name}</i>"
             price_value = row.get('Price', 'N/A')
 
             # Format Nasdaq 100 as a whole number, others as float
@@ -461,11 +473,10 @@ class ProfessionalPDFReportGenerator:
                 price = f"{price_value:.2f}" if isinstance(price_value, (int, float)) else str(price_value)
 
             pct_change = row.get('pct_change', 0)
-            direction = "+" if pct_change >= 0 else ""
-            change_text = f"{direction}{pct_change:.2f}%"
+            change_text = self._format_pct_change_with_color(pct_change)
             
             # Color coding for changes
-            data.append([display_name, price, change_text])
+            data.append([Paragraph(full_name, self.normal_style), price, change_text])
         
         self.add_rich_table(data, ["Symbol", "Price", "24h Change"], [2.5*inch, 1.75*inch, 1.75*inch])
     

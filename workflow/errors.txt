@@ -1,0 +1,293 @@
+(venv) pawan@MacBookAir CLI-Finance-Terminal % python -m src.cli.main report --institutional --format pdf
+Century Gothic font files not found. Regular: /Users/pawan/Desktop/fonts/Century Gothic/centurygothic.tff Bold: /Users/pawan/Desktop/fonts/Century Gothic/centurygothic_bold.tff
+Generating institutional-grade daily investment report at 2025-10-07 07:27:26
+Format: PDF
+Institutional-grade report enabled
+INFO:src.analysis.daily_report:Generating daily investment report...
+INFO:src.data.providers.finnhub_data:Returning info for TLT from cache
+INFO:src.data.providers.finnhub_data:Returning info for TLT from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=TLT&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for TLT (mapped to TLT)
+WARNING:src.analysis.daily_report:No historical data for TLT on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for IEF from cache
+INFO:src.data.providers.finnhub_data:Returning info for IEF from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=IEF&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for IEF (mapped to IEF)
+WARNING:src.analysis.daily_report:No historical data for IEF on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for SHY from cache
+INFO:src.data.providers.finnhub_data:Returning info for SHY from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=SHY&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for SHY (mapped to SHY)
+WARNING:src.analysis.daily_report:No historical data for SHY on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for LQD from cache
+INFO:src.data.providers.finnhub_data:Returning info for LQD from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=LQD&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for LQD (mapped to LQD)
+WARNING:src.analysis.daily_report:No historical data for LQD on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for US500Roll from cache
+WARNING:src.analysis.daily_report:Could not get current price for US500Roll
+INFO:src.data.providers.finnhub_data:Returning info for US30Roll from cache
+WARNING:src.analysis.daily_report:Could not get current price for US30Roll
+INFO:src.data.providers.finnhub_data:Returning info for UK100Roll from cache
+WARNING:src.analysis.daily_report:Could not get current price for UK100Roll
+INFO:src.data.providers.finnhub_data:Returning info for DE40Roll from cache
+WARNING:src.analysis.daily_report:Could not get current price for DE40Roll
+INFO:src.data.providers.finnhub_data:Returning info for FRA40Roll from cache
+WARNING:src.analysis.daily_report:Could not get current price for FRA40Roll
+INFO:src.data.providers.finnhub_data:Returning info for JP225Roll from cache
+WARNING:src.analysis.daily_report:Could not get current price for JP225Roll
+INFO:src.data.providers.finnhub_data:Attempting to fetch symbol info for: CHINA50Roll (mapped to 000016.SS)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/quote: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/quote?symbol=000016.SS&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+ERROR:src.data.providers.finnhub_data:Failed to get quote for CHINA50Roll (mapped to 000016.SS)
+WARNING:src.analysis.daily_report:Could not get current price for CHINA50Roll
+INFO:src.data.providers.finnhub_data:Returning info for EURUSD.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for EURUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for GBPUSD.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for GBPUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for USDJPY.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for USDJPY.sd
+INFO:src.data.providers.finnhub_data:Returning info for AUDUSD.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for AUDUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for USDCAD.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for USDCAD.sd
+INFO:src.data.providers.finnhub_data:Returning info for USDCHF.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for USDCHF.sd
+INFO:src.data.providers.finnhub_data:Returning info for NZDUSD.sd from cache
+WARNING:src.analysis.daily_report:Could not get current price for NZDUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for XAUUSD from cache
+WARNING:src.analysis.daily_report:Could not get current price for XAUUSD
+INFO:src.data.providers.finnhub_data:Returning info for XAGUSD from cache
+WARNING:src.analysis.daily_report:Could not get current price for XAGUSD
+INFO:src.data.providers.finnhub_data:Returning info for XPTUSD from cache
+WARNING:src.analysis.daily_report:Could not get current price for XPTUSD
+INFO:src.data.providers.finnhub_data:Returning info for USOILRoll from cache
+WARNING:src.analysis.daily_report:Could not get current price for USOILRoll
+INFO:src.data.providers.finnhub_data:Returning info for BTCUSD.lv from cache
+WARNING:src.analysis.daily_report:Could not get current price for BTCUSD.lv
+INFO:src.data.providers.finnhub_data:Returning info for ETHUSD.lv from cache
+WARNING:src.analysis.daily_report:Could not get current price for ETHUSD.lv
+INFO:src.data.providers.finnhub_data:Returning info for LTCUSD.lv from cache
+WARNING:src.analysis.daily_report:Could not get current price for LTCUSD.lv
+INFO:src.data.providers.finnhub_data:Returning info for TLT from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=TLT&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for TLT (mapped to TLT)
+WARNING:src.analysis.daily_report:No historical data for TLT on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for IEF from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=IEF&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for IEF (mapped to IEF)
+WARNING:src.analysis.daily_report:No historical data for IEF on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for SHY from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=SHY&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for SHY (mapped to SHY)
+WARNING:src.analysis.daily_report:No historical data for SHY on 2025-10-06. Falling back to CSV.
+INFO:src.data.providers.finnhub_data:Returning info for LQD from cache
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=LQD&resolution=D&from=1759689000&to=1759775399&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for LQD (mapped to LQD)
+WARNING:src.analysis.daily_report:No historical data for LQD on 2025-10-06. Falling back to CSV.
+INFO:src.analysis.daily_report:Successfully read economic calendar from: ./economic-calendar/ECONOMIC_CALENDAR_DATA.csv
+INFO:src.analysis.daily_report:Fetching financial news...
+INFO:src.analysis.daily_report:Successfully fetched 100 financial news headlines.
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EGSPC&resolution=D&from=1754618253&to=1759802253&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for US500Roll (mapped to ^GSPC)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EDJI&resolution=D&from=1754618254&to=1759802254&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for US30Roll (mapped to ^DJI)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EFTSE&resolution=D&from=1754618255&to=1759802255&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for UK100Roll (mapped to ^FTSE)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EGDAXI&resolution=D&from=1754618256&to=1759802256&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for DE40Roll (mapped to ^GDAXI)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EFCHI&resolution=D&from=1754618257&to=1759802257&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for FRA40Roll (mapped to ^FCHI)
+INFO:src.analysis.daily_report:Generating charts...
+INFO:src.analysis.daily_report:Found CSV data for US500Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/US500Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for US500Roll -> ./reports/daily_report_20251007_072726/charts/US500Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for US500Roll
+INFO:src.analysis.daily_report:Found CSV data for US30Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/US30Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for US30Roll -> ./reports/daily_report_20251007_072726/charts/US30Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for US30Roll
+INFO:src.analysis.daily_report:Found CSV data for UK100Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/UK100Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for UK100Roll -> ./reports/daily_report_20251007_072726/charts/UK100Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for UK100Roll
+INFO:src.analysis.daily_report:Found CSV data for DE40Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/DE40Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for DE40Roll -> ./reports/daily_report_20251007_072726/charts/DE40Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for DE40Roll
+INFO:src.analysis.daily_report:Found CSV data for FRA40Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/FRA40Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for FRA40Roll -> ./reports/daily_report_20251007_072726/charts/FRA40Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for FRA40Roll
+INFO:src.analysis.daily_report:Found CSV data for JP225Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/JP225Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for JP225Roll -> ./reports/daily_report_20251007_072726/charts/JP225Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for JP225Roll
+INFO:src.analysis.daily_report:Found CSV data for HK50Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/HK50Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for HK50Roll -> ./reports/daily_report_20251007_072726/charts/HK50Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for HK50Roll
+INFO:src.analysis.daily_report:Found CSV data for CHINA50Roll at /Users/pawan/CLI-Finance-Terminal/data/indices/CHINA50Roll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for CHINA50Roll -> ./reports/daily_report_20251007_072726/charts/CHINA50Roll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for CHINA50Roll
+INFO:src.analysis.daily_report:Found CSV data for EURUSD.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/EURUSD.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for EURUSD.sd -> ./reports/daily_report_20251007_072726/charts/EURUSD.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for EURUSD.sd
+INFO:src.analysis.daily_report:Found CSV data for GBPUSD.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/GBPUSD.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for GBPUSD.sd -> ./reports/daily_report_20251007_072726/charts/GBPUSD.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for GBPUSD.sd
+INFO:src.analysis.daily_report:Found CSV data for USDJPY.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/USDJPY.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for USDJPY.sd -> ./reports/daily_report_20251007_072726/charts/USDJPY.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for USDJPY.sd
+INFO:src.analysis.daily_report:Found CSV data for AUDUSD.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/AUDUSD.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for AUDUSD.sd -> ./reports/daily_report_20251007_072726/charts/AUDUSD.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for AUDUSD.sd
+INFO:src.analysis.daily_report:Found CSV data for USDCAD.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/USDCAD.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for USDCAD.sd -> ./reports/daily_report_20251007_072726/charts/USDCAD.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for USDCAD.sd
+INFO:src.analysis.daily_report:Found CSV data for USDCHF.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/USDCHF.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for USDCHF.sd -> ./reports/daily_report_20251007_072726/charts/USDCHF.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for USDCHF.sd
+INFO:src.analysis.daily_report:Found CSV data for NZDUSD.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/NZDUSD.sd_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for NZDUSD.sd -> ./reports/daily_report_20251007_072726/charts/NZDUSD.sd_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for NZDUSD.sd
+WARNING:src.analysis.daily_report:CSV file not found for USDCNH.sd at /Users/pawan/CLI-Finance-Terminal/data/forex/USDCNH.sd_data.csv
+INFO:src.analysis.daily_report:Found CSV data for XAUUSD at /Users/pawan/CLI-Finance-Terminal/data/commodities/XAUUSD_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for XAUUSD -> ./reports/daily_report_20251007_072726/charts/XAUUSD_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for XAUUSD
+INFO:src.analysis.daily_report:Found CSV data for XAGUSD at /Users/pawan/CLI-Finance-Terminal/data/commodities/XAGUSD_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for XAGUSD -> ./reports/daily_report_20251007_072726/charts/XAGUSD_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for XAGUSD
+INFO:src.analysis.daily_report:Found CSV data for XPTUSD at /Users/pawan/CLI-Finance-Terminal/data/commodities/XPTUSD_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for XPTUSD -> ./reports/daily_report_20251007_072726/charts/XPTUSD_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for XPTUSD
+INFO:src.analysis.daily_report:Found CSV data for USOILRoll at /Users/pawan/CLI-Finance-Terminal/data/commodities/USOILRoll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for USOILRoll -> ./reports/daily_report_20251007_072726/charts/USOILRoll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for USOILRoll
+WARNING:src.analysis.daily_report:CSV file not found for BRENT at /Users/pawan/CLI-Finance-Terminal/data/commodities/BRENT_data.csv
+WARNING:src.analysis.daily_report:CSV file not found for NGAS at /Users/pawan/CLI-Finance-Terminal/data/commodities/NGAS_data.csv
+INFO:src.analysis.daily_report:Found CSV data for BTCUSD.lv at /Users/pawan/CLI-Finance-Terminal/data/crypto/BTCUSD.lv_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for BTCUSD.lv -> ./reports/daily_report_20251007_072726/charts/BTCUSD.lv_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for BTCUSD.lv
+INFO:src.analysis.daily_report:Found CSV data for ETHUSD.lv at /Users/pawan/CLI-Finance-Terminal/data/crypto/ETHUSD.lv_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for ETHUSD.lv -> ./reports/daily_report_20251007_072726/charts/ETHUSD.lv_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for ETHUSD.lv
+WARNING:src.analysis.daily_report:CSV file not found for XRPUSD.lv at /Users/pawan/CLI-Finance-Terminal/data/crypto/XRPUSD.lv_data.csv
+INFO:src.analysis.daily_report:Found CSV data for LTCUSD.lv at /Users/pawan/CLI-Finance-Terminal/data/crypto/LTCUSD.lv_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for LTCUSD.lv -> ./reports/daily_report_20251007_072726/charts/LTCUSD.lv_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for LTCUSD.lv
+WARNING:src.analysis.daily_report:CSV file not found for BCHUSD.lv at /Users/pawan/CLI-Finance-Terminal/data/crypto/BCHUSD.lv_data.csv
+WARNING:src.analysis.daily_report:CSV file not found for EOSUSD.lv at /Users/pawan/CLI-Finance-Terminal/data/crypto/EOSUSD.lv_data.csv
+INFO:src.analysis.daily_report:Found CSV data for VIXRoll at /Users/pawan/CLI-Finance-Terminal/data/other/VIXRoll_data.csv
+INFO:src.analysis.daily_report:Generating candlestick chart for VIXRoll -> ./reports/daily_report_20251007_072726/charts/VIXRoll_candlestick.png
+INFO:src.analysis.daily_report:Successfully generated chart for VIXRoll
+INFO:src.analysis.daily_report:Generated 23 charts out of 29 attempted
+INFO:src.data.providers.finnhub_data:Returning info for JP225Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for JP225Roll
+INFO:src.data.providers.finnhub_data:Attempting to fetch symbol info for: CHINA50Roll (mapped to 000016.SS)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/quote: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/quote?symbol=000016.SS&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+ERROR:src.data.providers.finnhub_data:Failed to get quote for CHINA50Roll (mapped to 000016.SS)
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for CHINA50Roll
+INFO:src.data.providers.finnhub_data:Returning info for DE40Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for DE40Roll
+INFO:src.data.providers.finnhub_data:Returning info for FRA40Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for FRA40Roll
+INFO:src.data.providers.finnhub_data:Returning info for UK100Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for UK100Roll
+INFO:src.data.providers.finnhub_data:Returning info for US500Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for US500Roll
+INFO:src.data.providers.finnhub_data:Returning info for US30Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for US30Roll
+INFO:src.data.providers.finnhub_data:Returning info for JP225Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for JP225Roll
+INFO:src.data.providers.finnhub_data:Attempting to fetch symbol info for: CHINA50Roll (mapped to 000016.SS)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/quote: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/quote?symbol=000016.SS&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+ERROR:src.data.providers.finnhub_data:Failed to get quote for CHINA50Roll (mapped to 000016.SS)
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for CHINA50Roll
+INFO:src.data.providers.finnhub_data:Returning info for DE40Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for DE40Roll
+INFO:src.data.providers.finnhub_data:Returning info for FRA40Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for FRA40Roll
+INFO:src.data.providers.finnhub_data:Returning info for UK100Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for UK100Roll
+INFO:src.data.providers.finnhub_data:Returning info for US500Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for US500Roll
+INFO:src.data.providers.finnhub_data:Returning info for US30Roll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for US30Roll
+INFO:src.data.providers.finnhub_data:Returning info for EURUSD.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for EURUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for GBPUSD.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for GBPUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for USDJPY.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for USDJPY.sd
+INFO:src.data.providers.finnhub_data:Returning info for AUDUSD.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for AUDUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for USDCAD.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for USDCAD.sd
+INFO:src.data.providers.finnhub_data:Returning info for USDCHF.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for USDCHF.sd
+INFO:src.data.providers.finnhub_data:Returning info for NZDUSD.sd from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for NZDUSD.sd
+INFO:src.data.providers.finnhub_data:Returning info for XAUUSD from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for XAUUSD
+INFO:src.data.providers.finnhub_data:Returning info for XAGUSD from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for XAGUSD
+INFO:src.data.providers.finnhub_data:Returning info for XPTUSD from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for XPTUSD
+INFO:src.data.providers.finnhub_data:Returning info for USOILRoll from cache
+WARNING:src.data.providers.finnhub_data:Could not get current info or ask price for USOILRoll
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EGSPC&resolution=D&from=1752026307&to=1759802307&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for US500Roll (mapped to ^GSPC)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EDJI&resolution=D&from=1752026307&to=1759802307&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for US30Roll (mapped to ^DJI)
+ERROR:src.data.providers.finnhub_data:Error making request to https://api.finnhub.io/api/v1/stock/candle: 403 Client Error: Forbidden for url: https://api.finnhub.io/api/v1/stock/candle?symbol=%5EFTSE&resolution=D&from=1752026307&to=1759802307&token=d30kp4hr01qnmrsev8jgd30kp4hr01qnmrsev8k0
+WARNING:src.data.providers.finnhub_data:Failed to fetch historical data for UK100Roll (mapped to ^FTSE)
+INFO:src.analysis.enhanced_institutional_pdf:Chart embedding attempt - received 23 chart files
+INFO:src.analysis.enhanced_institutional_pdf:Out of 23 provided chart files, 23 exist on disk
+INFO:src.analysis.enhanced_institutional_pdf:Attempting to embed 23 existing chart files in the report
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/VIXRoll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/VIXRoll_candlestick.png for symbol VIXRoll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/VIXRoll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/VIXRoll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/JP225Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/JP225Roll_candlestick.png for symbol JP225Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/JP225Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/JP225Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/HK50Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/HK50Roll_candlestick.png for symbol HK50Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/HK50Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/HK50Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/CHINA50Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/CHINA50Roll_candlestick.png for symbol CHINA50Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/CHINA50Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/CHINA50Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/UK100Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/UK100Roll_candlestick.png for symbol UK100Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/UK100Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/UK100Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/DE40Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/DE40Roll_candlestick.png for symbol DE40Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/DE40Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/DE40Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/FRA40Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/FRA40Roll_candlestick.png for symbol FRA40Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/FRA40Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/FRA40Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/US500Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/US500Roll_candlestick.png for symbol US500Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/US500Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/US500Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/US30Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/US30Roll_candlestick.png for symbol US30Roll
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/US30Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/US30Roll_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/EURUSD.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/EURUSD.sd_candlestick.png for symbol EURUSD.sd
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/EURUSD.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/EURUSD.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/GBPUSD.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/GBPUSD.sd_candlestick.png for symbol GBPUSD.sd
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/GBPUSD.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/GBPUSD.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:After chart creation - confirmed chart file exists: ./reports/daily_report_20251007_072726/charts/USDJPY.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Before embedding in PDF - attempting to embed chart: ./reports/daily_report_20251007_072726/charts/USDJPY.sd_candlestick.png for symbol USDJPY.sd
+INFO:src.analysis.enhanced_institutional_pdf:Created Image object for ./reports/daily_report_20251007_072726/charts/USDJPY.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded chart image: ./reports/daily_report_20251007_072726/charts/USDJPY.sd_candlestick.png
+INFO:src.analysis.enhanced_institutional_pdf:Successfully embedded 23 chart files in the report
+INFO:src.analysis.enhanced_institutional_pdf:Enhanced institutional PDF report generated: ./reports/daily_report_20251007_072726/daily_report_20251007_072726_institutional.pdf
+INFO:src.analysis.daily_report:Daily investment report saved to: ./reports/daily_report_20251007_072726/daily_report_20251007_072726_institutional.pdf
+✅ Daily investment report generated successfully!
+📄 Report saved to: ./reports/daily_report_20251007_072726/daily_report_20251007_072726_institutional.pdf
+(venv) pawan@MacBookAir CLI-Fi

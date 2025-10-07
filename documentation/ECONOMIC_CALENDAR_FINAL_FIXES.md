@@ -1,7 +1,7 @@
 # Economic Calendar Final Fixes Summary
 
 ## Issues Addressed
-1. ✅ Timezone offset issue (6 PM IST showing as 21:00:00 IST)
+1. ✅ Timezone offset issue (6 PM EST/EDT showing as 21:00:00 IST)
 2. ✅ Text overflow in table cells
 3. ✅ Filtering for event importance levels
 4. ✅ Improved table layout and readability
@@ -49,7 +49,7 @@
 - **Consistent Implementation**: Both report types follow identical logic
 
 ## Verification
-Tested by generating PDF reports with Wine MT5 enabled. The economic calendar section now:
+Tested by generating PDF reports with Alpha Vantage data. The economic calendar section now:
 - Displays correct IST times with proper timezone conversion
 - Shows only Medium, High, and Very High importance events
 - Has properly formatted table cells with no text overflow

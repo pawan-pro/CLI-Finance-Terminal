@@ -12,6 +12,7 @@ numpy
 python-pptx
 reportlab
 pandas_ta
+mplfinance
 scipy
 scikit-learn
 seaborn

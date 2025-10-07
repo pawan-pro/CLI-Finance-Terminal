@@ -7,38 +7,12 @@ from typing import Dict, List, Optional
 import logging
 from scipy import stats
 
-# adding mt5 path    
-mt5_path = os.getenv("MT5_PATH")
-
-
 # Add the project root to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-# Try to import real MT5, fallback to mock if not available
-try:
-    # First try direct import (for Windows or Wine with proper setup)
-    import MetaTrader5
-    mt5 = MetaTrader5
-    MT5_AVAILABLE = True
-    print("Using real MT5 connection")
-except ImportError:
-    try:
-        # Try importing Wine MT5 connector as mt5
-        from src.data.providers.wine_mt5_connector import WineMT5Connector
-        # Create a wrapper to make it compatible with MT5 API
-        import src.data.providers.wine_mt5_connector as mt5
-        MT5_AVAILABLE = True
-        print("Using real MT5 connection (Wine connector)")
-    except ImportError:
-        # Use mock MT5 for development/testing
-        import src.data.providers.mock_mt5 as mt5
-        MT5_AVAILABLE = False
-        print("Warning: Using mock MT5. For production with Wine, ensure MT5 Python package is properly installed in Wine environment.")
-
 # Local imports
-from src.data.providers.mt5_data import MT5DataFetcher
-from src.data.providers.calendar_data import EconomicCalendarFetcher, MT5CalendarFetcher
-from src.data.providers.advanced_mt5_calendar import AdvancedMT5CalendarExtractor
+from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
+from src.data.providers.calendar_data import EconomicCalendarFetcher
 from src.data.providers.news import NewsAPI
 from src.analysis.volatility import VolatilityCalculator
 from src.analysis.charts import MarketChartGenerator
@@ -61,15 +35,16 @@ logger = logging.getLogger(__name__)
 class DailyInvestmentReportGenerator:
     """Class to generate daily investment reports with professional formatting and advanced market analytics"""
     
-    def __init__(self, use_wine_mt5: bool = False):
+    def __init__(self):
         """Initialize the report generator"""
-        self.use_wine_mt5 = use_wine_mt5
-        
         # Initialize data fetchers
-        self.mt5_fetcher = MT5DataFetcher(use_wine_mt5=use_wine_mt5)
+        from src.config.settings import settings
+        api_key = settings["api_keys"]["alpha_vantage"]
+        if not api_key:
+            raise ValueError("ALPHAVANTAGE_API_KEY not found in environment variables. Please set it in your .env file.")
+        
+        self.av_fetcher = AlphaVantageDataFetcher(api_key=api_key)
         self.calendar_fetcher = EconomicCalendarFetcher()
-        self.mt5_calendar_fetcher = MT5CalendarFetcher()
-        self.advanced_calendar_extractor = AdvancedMT5CalendarExtractor()
         self.news_fetcher = NewsAPI()
         self.volatility_calculator = VolatilityCalculator()
         self.chart_generator = MarketChartGenerator()
@@ -79,8 +54,8 @@ class DailyInvestmentReportGenerator:
         # Initialize LLM executive summary generator
         self.llm_generator = LLMExecutiveSummaryGenerator()
         
-        # Define default symbols to track with available symbols from MT5
-        self.major_indices = ['US500Roll', 'US30Roll', 'UK100Roll', 'DE40Roll', 'FRA40Roll', 'JP225Roll', 'HK50Roll', 'CHINA50Roll']
+        # Define default symbols to track with available symbols from Finnhub
+        self.major_indices = ['US500Roll', 'US30Roll', 'UK100Roll', 'DE40Roll', 'FRA40Roll', 'JP225Roll', 'CHINA50Roll']  # Removed HK50Roll as it might not be available in Finnhub
         self.major_currencies = ['EURUSD.sd', 'GBPUSD.sd', 'USDJPY.sd', 'AUDUSD.sd', 'USDCAD.sd', 'USDCHF.sd', 'NZDUSD.sd', 'USDCNH.sd']
         self.commodities = ['XAUUSD', 'XAGUSD', 'XPTUSD', 'USOILRoll', 'BRENT', 'NGAS']
         self.bonds = ['TLT', 'IEF', 'SHY', 'LQD']
@@ -112,7 +87,7 @@ class DailyInvestmentReportGenerator:
                             'bid': latest_data.get('open', 0),
                             'last': latest_data.get('close', 0),
                             'volume': latest_data.get('tick_volume', 0),
-                            'pct_change_24h': self._calculate_24h_percentage_change(symbol)
+                            'pct_change_24h': self._calculate_24h_percentage_change_from_csv(symbol)
                         }
                         info['Price'] = (info.get('ask', 0) + info.get('bid', 0)) / 2 if info.get('ask') and info.get('bid') else info.get('last', 0)
                         data_list.append(info)
@@ -122,72 +97,95 @@ class DailyInvestmentReportGenerator:
         
         return pd.DataFrame(data_list)
 
-    def _get_wine_symbol_info(self, symbol: str) -> Optional[Dict]:
-        """Get symbol info from Wine MT5"""
-        if not self.use_wine_mt5:
-            return None
-        
-        try:
-            from src.data.providers.wine_mt5_connector import wine_mt5_connector
-            symbol_info = wine_mt5_connector.get_symbol_info(symbol)
-            return symbol_info
-        except Exception as e:
-            logger.error(f"Error getting symbol info for {symbol} from Wine MT5: {e}")
-            return None
-
-    def _get_wine_historical_data(self, symbol: str, timeframe: int, start_time: datetime, end_time: datetime) -> pd.DataFrame:
-        """Get historical data from Wine MT5"""
-        if not self.use_wine_mt5:
-            return pd.DataFrame()
-        
-        try:
-            from src.data.providers.wine_mt5_connector import wine_mt5_connector
-            rates = wine_mt5_connector.copy_rates_range(symbol, timeframe, start_time, end_time)
-            if rates:
-                df = pd.DataFrame(rates)
-                df['time'] = pd.to_datetime(df['time'], unit='s')
-                return df
-            return pd.DataFrame()
-        except Exception as e:
-            logger.error(f"Error getting historical data for {symbol} from Wine MT5: {e}")
-            return pd.DataFrame()
+    
 
     def _calculate_24h_percentage_change(self, symbol: str) -> float:
-        """Calculate 24-hour percentage change for a symbol"""
+        """
+        Calculate the percentage change from the last trading day's close.
+        - If today is Sunday or Monday, it compares to Friday's close.
+        - Otherwise, it compares to the previous day's close.
+        """
         try:
-            end_time = datetime.now()
-            start_time = end_time - timedelta(days=1)
-            
-            if self.use_wine_mt5:
-                historical_data = self._get_wine_historical_data(symbol, mt5.TIMEFRAME_M15, start_time, end_time)
-            else:
-                folder = ''
-                if '.sd' in symbol:
-                    folder = 'forex'
-                elif '.lv' in symbol:
-                    folder = 'crypto'
-                elif 'Roll' in symbol:
-                    if 'VIX' in symbol:
-                        folder = 'other'
-                    else:
-                        folder = 'indices'
-                else:
-                    folder = 'commodities'
-                
-                csv_filename = f"/Users/pawan/CLI-Finance-Terminal/data/{folder}/{symbol}_data.csv"
-                if os.path.exists(csv_filename):
-                    historical_data = pd.read_csv(csv_filename)
-                else:
-                    historical_data = pd.DataFrame()
+            # 1. Get the current price
+            current_info = self.av_fetcher.get_symbol_info(symbol)
+            if not current_info or 'ask' not in current_info or current_info['ask'] == 0:
+                logger.warning(f"Could not get current price for {symbol}")
+                # Fallback to CSV if Alpha Vantage fails
+                return self._calculate_24h_percentage_change_from_csv(symbol)
 
-            if not historical_data.empty and len(historical_data) > 1:
-                first_price = historical_data['close'].iloc[0]
-                last_price = historical_data['close'].iloc[-1]
-                if first_price != 0:
-                    return ((last_price - first_price) / first_price) * 100
+            current_price = current_info['ask']
+
+            # 2. Determine the last trading day
+            today = datetime.now()
+            weekday = today.weekday()
+
+            if weekday == 6:  # Sunday
+                # Compare to Friday's close (2 days ago)
+                last_trading_day = today - timedelta(days=2)
+            elif weekday == 0:  # Monday
+                # Compare to Friday's close (3 days ago)
+                last_trading_day = today - timedelta(days=3)
+            else:
+                # Compare to previous day's close
+                last_trading_day = today - timedelta(days=1)
+            
+            # We need a small window to ensure we get the bar
+            start_time = last_trading_day.replace(hour=0, minute=0, second=0)
+            end_time = last_trading_day.replace(hour=23, minute=59, second=59)
+
+            # 3. Fetch historical data for the last trading day
+            # Use Alpha Vantage fetcher to get historical data
+            try:
+                historical_data = self.av_fetcher.fetch_historical_data(symbol, 'D', start_time, end_time)
+            except Exception as e:
+                logger.warning(f"Could not fetch Alpha Vantage data for {symbol}: {e}. Falling back to CSV.")
+                return self._calculate_24h_percentage_change_from_csv(symbol)
+
+            if historical_data.empty:
+                logger.warning(f"No historical data for {symbol} on {last_trading_day.date()}. Falling back to CSV.")
+                return self._calculate_24h_percentage_change_from_csv(symbol)
+
+            # 4. Get the previous day's close
+            prev_day_close = historical_data['close'].iloc[0]
+
+            # 5. Calculate percentage change
+            if prev_day_close != 0:
+                return ((current_price - prev_day_close) / prev_day_close) * 100
+            
+            return 0.0
+
+        except Exception as e:
+            logger.error(f"Error calculating 24H percentage change for {symbol}: {e}", exc_info=True)
+            return 0.0
+
+    def _calculate_24h_percentage_change_from_csv(self, symbol: str) -> float:
+        """Fallback to calculate 24h percentage change from CSV."""
+        try:
+            folder = ''
+            if '.sd' in symbol: folder = 'forex'
+            elif '.lv' in symbol: folder = 'crypto'
+            elif 'Roll' in symbol:
+                if 'VIX' in symbol: folder = 'other'
+                else: folder = 'indices'
+            else: folder = 'commodities'
+            
+            csv_filename = f"/Users/pawan/CLI-Finance-Terminal/data/{folder}/{symbol}_data.csv"
+            if not os.path.exists(csv_filename):
+                return 0.0
+
+            df = pd.read_csv(csv_filename)
+            if df.empty or len(df) < 2:
+                return 0.0
+
+            # Assuming the CSV is sorted by date, last row is current, second to last is previous
+            last_price = df['close'].iloc[-1]
+            previous_price = df['close'].iloc[-2]
+
+            if previous_price != 0:
+                return ((last_price - previous_price) / previous_price) * 100
             return 0.0
         except Exception as e:
-            logger.warning(f"Error calculating 24H percentage change for {symbol}: {e}")
+            logger.warning(f"CSV Fallback Error for {symbol}: {e}")
             return 0.0
 
     def get_market_status(self) -> Dict:
@@ -218,7 +216,7 @@ class DailyInvestmentReportGenerator:
         """Get data for bonds (using ETF proxies)"""
         bonds_data = []
         for symbol in self.bonds:
-            info = self.mt5_fetcher.get_symbol_info(symbol)
+            info = self.av_fetcher.get_symbol_info(symbol)
             if info:
                 info['pct_change_24h'] = self._calculate_24h_percentage_change(symbol)
                 bonds_data.append(info)
@@ -355,7 +353,7 @@ class DailyInvestmentReportGenerator:
             try:
                 end_time = datetime.now()
                 start_time = end_time - timedelta(days=60)
-                data = self.mt5_fetcher.fetch_historical_data(symbol, mt5.TIMEFRAME_D1, start_time, end_time)
+                data = self.av_fetcher.fetch_historical_data(symbol, 'D', start_time, end_time)
                 if not data.empty:
                     summary = self.volatility_calculator.get_volatility_summary(data, symbol)
                     if summary:
@@ -528,20 +526,9 @@ class DailyInvestmentReportGenerator:
         # Collect historical data for major indices
         for symbol in self.major_indices[:3]:  # Limit to first 3 for performance
             try:
-                # Use Wine MT5 if enabled, otherwise use regular MT5 fetcher
-                if self.use_wine_mt5:
-                    try:
-                        data = self._get_wine_historical_data(
-                            symbol, mt5.TIMEFRAME_D1, start_time, end_time)
-                    except Exception as e:
-                        logger.warning(f"Error fetching data for {symbol} from Wine MT5: {e}")
-                        # Fallback to regular MT5 fetcher
-                        data = self.mt5_fetcher.fetch_historical_data(
-                            symbol, mt5.TIMEFRAME_D1, start_time, end_time)
-                else:
-                    # Use regular MT5 fetcher
-                    data = self.mt5_fetcher.fetch_historical_data(
-                        symbol, mt5.TIMEFRAME_D1, start_time, end_time)
+                # Use Alpha Vantage to fetch historical data
+                data = self.av_fetcher.fetch_historical_data(
+                    symbol, 'D', start_time, end_time)
                 
                 if not data.empty:
                     historical_data_dict[symbol] = data
@@ -678,12 +665,13 @@ class DailyInvestmentReportGenerator:
 
     def shutdown(self):
         """Shutdown connections"""
-        self.mt5_fetcher.shutdown()
+        # Finnhub doesn't need explicit shutdown
+        pass
 
 # Example usage
 if __name__ == "__main__":
     try:
-        report_gen = DailyInvestmentReportGenerator(use_wine_mt5=True)
+        report_gen = DailyInvestmentReportGenerator()
         report_path = report_gen.generate_report()
         print(f"Report generated: {report_path}")
         report_gen.shutdown()

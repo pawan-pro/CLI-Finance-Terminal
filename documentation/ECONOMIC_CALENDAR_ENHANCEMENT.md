@@ -1,65 +1,43 @@
-# Economic Calendar Enhancement Summary
+# Economic Calendar Enhancement
 
-## Issue
-The economic calendar section in the PDF reports needed several improvements:
-1. Column structure didn't match requirements
-2. Time was not converted to IST timezone
-3. Column alignment was not properly implemented
-4. Missing Notes column
+## Enhancement Overview
+Enhanced the economic calendar section of the daily reports with improved formatting, better data filtering, and professional styling to match bulge-bracket investment firm standards.
 
-## Requirements Implemented
-The economic calendar now displays with these columns:
-- Date/Time
-- Importance
-- Currency
-- Event
-- Actual
-- Forecast
-- Previous
-- Notes
+## Key Improvements
 
-Additional requirements:
-- Time converted to IST timezone (UTC+5:30)
-- Proper column alignment (left, center, right as appropriate)
-- Consistent styling across both professional and institutional reports
+### 1. Professional Formatting
+- Implemented a clean, tabular format with clear headers
+- Added color coding for different impact levels (High: red, Medium: yellow, Low: blue)
+- Enhanced readability with proper spacing and alignment
 
-## Changes Made
+### 2. Data Filtering & Processing
+- Filtered events to show only the current day's economic releases
+- Added proper date formatting consistent with financial industry standards
+- Implemented data validation to handle missing or incomplete event information
 
-### 1. Professional PDF Report (`src/analysis/professional_pdf_report.py`)
-- Rewrote `add_calendar_events` method completely
-- Added proper column structure with all required fields
-- Implemented IST timezone conversion using pytz
-- Added column-specific alignment:
-  - Date/Time: Left aligned
-  - Importance: Center aligned
-  - Currency: Center aligned
-  - Event: Left aligned
-  - Actual, Forecast, Previous: Right aligned
-  - Notes: Left aligned
-- Added proper styling with consistent color scheme
+### 3. Integration with Report Generator
+- Integrated seamlessly with the existing daily report generator
+- Added automatic fetching of economic calendar data from CSV sources
+- Implemented fallback mechanisms when calendar data is unavailable
 
-### 2. Institutional PDF Report (`src/analysis/enhanced_institutional_pdf.py`)
-- Updated `add_calendar_events` method
-- Added Notes column to match requirements
-- Implemented IST timezone conversion
-- Added proper column alignment
-- Maintained existing high-impact event filtering
+## Implementation Details
 
-## Key Features
-- **Timezone Conversion**: All calendar times are now converted to IST (Indian Standard Time)
-- **Proper Alignment**: Each column is aligned according to its content type
-- **Enhanced Data Display**: Shows all relevant economic data fields
-- **Error Handling**: Graceful handling of datetime conversion failures
-- **Consistency**: Both report types now follow the same structure and styling
+### Code Changes
+1. **src/analysis/daily_report.py** - Added economic calendar data fetching and formatting methods
+2. **src/analysis/professional_pdf_report.py** - Enhanced the add_calendar_events method with professional styling
+3. **src/analysis/enhanced_institutional_pdf.py** - Added institutional-grade calendar formatting
 
-## Files Modified
-1. `src/analysis/professional_pdf_report.py` - Complete rewrite of calendar display
-2. `src/analysis/enhanced_institutional_pdf.py` - Enhancement of calendar display
+### Data Sources
+- Primary source: CSV files with economic calendar data
+- Fallback: Empty calendar section when no data is available
 
-## Verification
-Tested by generating PDF reports with Wine MT5 enabled. The economic calendar section now:
-- Displays all required columns
-- Shows times in IST format
-- Has proper column alignment
-- Maintains consistent styling
-- Handles edge cases gracefully
+## Usage
+
+The economic calendar section is automatically included in both standard and institutional PDF reports. It appears after the market overview section and before the risk metrics section.
+
+## Testing
+Verified by generating PDF reports with Alpha Vantage data. The economic calendar section now:
+- Shows only relevant events for the current date
+- Displays impact levels with appropriate color coding
+- Maintains consistent formatting with the rest of the professional report
+- Properly handles cases where calendar data is unavailable
