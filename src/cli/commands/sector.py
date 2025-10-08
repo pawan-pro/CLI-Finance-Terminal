@@ -1,6 +1,6 @@
 import typer
 from rich.console import Console
-from src.data.providers.alpha_vantage import AlphaVantage
+from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
 from src.cli.formatters.sector import format_sector_performance
 
 console = Console()
@@ -10,7 +10,7 @@ def sector():
     Display sector performance data.
     """
     try:
-        client = AlphaVantage()
+        client = AlphaVantageDataFetcher()
     except ValueError as e:
         console.print(f"[bold red]Error: {e}[/bold red]")
         raise typer.Exit(code=1)

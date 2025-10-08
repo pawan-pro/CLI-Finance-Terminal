@@ -7,7 +7,7 @@ from src.cli.commands.status import status
 from src.cli.commands.sector import sector
 from src.cli.commands.report import generate as report_generate
 from src.cli.commands import config as config_command
-from src.data.providers.alpha_vantage import AlphaVantage
+from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
 from src.cli.formatters.dashboard import format_dashboard
 from src.config.settings import settings
 
@@ -43,26 +43,28 @@ def dashboard():
     console.print("[bold cyan]Welcome to the Finance Terminal![/bold cyan]")
 
     try:
-        client = AlphaVantage()
+        client = AlphaVantageDataFetcher()
     except ValueError as e:
         console.print(f"[bold red]Error: {e}[/bold red]")
         raise typer.Exit(code=1)
 
     with console.status("[bold green]Fetching market data...", spinner="dots"):
-        # Use watchlist from settings
-        symbols = settings["assets"]["watchlist"]
+        # Use watchlist from settings or provide defaults
+        symbols = settings.get("assets", {}).get("watchlist", [])
+        if not symbols:
+            console.print("[yellow]No symbols in watchlist. Using defaults.[/yellow]")
+            symbols = ['US500Roll', 'US30Roll', 'EURUSD', 'BTCUSD']
 
-        # Fetch all data
-        data = client.get_dashboard_data(symbols)
-        data["USD/EUR"] = client.get_forex_rate("USD", "EUR")
-        data["USD/JPY"] = client.get_forex_rate("USD", "JPY")
-        data["10Y Treasury"] = client.get_treasury_yield()
-
-        # Map BTC-USD to BTC and UUP to DXY for the formatter
-        if data.get("BTC-USD"):
-            data["BTC"] = data["BTC-USD"]
-        if data.get("UUP"):
-            data["DXY"] = data["UUP"]
+        data = {}
+        for symbol in symbols:
+            quote = client.get_global_quote(symbol)
+            if quote:
+                # Structure data to be compatible with the existing formatter
+                data[symbol] = {
+                    '01. symbol': quote.get('symbol'),
+                    '05. price': quote.get('price'),
+                    '10. change percent': str(quote.get('change_percent')) + '%'
+                }
 
     # Format and display
     if data:

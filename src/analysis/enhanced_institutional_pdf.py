@@ -25,24 +25,6 @@ from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
 FONT_REGULAR = 'Helvetica'
 FONT_BOLD = 'Helvetica-Bold'
 
-# Try to register Century Gothic fonts but only if the files exist
-try:
-    import os
-    font_path = '/Users/pawan/Desktop/fonts/Century Gothic/centurygothic.tff'
-    font_bold_path = '/Users/pawan/Desktop/fonts/Century Gothic/centurygothic_bold.tff'
-    
-    if os.path.exists(font_path) and os.path.exists(font_bold_path):
-        pdfmetrics.registerFont(TTFont('CenturyGothic', font_path))
-        pdfmetrics.registerFont(TTFont('CenturyGothic-Bold', font_bold_path))
-        FONT_REGULAR = 'CenturyGothic'
-        FONT_BOLD = 'CenturyGothic-Bold'
-    else:
-        print(f"Century Gothic font files not found. Regular: {font_path} Bold: {font_bold_path}")
-except Exception as e:
-    print(f"Could not register Century Gothic fonts, falling back to Helvetica: {e}")
-    FONT_REGULAR = 'Helvetica'
-    FONT_BOLD = 'Helvetica-Bold'
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -67,9 +49,8 @@ class EnhancedInstitutionalPDFReportGenerator:
             bottomMargin=36
         )
         
-        from src.config.settings import settings
-        api_key = settings["api_keys"]["alpha_vantage"]
-        self.av_data_fetcher = AlphaVantageDataFetcher(api_key=api_key)
+        # Use the consolidated AlphaVantageDataFetcher, which manages its own API keys
+        self.av_data_fetcher = AlphaVantageDataFetcher()
         
         # Define institutional color palette
         self.colors = {
@@ -499,8 +480,9 @@ class EnhancedInstitutionalPDFReportGenerator:
                 display_name = self.symbol_map.get(name, name)
                 ask = float(row.get('ask', 0))
                 bid = float(row.get('bid', 0))
-                last = (ask + bid) / 2
-                change, pct_change = self.av_data_fetcher.get_24h_change(name)
+                last = float(row.get('Price', 0))
+                change = float(row.get('change', 0.0))
+                pct_change = float(row.get('pct_change_24h', 0.0))
                 
                 # Store raw values to be formatted later with direct color application
                 table_data.append([
@@ -584,9 +566,10 @@ class EnhancedInstitutionalPDFReportGenerator:
             display_name = self.symbol_map.get(name, name)
             # Add a smaller, italicized line beneath the market name to show the CFD symbol
             full_name = f"{display_name}<br/><i>({name})</i>"
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            change, pct_change = self.av_data_fetcher.get_24h_change(name)
-            
+            price = f"{row.get('Price', 0.0):.2f}"
+            pct_change = row.get('pct_change_24h', 0.0)
+            change = (price * pct_change) / 100 if price and pct_change else 0.0
+
             # Format numbers with appropriate precision
             table_data.append([
                 full_name,
@@ -635,12 +618,13 @@ class EnhancedInstitutionalPDFReportGenerator:
             display_name = self.symbol_map.get(name, name)
             # Add a smaller, italicized line beneath the market name to show the CFD symbol
             full_name = f"{display_name}<br/><i>({name})</i>"
-            price = f"{row.get('Price', 'N/A'):.4f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            change, pct_change = self.av_data_fetcher.get_24h_change(name)
+            price = float(row.get('Price', 0.0))
+            pct_change = float(row.get('pct_change_24h', 0.0))
+            change = (price * pct_change) / 100 if price and pct_change else 0.0
 
             table_data.append([
                 full_name,
-                price,
+                f"{price:.4f}",
                 f"{change:+.4f}",
                 self._format_pct_change_with_color(pct_change)
             ])
@@ -685,12 +669,13 @@ class EnhancedInstitutionalPDFReportGenerator:
             display_name = self.symbol_map.get(name, name)
             # Add a smaller, italicized line beneath the market name to show the CFD symbol
             full_name = f"{display_name}<br/><i>({name})</i>"
-            price = f"{row.get('Price', 'N/A'):.2f}" if isinstance(row.get('Price'), (int, float)) else str(row.get('Price', 'N/A'))
-            change, pct_change = self.av_data_fetcher.get_24h_change(name)
+            price = float(row.get('Price', 0.0))
+            pct_change = float(row.get('pct_change_24h', 0.0))
+            change = (price * pct_change) / 100 if price and pct_change else 0.0
             
             table_data.append([
                 full_name,
-                price,
+                f"{price:.2f}",
                 f"{change:+.2f}",
                 self._format_pct_change_with_color(pct_change)
             ])
@@ -747,13 +732,22 @@ class EnhancedInstitutionalPDFReportGenerator:
             bonds_data_list = []
             for symbol in bond_etf_symbols:
                 try:
-                    quote_data = self.av_data_fetcher.get_quote(symbol)
+                    quote_data = self.av_data_fetcher.get_global_quote(symbol)
                     if quote_data:
-                        # Calculate 24h change
-                        change, pct_change = self.av_data_fetcher.get_24h_change(symbol)
-                        quote_data['change'] = change
-                        quote_data['pct_change'] = pct_change
-                        bonds_data_list.append(quote_data)
+                        price_str = quote_data.get('price', '0')
+                        price = float(price_str) if price_str and price_str != 'N/A' else 0.0
+
+                        pct_change_str = str(quote_data.get('change_percent', '0')).strip('%')
+                        pct_change = float(pct_change_str) if pct_change_str and pct_change_str != 'N/A' else 0.0
+
+                        change = (price * pct_change) / 100 if price and pct_change else 0.0
+
+                        bonds_data_list.append({
+                            'name': symbol,
+                            'Price': price,
+                            'change': change,
+                            'pct_change': pct_change
+                        })
                 except Exception as e:
                     logger.warning(f"Failed to fetch data for bond/ETF {symbol}: {e}")
                     continue
@@ -1346,9 +1340,6 @@ class EnhancedInstitutionalPDFReportGenerator:
             self._add_section_header("TECHNICAL CHARTS")
             self.story.append(Paragraph("No technical charts are currently available in this report.", self.body_text_style))
             self.story.append(Spacer(1, 20))
-            # Summarize chart embedding attempts and issues found in prompt-updates.md
-            with open("/Users/pawan/CLI-Finance-Terminal/prompt-updates.md", "a") as f:
-                f.write(f"\n### Chart Embedding Debug Summary\n- **Status:** Attempted embedding {len(chart_files)} files, {len(existing_chart_files)} exist on disk\n- **Missing files:** {missing_files}\n- **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             return
             
         logger.info(f"Attempting to embed {len(existing_chart_files)} existing chart files in the report")
@@ -1496,9 +1487,6 @@ class EnhancedInstitutionalPDFReportGenerator:
             self.story.append(Spacer(1, 20))
         
         logger.info(f"Successfully embedded {len(existing_chart_files)} chart files in the report")
-        # Summarize chart embedding attempts and issues found in prompt-updates.md
-        with open("/Users/pawan/CLI-Finance-Terminal/prompt-updates.md", "a") as f:
-            f.write(f"\n### Chart Embedding Summary\n- **Status:** Successfully embedded {len(existing_chart_files)} out of {len(chart_files)} requested chart files\n- **Files processed:** {existing_chart_files}\n- **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     def add_disclaimer(self):
         """Add legal disclaimer"""
