@@ -3,9 +3,6 @@ import pandas as pd
 from datetime import datetime
 import os
 from rate_limiter import APITimer
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # List of major commodities available for free (check docs/API for symbol support)
 commodities = ['XAU/USD',  # Gold
@@ -15,10 +12,13 @@ commodities = ['XAU/USD',  # Gold
                'NATGAS/USD' # Natural gas
               ]
 api_key = os.getenv('TWELVE_DATA_API_KEY')
-csv_file = 'approach 2.0/data/commodities_15min.csv'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(script_dir, '..'))
+csv_file = os.path.join(script_dir, 'data/commodities_15min.csv')
 
-# Initialize the timer
-api_timer = APITimer(calls=8, period=60)
+# Initialize the timer with the shared timestamp file
+timestamp_file = os.path.join(project_root, 'timestamps.json')
+api_timer = APITimer(calls=8, period=60, file_path=timestamp_file)
 
 try:
 

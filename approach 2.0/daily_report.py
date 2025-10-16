@@ -69,16 +69,18 @@ def get_price_col(asset_class, hist):
 
 def generate_chart(symbol, asset_class, days=1):
     df = load_historical_csv(symbol, asset_class, days)
-    if df.empty:
-        return ""
-    price_col = get_price_col(asset_class, df)
-    if not price_col:
+    if df.empty or not all(col in df.columns for col in ['open', 'high', 'low', 'close']):
         return ""
 
-    fig = go.Figure(data=go.Scatter(x=df['timestamp'], y=df[price_col], mode='lines'))
+    fig = go.Figure(data=[go.Candlestick(x=df['timestamp'],
+                open=df['open'],
+                high=df['high'],
+                low=df['low'],
+                close=df['close'])])
     fig.update_layout(title=f'{symbol} 24-Hour Performance',
                       xaxis_title='Timestamp',
-                      yaxis_title='Price')
+                      yaxis_title='Price',
+                      xaxis_rangeslider_visible=False)
     return fig.to_html(full_html=False, include_plotlyjs='cdn')
 
 def html_report(analysis_results):

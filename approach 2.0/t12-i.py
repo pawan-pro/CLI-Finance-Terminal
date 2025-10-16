@@ -3,9 +3,6 @@ import pandas as pd
 from datetime import datetime
 import os
 from rate_limiter import APITimer
-from dotenv import load_dotenv
-
-load_dotenv()
 
 symbols = [
     'SPY',    # S&P 500 (US large cap)
@@ -26,11 +23,14 @@ symbols = [
 ]
 
 api_key = os.getenv('TWELVE_DATA_API_KEY')
-csv_file = 'approach 2.0/data/indices_15min.csv'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(script_dir, '..'))
+csv_file = os.path.join(script_dir, 'data/indices_15min.csv')
 interval = '15min'
 
-# Initialize the timer
-api_timer = APITimer(calls=8, period=60)
+# Initialize the timer with the shared timestamp file
+timestamp_file = os.path.join(project_root, 'timestamps.json')
+api_timer = APITimer(calls=8, period=60, file_path=timestamp_file)
 
 # Try to read existing data
 try:

@@ -20,4 +20,5 @@ test_reports/
 # Other
 finterm.egg-info/
 .cache/
-*.log
+*.logtimestamps.json
+approach 2.0/daily_report.html
