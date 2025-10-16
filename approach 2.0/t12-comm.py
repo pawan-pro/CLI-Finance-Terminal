@@ -24,7 +24,6 @@ for symbol in commodities:
         f"?symbol={symbol}&interval=15min&outputsize=96&apikey={api_key}"
     )
     data = requests.get(url).json()
-    print(f"Fetched data for {symbol}: {data}")
     for entry in data.get('values', []):
         rows.append({
             'commodity': symbol,
