@@ -1,9 +1,18 @@
 import requests
 import pandas as pd
+from datetime import datetime
+import os
+from rate_limiter import APITimer
+from dotenv import load_dotenv
+
+load_dotenv()
 
 cryptos = ['BTC/USD', 'ETH/USD', 'XRP/USD', 'LTC/USD', 'ADA/USD']
-api_key = 'd423c8d01edf48fc940b88a5a894bb2f'
+api_key = os.getenv('TWELVE_DATA_API_KEY')
 csv_file = 'approach 2.0/data/crypto_15min.csv'
+
+# Initialize the timer
+api_timer = APITimer(calls=8, period=60)
 
 try:
     df_existing = pd.read_csv(csv_file, parse_dates=['timestamp'])
@@ -12,6 +21,10 @@ except FileNotFoundError:
 
 rows = []
 for symbol in cryptos:
+    # Add the wait call inside the loop
+    api_timer.wait_if_needed()
+
+    print(f"Fetching data for {symbol}...")
     url = (
         f"https://api.twelvedata.com/time_series"
         f"?symbol={symbol}&interval=15min&outputsize=96&apikey={api_key}"
