@@ -1,21 +1,21 @@
 import pandas as pd
 from datetime import datetime
 import pytz
-
+import pickle
 def read_and_align_data():
     """
     Read all asset class CSVs, align timezones, and select the latest data for each asset.
     Returns a dictionary with latest data for each asset class.
     """
     data_files = {
-        'bonds': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/bonds_15min.csv', 'tz_source': 'America/New_York'},
-        'commodities': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/commodities_15min.csv', 'tz_source': 'UTC'},
-        'crypto': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/crypto_15min.csv', 'tz_source': 'UTC'},
-        'forex': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/forex_15min.csv', 'tz_source': 'UTC'},
-        'indices': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/indices_15min.csv', 'tz_source': 'America/New_York'},
-        'sector_s1': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/sector_etf_15min.csv', 'tz_source': 'America/New_York'},
-        'sector_s2': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/sector2_etf_15min.csv', 'tz_source': 'America/New_York'},
-        'vix': {'file': '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/vix_15min.csv', 'tz_source': 'America/New_York'}
+        'bonds': {'file': 'data/bonds_15min.csv', 'tz_source': 'America/New_York'},
+        'commodities': {'file': 'data/commodities_15min.csv', 'tz_source': 'UTC'},
+        'crypto': {'file': 'data/crypto_15min.csv', 'tz_source': 'UTC'},
+        'forex': {'file': 'data/forex_15min.csv', 'tz_source': 'UTC'},
+        'indices': {'file': 'data/indices_15min.csv', 'tz_source': 'America/New_York'},
+        'sector_s1': {'file': 'data/sector_etf_15min.csv', 'tz_source': 'America/New_York'},
+        'sector_s2': {'file': 'data/sector2_etf_15min.csv', 'tz_source': 'America/New_York'},
+        'vix': {'file': 'data/vix_15min.csv', 'tz_source': 'America/New_York'}
     }
 
     latest_data = {}
@@ -67,8 +67,7 @@ def read_and_align_data():
         latest_data.pop('sector_s1', None)
         latest_data.pop('sector_s2', None)
 
-    import pickle
-    output_path = '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/latest_market_data.pkl'
+    output_path = 'data/latest_market_data.pkl'
     with open(output_path, 'wb') as f:
         pickle.dump(latest_data, f)
     print(f"\n✓ Latest data saved to '{output_path}' for analysis")

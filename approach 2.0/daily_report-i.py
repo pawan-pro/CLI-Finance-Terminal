@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import pytz
+import plotly.graph_objects as go
+import plotly.io as pio
 
 # --- Symbol to Descriptive Name Mapping ---
 SYMBOL_TO_NAME_MAP = {
@@ -51,7 +53,7 @@ def load_historical_csv(symbol, asset, days=1):
         'vix': 'vix_15min.csv'
     }
     try:
-        base_path = "/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/"
+        base_path = "data/"
         
         filenames = file_map.get(asset)
         if not filenames:
@@ -149,101 +151,196 @@ def _generate_performance_table(df, title):
 
 def generate_candle_chart_html(asset_symbol, asset_name, hist_data):
     """
-    Generate HTML for a professional candlestick chart for the given asset using 15-min data.
-    
-    Args:
-        asset_symbol: The symbol of the asset (e.g., 'SPY')
-        asset_name: The display name of the asset (e.g., 'S&P 500')
-        hist_data: Historical data for the asset
-        
-    Returns:
-        HTML string for the candlestick chart
+    Generates an interactive Plotly candlestick chart for the given asset.
     """
-    if hist_data.empty or len(hist_data) < 2:
-        return f'<p>No sufficient data for {asset_name} ({asset_symbol}) chart</p>'
-    
-    # Sort by timestamp to ensure proper order
-    hist_sorted = hist_data.sort_values('timestamp')
-    
-    # Get the required columns for OHLC
-    if not all(col in hist_sorted.columns for col in ['open', 'high', 'low', 'close']):
-        return f'<p>Insufficient OHLC data for {asset_name} ({asset_symbol}) chart</p>'
-    
-    # Limit to the most recent 40 data points for 15-min candles (10 hours of 15-min data)
-    hist_recent = hist_sorted.tail(40)
-    
-    # Prepare chart data
-    timestamps = hist_recent['timestamp'].tolist()
-    opens = hist_recent['open'].tolist()
-    highs = hist_recent['high'].tolist()
-    lows = hist_recent['low'].tolist()
-    closes = hist_recent['close'].tolist()
-    
-    # Find min and max for scaling
-    all_prices = opens + highs + lows + closes
-    min_price = min(all_prices) * 0.995  # Slightly tighter margin for institutional look
-    max_price = max(all_prices) * 1.005  # Slightly tighter margin for institutional look
-    price_range = max_price - min_price
-    
-    # Create SVG-based institutional-style candlestick chart
-    chart_html = f'''
-    <div class="candle-chart" style="position:relative;height:200px;margin:10px 0;">
-        <svg width="100%" height="100%" viewBox="0 0 1000 200" preserveAspectRatio="none">
-    '''
-    
-    # Draw background grid (institutional style)
-    chart_html += '''<rect x="0" y="0" width="1000" height="200" fill="#f8f9fa"/>'''
-    
-    # Draw horizontal grid lines
-    for i in range(5):
-        y = 40 + i * 40  # Horizontal grid lines
-        chart_html += f'<line x1="0" y1="{y}" x2="1000" y2="{y}" stroke="#e9ecef" stroke-width="0.5"/>'
-    
-    # Draw candles with more professional spacing
-    candle_width = 15
-    spacing = 5
-    total_width = (candle_width + spacing) * len(timestamps)
-    start_x = max(20, (1000 - total_width) // 2)  # Center the chart
-    
-    for i, (timestamp, open_price, high_price, low_price, close_price) in enumerate(zip(timestamps, opens, highs, lows, closes)):
-        x = start_x + i * (candle_width + spacing)
-        
-        # Calculate y positions (inverted because SVG y=0 is at top)
-        high_y = 10 + ((max_price - high_price) / price_range) * 180
-        low_y = 10 + ((max_price - low_price) / price_range) * 180
-        open_y = 10 + ((max_price - open_price) / price_range) * 180
-        close_y = 10 + ((max_price - close_price) / price_range) * 180
-        
-        # Determine candle color (green for up, red for down)
-        is_up = close_price >= open_price
-        body_color = "#27ae60" if is_up else "#e74c3c"  # Professional green/red
-        wick_color = body_color
-        
-        # Draw high-low line (wick)
-        chart_html += f'<line x1="{x + candle_width//2}" y1="{min(high_y, low_y)}" x2="{x + candle_width//2}" y2="{max(high_y, low_y)}" stroke="{wick_color}" stroke-width="1"/>'
-        
-        # Draw candle body
-        body_top = min(open_y, close_y)
-        body_height = abs(close_y - open_y)
-        if body_height < 1:  # If open and close are nearly equal, make it visible as a thin line
-            body_height = 1
-            body_top = open_y
-        
-        chart_html += f'<rect x="{x}" y="{body_top}" width="{candle_width}" height="{body_height}" fill="{body_color}" stroke="#333" stroke-width="0.1"/>'
-    
-    chart_html += '</svg>'
-    chart_html += f'<div style="text-align:center;font-size:14px;margin-top:5px;font-weight:bold;">15-Min OHLC Chart for {asset_name}</div>'
-    chart_html += '</div>'
-    
-    return chart_html
+    if hist_data.empty or len(hist_data) < 2 or not all(col in hist_data.columns for col in ['open', 'high', 'low', 'close', 'timestamp']):
+        return f'<p>No sufficient OHLC data for {asset_name} ({asset_symbol}) chart</p>'
 
+    hist_sorted = hist_data.sort_values('timestamp').tail(40)
+
+    fig = go.Figure(data=[go.Candlestick(
+        x=hist_sorted['timestamp'],
+        open=hist_sorted['open'],
+        high=hist_sorted['high'],
+        low=hist_sorted['low'],
+        close=hist_sorted['close'],
+        increasing_line_color='#2E8B57',
+        decreasing_line_color='#B22222'
+    )])
+
+    fig.update_layout(
+        title=f"{asset_name} ({asset_symbol}) - 15 Min",
+        xaxis_title="Time",
+        yaxis_title="Price",
+        paper_bgcolor='#ffffff',
+        plot_bgcolor='#f5f5f5',
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(gridcolor='#e0e0e0'),
+        yaxis=dict(gridcolor='#e0e0e0'),
+        margin=dict(l=50, r=50, t=50, b=50)
+    )
+
+    return fig.to_html(full_html=False, include_plotlyjs='cdn')
+
+
+def generate_sector_performance_chart(sectors_df, symbol_map):
+    """Generates a Plotly horizontal bar chart for sector performance."""
+    if sectors_df.empty:
+        return ""
+
+    # Calculate percentage change for each sector
+    perf_data = []
+    for _, row in sectors_df.iterrows():
+        hist = load_historical_csv(row['symbol'], 'sectors', days=1)
+        _, _, pct = value_and_pct_change(hist, 'close')
+        if pd.notna(pct):
+            display_name = symbol_map.get(row['symbol'], row['symbol'])
+            perf_data.append({'name': display_name, 'pct_change': pct})
+    
+    if not perf_data:
+        return "<h3>Sector Performance (24h % Change)</h3><p>No performance data available.</p>"
+
+    # Create a DataFrame and sort by performance
+    perf_df = pd.DataFrame(perf_data).sort_values('pct_change', ascending=False)
+    
+    # Conditional coloring
+    colors = ['#2E8B57' if val >= 0 else '#B22222' for val in perf_df['pct_change']]
+    
+    # Create the chart
+    fig = go.Figure(go.Bar(
+        x=perf_df['pct_change'],
+        y=perf_df['name'],
+        orientation='h',
+        marker_color=colors
+    ))
+    
+    # Style the chart
+    fig.update_layout(
+        title_text='Sector Performance (24h % Change)',
+        yaxis={'categoryorder': 'total ascending'},
+        paper_bgcolor='#ffffff',
+        plot_bgcolor='#f5f5f5',
+        showlegend=False,
+        xaxis_title="24h % Change",
+        yaxis_title="Sector",
+        margin=dict(l=150, r=20, t=50, b=50),
+        xaxis=dict(gridcolor='#e0e0e0')
+    )
+    
+    return fig.to_html(full_html=False, include_plotlyjs='cdn')
 
 def html_report(analysis_results):
     """Generates a professional, styled HTML financial market report."""
     latest_data = analysis_results['latest_data']
     summary = analysis_results['market_summary']
     all_assets_performance = []
-    css_style = """<style>body{font-family:'Century Gothic',CenturyGothic,sans-serif;margin:0;padding:0;background-color:#f9f9f9;color:#333;font-size:16px;line-height:1.6}.container{max-width:960px;margin:20px auto;padding:20px;background-color:#fff;border:1px solid #e0e0e0;box-shadow:0 2px 5px rgba(0,0,0,.05)}h1,h2,h3{color:#2c3e50;border-bottom:2px solid #e0e0e0;padding-bottom:10px;margin-top:30px}h1{font-size:2em}h2{font-size:1.75em}h3{font-size:1.25em;border-bottom:none}.header{text-align:center;margin-bottom:40px}.header h1{border-bottom:none}.report-meta{font-size:.9em;color:#777}.data-table{width:100%;border-collapse:collapse;margin-bottom:30px}.data-table th,.data-table td{padding:12px;text-align:left;border-bottom:1px solid #ddd}.data-table th{background-color:#f2f2f2;font-weight:700;color:#555}.data-table tbody tr:nth-child(even){background-color:#f9f9f9}.data-table tbody tr:hover{background-color:#f1f1f1}.positive{color:#27ae60!important}.negative{color:#c0392b!important}.performance-section{display:flex;justify-content:space-between;gap:20px}.performance-section>div{width:48%}.charts-section{margin:20px 0;padding:15px;background-color:#f8f9fa;border-radius:5px}.chart-container{margin:10px 0;padding:10px;background-color:#fff;border:1px solid #ddd;border-radius:4px;position:relative;overflow:hidden}.key-assets{margin:20px 0}.candle-chart{border:1px solid #eee;border-radius:4px;padding:5px;}.geographic-section{margin:30px 0;}.geographic-header{background-color:#e9ecef;padding:10px;border-left:4px solid #2c3e50;}.asset-class-header{background-color:#f1f3f5;padding:8px;margin-top:15px;}</style>"""
+    css_style = """
+    <style>
+        body {
+            font-family: 'Century Gothic', CenturyGothic, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        h1 { font-size: 2.2em; }
+        h2 { font-size: 1.8em; }
+        h3 {
+            font-size: 1.4em;
+            border-bottom: none;
+            background-color: #f5f5f5;
+            padding: 12px;
+            border-left: 5px solid #2c3e50;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            border-bottom: none;
+        }
+        .report-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .data-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .data-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .positive { color: #2E8B57 !important; }
+        .negative { color: #B22222 !important; }
+        .performance-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+        }
+        .performance-section > div {
+            width: 48%;
+        }
+        .charts-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .chart-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .geographic-header {
+            background-color: #f5f5f5;
+            padding: 12px;
+            border-left: 5px solid #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+        .asset-class-header {
+            background-color: #f5f5f5;
+            padding: 12px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+    """
     
     html_body = [f"""<div class="header"><h1>Daily Financial Market Report</h1><p class="report-meta">Report Generated: {summary['report_time'].strftime('%Y-%m-%d %H:%M:%S %Z')}</p><p class="report-meta">Total Assets Tracked: {summary['total_assets_tracked']} | Asset Classes: {', '.join(summary['asset_classes'])}</p></div>"""]
     
@@ -289,7 +386,11 @@ def html_report(analysis_results):
         
         # Process remaining non-indices asset classes
         for asset_class, df in latest_data.items():
-            if asset_class != 'indices':
+            if asset_class == 'sectors':
+                # Generate and append the sector performance chart
+                sector_chart_html = generate_sector_performance_chart(df, SYMBOL_TO_NAME_MAP)
+                html_body.append(f'<div class="chart-container">{sector_chart_html}</div>')
+            elif asset_class != 'indices':
                 html_body.append(f'<h2 class="asset-class-header">{asset_class.title()}</h2>')
                 table_rows = []
                 for _, row in df.iterrows():
@@ -357,8 +458,8 @@ def html_report(analysis_results):
 
 # --- Main execution block ---
 if __name__ == '__main__':
-    fp = '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/market_analysis_results.pkl'
-    out_path = '/Users/pawan/CLI-Finance-Terminal/approach 2.0/daily_report-i.html'
+    fp = 'data/market_analysis_results.pkl'
+    out_path = 'daily_report-i.html'
     try:
         analysis_results = load_analysis_results(fp)
         html_content = html_report(analysis_results)

@@ -19,7 +19,7 @@ def load_historical_csv(symbol, asset, days=1):
         'vix': 'vix_15min.csv'
     }
     try:
-        df = pd.read_csv(f"/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/{file_map[asset]}", parse_dates=['timestamp'])
+        df = pd.read_csv(f"data/{file_map[asset]}", parse_dates=['timestamp'])
         end_time = df['timestamp'].max()
         start_time = pd.to_datetime(end_time) - pd.Timedelta(days=days)
         for col in ['symbol', 'pair', 'sector_etf', 'commodity', 'crypto', 'vix_etf', 'bond']:
@@ -98,10 +98,10 @@ def html_report(analysis_results):
     return ''.join(html)
 
 if __name__ == '__main__':
-    fp = '/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/market_analysis_results.pkl'
+    fp = 'data/market_analysis_results.pkl'
     analysis_results = load_analysis_results(fp)
     html = html_report(analysis_results)
-    out_path = '/Users/pawan/CLI-Finance-Terminal/approach 2.0/daily_report.html'
+    out_path = 'daily_report.html'
     with open(out_path, 'w') as f:
         f.write(html)
     print(f"✓ HTML report generated: {out_path}")

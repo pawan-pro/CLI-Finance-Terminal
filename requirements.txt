@@ -15,3 +15,5 @@ pandas_ta
 scipy
 scikit-learn
 seaborn
+plotly
+pytest
