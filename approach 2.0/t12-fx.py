@@ -18,7 +18,11 @@ for base, quote in pairs:
         f"?symbol={symbol}&interval=15min&outputsize=96&apikey={api_key}"
     )
     data = requests.get(url).json()
+    if "values" not in data:
+        print(f"No data for {symbol}: {data}")
+        continue
     for entry in data.get('values', []):
+        
         rows.append({
             'pair': symbol,
             'timestamp': pd.to_datetime(entry['datetime']),

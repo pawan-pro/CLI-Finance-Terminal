@@ -37,6 +37,9 @@ for symbol in symbols:
         f"symbol={symbol}&interval={interval}&outputsize=96&apikey={api_key}"
     )
     data = requests.get(url).json()
+    if "values" not in data:
+        print(f"No data for {symbol}: {data}")
+        continue
     for entry in data.get('values', []):
         row = {
             'symbol': symbol,

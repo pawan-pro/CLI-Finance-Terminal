@@ -61,6 +61,8 @@ def read_and_align_data():
     # Combine sector_s1 and sector_s2
     if 'sector_s1' in latest_data and 'sector_s2' in latest_data:
         sectors_combined = pd.concat([latest_data['sector_s1'], latest_data['sector_s2']], ignore_index=True)
+        # Remove duplicates by keeping the most recent timestamp for each symbol
+        sectors_combined = sectors_combined.loc[sectors_combined.groupby('symbol')['timestamp'].idxmax()]
         latest_data['sectors'] = sectors_combined
         latest_data.pop('sector_s1', None)
         latest_data.pop('sector_s2', None)

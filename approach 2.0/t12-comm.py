@@ -3,10 +3,10 @@ import pandas as pd
 
 # List of major commodities available for free (check docs/API for symbol support)
 commodities = ['XAU/USD',  # Gold
-               'XAG/USD',  # Silver
-               'WTI/USD',  # Crude oil West Texas Intermediate
-               'BRENT/USD',# Crude oil Brent
-               'NATGAS/USD' # Natural gas
+               #'XAG/USD',  # Silver
+               #'WTI/USD',  # Crude oil West Texas Intermediate
+               #'BRENT/USD',# Crude oil Brent
+               #'NATGAS/USD' # Natural gas
               ]
 api_key = 'd423c8d01edf48fc940b88a5a894bb2f'
 csv_file = 'approach 2.0/data/commodities_15min.csv'
