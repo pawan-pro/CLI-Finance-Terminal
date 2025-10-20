@@ -1,7 +1,7 @@
 import pickle
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import pytz
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -156,7 +156,7 @@ def generate_candle_chart_html(asset_symbol, asset_name, hist_data):
     if hist_data.empty or len(hist_data) < 2 or not all(col in hist_data.columns for col in ['open', 'high', 'low', 'close', 'timestamp']):
         return f'<p>No sufficient OHLC data for {asset_name} ({asset_symbol}) chart</p>'
 
-    hist_sorted = hist_data.sort_values('timestamp').tail(40)
+    hist_sorted = hist_data.sort_values('timestamp')
 
     fig = go.Figure(data=[go.Candlestick(
         x=hist_sorted['timestamp'],
@@ -168,13 +168,26 @@ def generate_candle_chart_html(asset_symbol, asset_name, hist_data):
         decreasing_line_color='#B22222'
     )])
 
+    # Add alternating day background highlights
+    unique_days = hist_sorted['timestamp'].dt.date.unique()
+    for i, day in enumerate(unique_days):
+        if i % 2 != 0:
+            fig.add_vrect(
+                x0=datetime.combine(day, time.min),
+                x1=datetime.combine(day, time.max),
+                fillcolor="#f0f0f0",
+                opacity=0.5,
+                layer="below",
+                line_width=0,
+            )
+
     fig.update_layout(
-        title=f"{asset_name} ({asset_symbol}) - 15 Min",
         xaxis_title="Time",
         yaxis_title="Price",
         paper_bgcolor='#ffffff',
         plot_bgcolor='#f5f5f5',
         xaxis_rangeslider_visible=False,
+        font=dict(family='Century Gothic', color='#2c3e50'),
         xaxis=dict(gridcolor='#e0e0e0'),
         yaxis=dict(gridcolor='#e0e0e0'),
         margin=dict(l=50, r=50, t=50, b=50)
@@ -207,11 +220,14 @@ def generate_sector_performance_chart(sectors_df, symbol_map):
     colors = ['#2E8B57' if val >= 0 else '#B22222' for val in perf_df['pct_change']]
     
     # Create the chart
+    # Create the chart
     fig = go.Figure(go.Bar(
         x=perf_df['pct_change'],
         y=perf_df['name'],
         orientation='h',
-        marker_color=colors
+        marker_color=colors,
+        text=perf_df['pct_change'].apply(lambda x: f'{x:+.2f}%'),
+        textposition='outside'
     ))
     
     # Style the chart
@@ -283,7 +299,7 @@ def html_report(analysis_results):
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
         .data-table th, .data-table td {
             padding: 12px 15px;
@@ -346,9 +362,10 @@ def html_report(analysis_results):
     
     # Reorganize indices by geography
     geographic_regions = {
-        'Asia-Pacific': ['EWJ', 'INDA', 'MCHI'],  # Japan, India, China
-        'Europe + UK': ['FEZ', 'DAX', 'EWU', 'EWG', 'EWQ'],  # Euro Stoxx 50, Germany, UK, etc.
-        'Americas': ['SPY', 'QQQ', 'DIA', 'IWM', 'EEM', 'EWA']  # US and other Americas
+        'Asia-Pacific': ['EWJ', 'INDA', 'MCHI', 'EWA'],
+        'Europe + UK': ['FEZ', 'DAX', 'EWU', 'EWG', 'EWQ'],
+        'Americas': ['SPY', 'QQQ', 'DIA', 'IWM'],
+        'Global / Emerging Markets': ['EEM']
     }
     
     # Process indices first in geographic order
@@ -448,7 +465,7 @@ def html_report(analysis_results):
             if asset in df['symbol'].values:
                 display_name = SYMBOL_TO_NAME_MAP.get(asset, asset)
                 # Get historical data for chart
-                hist = load_historical_csv(asset, asset_class, days=1)
+                hist = load_historical_csv(asset, asset_class, days=7)
                 chart_html = generate_candle_chart_html(asset, display_name, hist)
                 html_body.append(f'<div class="chart-container"><h3>{display_name} ({asset})</h3>{chart_html}</div>')
                 break
