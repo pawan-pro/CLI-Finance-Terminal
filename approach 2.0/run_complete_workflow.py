@@ -65,37 +65,43 @@ def main():
     # Define the approach 2.0 directory
     approach_dir = Path(__file__).parent
     
-    # Step 1: Fetch all data with rate limiting
+    # Step 1: Downloading latest data from MT5 Server...
+    mt5_downloader_script = approach_dir / "src/fetchers/mt5_file_downloader.py"
+    logger.info("Step 1: Downloading latest data from MT5 Server...")
+    if not run_script(str(mt5_downloader_script)):
+        logger.warning("MT5 data download failed. Proceeding with existing data.")
+
+    # Step 2: Fetch all data with rate limiting
     fetch_script = approach_dir / "fetch_all_data_batched.py"
-    logger.info("Step 1: Fetching all market data with rate limiting...")
+    logger.info("Step 2: Fetching all market data with rate limiting...")
     if not run_script(str(fetch_script)):
         logger.error("Failed to fetch market data. Aborting workflow.")
         return False
-    
-    # Step 2: Align data from all asset classes
+
+    # Step 3: Align data from all asset classes
     align_script = approach_dir / "read_align_data.py"
-    logger.info("Step 2: Aligning data from all asset classes...")
+    logger.info("Step 3: Aligning data from all asset classes...")
     if not run_script(str(align_script)):
         logger.error("Failed to align data. Aborting workflow.")
         return False
     
-    # Step 3: Compute market metrics
+    # Step 4: Compute market metrics
     metrics_script = approach_dir / "compute_metrics.py"
-    logger.info("Step 3: Computing market metrics...")
+    logger.info("Step 4: Computing market metrics...")
     if not run_script(str(metrics_script)):
         logger.error("Failed to compute market metrics. Aborting workflow.")
         return False
     
-    # Step 4: Generate daily report (HTML)
+    # Step 5: Generate daily report (HTML)
     daily_report_script = approach_dir / "daily_report.py"
-    logger.info("Step 4: Generating standard daily report...")
+    logger.info("Step 5: Generating standard daily report...")
     if not run_script(str(daily_report_script)):
         logger.error("Failed to generate standard daily report.")
         # Continue execution as this is not a critical failure
     
-    # Step 5: Generate enhanced daily report (HTML)
+    # Step 6: Generate enhanced daily report (HTML)
     daily_report_i_script = approach_dir / "daily_report-i.py"
-    logger.info("Step 5: Generating enhanced daily report...")
+    logger.info("Step 6: Generating enhanced daily report...")
     if not run_script(str(daily_report_i_script)):
         logger.error("Failed to generate enhanced daily report.")
         # Continue execution as this is not a critical failure

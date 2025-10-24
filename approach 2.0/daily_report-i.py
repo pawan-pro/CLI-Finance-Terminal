@@ -156,20 +156,31 @@ def generate_candle_chart_html(asset_symbol, asset_name, hist_data):
     if hist_data.empty or len(hist_data) < 2 or not all(col in hist_data.columns for col in ['open', 'high', 'low', 'close', 'timestamp']):
         return f'<p>No sufficient OHLC data for {asset_name} ({asset_symbol}) chart</p>'
 
-    hist_sorted = hist_data.sort_values('timestamp')
+    # Resample to 1-hour candles
+    hist_data['timestamp'] = pd.to_datetime(hist_data['timestamp'])
+    df_hourly = hist_data.resample('1H', on='timestamp').agg({
+        'open': 'first',
+        'high': 'max',
+        'low': 'min',
+        'close': 'last',
+        'volume': 'sum'
+    }).dropna()
+
+    if df_hourly.empty:
+        return f'<p>No sufficient OHLC data for {asset_name} ({asset_symbol}) chart after resampling</p>'
 
     fig = go.Figure(data=[go.Candlestick(
-        x=hist_sorted['timestamp'],
-        open=hist_sorted['open'],
-        high=hist_sorted['high'],
-        low=hist_sorted['low'],
-        close=hist_sorted['close'],
+        x=df_hourly.index,
+        open=df_hourly['open'],
+        high=df_hourly['high'],
+        low=df_hourly['low'],
+        close=df_hourly['close'],
         increasing_line_color='#2E8B57',
         decreasing_line_color='#B22222'
     )])
 
     # Add alternating day background highlights
-    unique_days = hist_sorted['timestamp'].dt.date.unique()
+    unique_days = df_hourly.index.date.unique()
     for i, day in enumerate(unique_days):
         if i % 2 != 0:
             fig.add_vrect(
@@ -458,7 +469,7 @@ def html_report(analysis_results):
     
     # Add charts section at the end
     key_assets = ['SPY', 'QQQ', 'DIA', 'IWM', 'VXX', 'UVXY', 'XLE', 'XLF', 'XLK', 'XLV', 'XLU']  # Key assets for charts (including XLU - Utilities)
-    html_body.append('<div class="charts-section"><h2>Key Assets 15-Min Charts</h2>')
+    html_body.append('<div class="charts-section"><h2>Key Assets 1-Hour Charts</h2>')
     
     for asset in key_assets:
         for asset_class, df in latest_data.items():
