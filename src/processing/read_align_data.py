@@ -8,14 +8,14 @@ def read_and_align_data():
     Returns a dictionary with latest data for each asset class.
     """
     data_files = {
-        'bonds': {'file': 'data/bonds_15min.csv', 'tz_source': 'America/New_York'},
-        'commodities': {'file': 'data/commodities_15min.csv', 'tz_source': 'UTC'},
-        'crypto': {'file': 'data/crypto_15min.csv', 'tz_source': 'UTC'},
-        'forex': {'file': 'data/forex_15min.csv', 'tz_source': 'UTC'},
-        'indices': {'file': 'data/indices_15min.csv', 'tz_source': 'America/New_York'},
-        'sector_s1': {'file': 'data/sector_etf_15min.csv', 'tz_source': 'America/New_York'},
-        'sector_s2': {'file': 'data/sector2_etf_15min.csv', 'tz_source': 'America/New_York'},
-        'vix': {'file': 'data/vix_15min.csv', 'tz_source': 'America/New_York'}
+        'bonds': {'file': '../data/bonds_15min.csv', 'tz_source': 'America/New_York'},
+        'commodities': {'file': '../data/commodities_15min.csv', 'tz_source': 'UTC'},
+        'crypto': {'file': '../data/crypto_15min.csv', 'tz_source': 'UTC'},
+        'forex': {'file': '../data/forex_15min.csv', 'tz_source': 'UTC'},
+        'indices': {'file': '../data/indices_15min.csv', 'tz_source': 'America/New_York'},
+        'sector_s1': {'file': '../data/sector_etf_15min.csv', 'tz_source': 'America/New_York'},
+        'sector_s2': {'file': '../data/sector2_etf_15min.csv', 'tz_source': 'America/New_York'},
+        'vix': {'file': '../data/vix_15min.csv', 'tz_source': 'America/New_York'}
     }
 
     latest_data = {}
@@ -67,7 +67,7 @@ def read_and_align_data():
         latest_data.pop('sector_s1', None)
         latest_data.pop('sector_s2', None)
 
-    output_path = 'data/latest_market_data.pkl'
+    output_path = '../data/latest_market_data.pkl'
     with open(output_path, 'wb') as f:
         pickle.dump(latest_data, f)
     print(f"\n✓ Latest data saved to '{output_path}' for analysis")

@@ -6,7 +6,7 @@ import pytz
 
 def load_latest_data():
     try:
-        with open('data/latest_market_data.pkl', 'rb') as f:
+        with open('../data/latest_market_data.pkl', 'rb') as f:
             return pickle.load(f)
     except FileNotFoundError:
         print("Error: latest_market_data.pkl not found. Run data alignment script first.")
@@ -121,7 +121,7 @@ def save_analysis_results(latest_data, metrics, summary):
         'market_summary': summary,
         'analysis_timestamp': datetime.now(pytz.timezone('Asia/Kolkata'))
     }
-    output_path = 'data/market_analysis_results.pkl'
+    output_path = '../data/market_analysis_results.pkl'
     with open(output_path, 'wb') as f:
         pickle.dump(analysis_results, f)
     print(f"\n✓ Analysis results saved to '{output_path}'")

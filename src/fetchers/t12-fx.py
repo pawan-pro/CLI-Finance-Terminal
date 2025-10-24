@@ -1,17 +1,18 @@
 import requests
 import pandas as pd
 
-vix_symbols = ['VXX', 'UVXY']  # VIX ETF proxies
+pairs = [('EUR', 'USD'), ('GBP', 'USD'), ('USD', 'JPY'), ('USD', 'CHF'), ('USD', 'CAD'), ('AUD', 'USD')]
 api_key = 'd423c8d01edf48fc940b88a5a894bb2f'
-csv_file = 'approach 2.0/data/vix_15min.csv'
+csv_file = '../data/forex_15min.csv'
 
 try:
     df_existing = pd.read_csv(csv_file, parse_dates=['timestamp'])
 except FileNotFoundError:
-    df_existing = pd.DataFrame(columns=['vix_etf', 'timestamp', 'open', 'high', 'low', 'close'])
+    df_existing = pd.DataFrame(columns=['pair', 'timestamp', 'open', 'high', 'low', 'close'])
 
 rows = []
-for symbol in vix_symbols:
+for base, quote in pairs:
+    symbol = f"{base}/{quote}"
     url = (
         f"https://api.twelvedata.com/time_series"
         f"?symbol={symbol}&interval=15min&outputsize=96&apikey={api_key}"
@@ -21,8 +22,9 @@ for symbol in vix_symbols:
         print(f"No data for {symbol}: {data}")
         continue
     for entry in data.get('values', []):
+        
         rows.append({
-            'vix_etf': symbol,
+            'pair': symbol,
             'timestamp': pd.to_datetime(entry['datetime']),
             'open': float(entry['open']),
             'high': float(entry['high']),
@@ -31,5 +33,5 @@ for symbol in vix_symbols:
         })
 
 df_new = pd.DataFrame(rows)
-df_combined = pd.concat([df_existing, df_new]).drop_duplicates(subset=['vix_etf', 'timestamp']).sort_values(['vix_etf', 'timestamp'])
+df_combined = pd.concat([df_existing, df_new]).drop_duplicates(subset=['pair', 'timestamp']).sort_values(['pair', 'timestamp'])
 df_combined.to_csv(csv_file, index=False)

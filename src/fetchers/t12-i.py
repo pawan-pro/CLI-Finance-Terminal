@@ -21,7 +21,7 @@ symbols = [
 ]
 
 api_key = 'd423c8d01edf48fc940b88a5a894bb2f'
-csv_file = 'approach 2.0/data/indices_15min.csv'
+csv_file = '../data/indices_15min.csv'
 interval = '15min'
 
 # Try to read existing data

@@ -3,7 +3,7 @@ import pandas as pd
 
 bonds = ['US2Y']
 api_key = 'd423c8d01edf48fc940b88a5a894bb2f'
-csv_file = 'approach 2.0/data/bonds_15min.csv'
+csv_file = '../data/bonds_15min.csv'
 
 try:
     df_existing = pd.read_csv(csv_file, parse_dates=['timestamp'])
