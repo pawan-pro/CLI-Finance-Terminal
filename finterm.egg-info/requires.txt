@@ -1,8 +1,0 @@
-typer
-rich
-requests
-PyYAML
-python-dotenv
-plotille
-beautifulsoup4
-schedule
