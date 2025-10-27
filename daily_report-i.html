@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Daily Financial Report</title>
+    <style>
+        body {
+            font-family: 'Century Gothic', CenturyGothic, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        h1 { font-size: 2.2em; }
+        h2 { font-size: 1.8em; }
+        h3 {
+            font-size: 1.4em;
+            border-bottom: none;
+            background-color: #f5f5f5;
+            padding: 12px;
+            border-left: 5px solid #2c3e50;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            border-bottom: none;
+        }
+        .report-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .data-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .data-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .positive { color: #2E8B57 !important; }
+        .negative { color: #B22222 !important; }
+        .performance-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+        }
+        .performance-section > div {
+            width: 48%;
+        }
+        .charts-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .chart-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .geographic-header {
+            background-color: #f5f5f5;
+            padding: 12px;
+            border-left: 5px solid #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+        .asset-class-header {
+            background-color: #f5f5f5;
+            padding: 12px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+    </head><body><div class="container"><div class="header"><h1>Daily Financial Market Report</h1><p class="report-meta">Report Generated: 2025-10-27 09:01:19 IST</p><p class="report-meta">Total Assets Tracked: 82 | Asset Classes: bonds, commodities, crypto, forex, indices, vix, sectors, mt5</p></div><div class="geographic-section"><h2>Global Indices by Region</h2><div class="geographic-header"><h3>Asia-Pacific</h3></div><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>Australia</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>Japan (Nikkei)</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>India (MSCI India)</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>China (MSCI China)</td><td>-</td><td class="">-</td><td class="">-</td></tr></tbody></table><div class="geographic-header"><h3>Europe + UK</h3></div><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>Germany (DAX)</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>Germany Equity</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>France</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>United Kingdom (FTSE)</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>Euro Stoxx 50</td><td>-</td><td class="">-</td><td class="">-</td></tr></tbody></table><div class="geographic-header"><h3>Americas</h3></div><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>Dow Jones Industrial Average</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>Russell 2000</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>Nasdaq 100</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>S&P 500</td><td>-</td><td class="">-</td><td class="">-</td></tr></tbody></table><div class="geographic-header"><h3>Global / Emerging Markets</h3></div><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>Emerging Markets</td><td>-</td><td class="">-</td><td class="">-</td></tr></tbody></table></div><h2 class="asset-class-header">Bonds</h2><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>US2Y</td><td>-</td><td class="">-</td><td class="">-</td></tr></tbody></table><h2 class="asset-class-header">Commodities</h2><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>XAU/USD</td><td>4,077.2850</td><td class="positive">+12.8270</td><td class="positive">+0.32%</td></tr></tbody></table><h2 class="asset-class-header">Crypto</h2><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>ADA/USD</td><td>0.3325</td><td class="">+0.0000</td><td class="">+0.00%</td></tr><tr><td>BTC/USD</td><td>114,941.7400</td><td class="positive">+388.6300</td><td class="positive">+0.34%</td></tr><tr><td>ETH/USD</td><td>4,208.8700</td><td class="positive">+50.8300</td><td class="positive">+1.22%</td></tr><tr><td>LTC/USD</td><td>99.6400</td><td class="positive">+0.1700</td><td class="positive">+0.17%</td></tr><tr><td>XRP/USD</td><td>2.6335</td><td class="negative">-0.0110</td><td class="negative">-0.42%</td></tr></tbody></table><h2 class="asset-class-header">Forex</h2><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>AUD/USD</td><td>0.6537</td><td class="positive">+0.0004</td><td class="positive">+0.06%</td></tr><tr><td>EUR/USD</td><td>1.1630</td><td class="negative">-0.0000</td><td class="negative">-0.00%</td></tr><tr><td>GBP/USD</td><td>1.3324</td><td class="positive">+0.0003</td><td class="positive">+0.02%</td></tr><tr><td>USD/CAD</td><td>1.3984</td><td class="negative">-0.0010</td><td class="negative">-0.07%</td></tr><tr><td>USD/CHF</td><td>0.7956</td><td class="negative">-0.0005</td><td class="negative">-0.06%</td></tr><tr><td>USD/JPY</td><td>152.9630</td><td class="negative">-0.1050</td><td class="negative">-0.07%</td></tr></tbody></table><h2 class="asset-class-header">Vix</h2><table class="data-table"><thead><tr><th>Asset</th><th>Latest Price</th><th>Change (24h)</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>UVXY</td><td>-</td><td class="">-</td><td class="">-</td></tr><tr><td>VIX Short-Term Futures ETN</td><td>-</td><td class="">-</td><td class="">-</td></tr></tbody></table><div class="chart-container"><h3>Sector Performance (24h % Change)</h3><p>No performance data available.</p></div><h2 class="asset-class-header">MT5 Real-Time Data</h2><table class="data-table"><thead><tr><th>Asset (MT5 Real-Time)</th><th>Latest Price</th><th>Change (Session)</th><th>% Change (Session)</th></tr></thead><tbody><tr><td>Ripple vs US Dollar (MT5)</td><td>2.6335</td><td class="negative">-0.0027</td><td class="negative">-0.10%</td></tr><tr><td>Hong Kong 50 (Hang Seng) (MT5)</td><td>26,412.5000</td><td class="positive">+3.1000</td><td class="positive">+0.01%</td></tr><tr><td>Euro Stoxx 50 (MT5)</td><td>5,702.4600</td><td class="positive">+0.0700</td><td class="positive">+0.00%</td></tr><tr><td>Solana vs US Dollar (MT5)</td><td>203.2593</td><td class="negative">-0.1602</td><td class="negative">-0.08%</td></tr><tr><td>US 500 (S&P 500) (MT5)</td><td>6,853.1000</td><td class="negative">-0.0400</td><td class="negative">-0.00%</td></tr><tr><td>US Dollar vs Canadian Dollar (MT5)</td><td>1.3984</td><td class="negative">-0.0000</td><td class="negative">-0.00%</td></tr><tr><td>US Dollar vs Swiss Franc (MT5)</td><td>0.7956</td><td class="">+0.0000</td><td class="">+0.00%</td></tr><tr><td>US Dollar vs Japanese Yen (MT5)</td><td>152.9630</td><td class="negative">-0.0170</td><td class="negative">-0.01%</td></tr><tr><td>Litecoin vs US Dollar (MT5)</td><td>99.6400</td><td class="negative">-0.0600</td><td class="negative">-0.06%</td></tr><tr><td>US Dollar vs Swedish Krona (MT5)</td><td>9.3211</td><td class="positive">+0.0000</td><td class="positive">+0.00%</td></tr><tr><td>JP225m</td><td>50,405.6000</td><td class="negative">-10.0000</td><td class="negative">-0.02%</td></tr><tr><td>US Oil (MT5)</td><td>61.4440</td><td class="positive">+0.0220</td><td class="positive">+0.04%</td></tr><tr><td>US Tech 100 (Nasdaq 100) (MT5)</td><td>25,651.6800</td><td class="positive">+0.2500</td><td class="positive">+0.00%</td></tr><tr><td>Silver vs US Dollar (MT5)</td><td>48.1770</td><td class="positive">+0.0090</td><td class="positive">+0.02%</td></tr><tr><td>UK 100 (FTSE) (MT5)</td><td>9,667.8000</td><td class="negative">-0.5600</td><td class="negative">-0.01%</td></tr><tr><td>British Pound vs US Dollar (MT5)</td><td>1.3324</td><td class="positive">+0.0001</td><td class="positive">+0.00%</td></tr><tr><td>France 40 (CAC 40) (MT5)</td><td>8,251.5300</td><td class="positive">+0.4900</td><td class="positive">+0.01%</td></tr><tr><td>Gold vs US Dollar (MT5)</td><td>4,077.2850</td><td class="positive">+0.6270</td><td class="positive">+0.02%</td></tr><tr><td>Euro vs US Dollar (MT5)</td><td>1.1630</td><td class="">+0.0000</td><td class="">+0.00%</td></tr><tr><td>Ethereum vs US Dollar (MT5)</td><td>4,208.8700</td><td class="negative">-4.6600</td><td class="negative">-0.11%</td></tr></tbody></table><h2>Market Performance Highlights</h2><div class="performance-section"><div><h3>Top 5 Leaders</h3><table class="data-table"><thead><tr><th>Asset</th><th>Asset Class</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>ETH/USD</td><td>Crypto</td><td class="positive">+1.22%</td></tr><tr><td>BTC/USD</td><td>Crypto</td><td class="positive">+0.34%</td></tr><tr><td>XAU/USD</td><td>Commodities</td><td class="positive">+0.32%</td></tr><tr><td>LTC/USD</td><td>Crypto</td><td class="positive">+0.17%</td></tr><tr><td>AUD/USD</td><td>Forex</td><td class="positive">+0.06%</td></tr></tbody></table></div><div><h3>Top 5 Laggards</h3><table class="data-table"><thead><tr><th>Asset</th><th>Asset Class</th><th>% Change (24h)</th></tr></thead><tbody><tr><td>XRP/USD</td><td>Crypto</td><td class="negative">-0.42%</td></tr><tr><td>Ethereum vs US Dollar (MT5)</td><td>Mt5</td><td class="negative">-0.11%</td></tr><tr><td>Ripple vs US Dollar (MT5)</td><td>Mt5</td><td class="negative">-0.10%</td></tr><tr><td>Solana vs US Dollar (MT5)</td><td>Mt5</td><td class="negative">-0.08%</td></tr><tr><td>USD/CAD</td><td>Forex</td><td class="negative">-0.07%</td></tr></tbody></table></div></div><div class="charts-section"><h2>Key Assets 15-Min Charts</h2><div class="chart-container"><h3>S&P 500 (SPY)</h3><p>No sufficient OHLC data for S&P 500 (SPY) chart</p></div><div class="chart-container"><h3>Nasdaq 100 (QQQ)</h3><p>No sufficient OHLC data for Nasdaq 100 (QQQ) chart</p></div><div class="chart-container"><h3>Dow Jones Industrial Average (DIA)</h3><p>No sufficient OHLC data for Dow Jones Industrial Average (DIA) chart</p></div><div class="chart-container"><h3>Russell 2000 (IWM)</h3><p>No sufficient OHLC data for Russell 2000 (IWM) chart</p></div><div class="chart-container"><h3>VIX Short-Term Futures ETN (VXX)</h3><p>No sufficient OHLC data for VIX Short-Term Futures ETN (VXX) chart</p></div><div class="chart-container"><h3>UVXY (UVXY)</h3><p>No sufficient OHLC data for UVXY (UVXY) chart</p></div><div class="chart-container"><h3>Energy Sector (XLE)</h3><p>No sufficient OHLC data for Energy Sector (XLE) chart</p></div><div class="chart-container"><h3>Financials Sector (XLF)</h3><p>No sufficient OHLC data for Financials Sector (XLF) chart</p></div><div class="chart-container"><h3>Technology Sector (XLK)</h3><p>No sufficient OHLC data for Technology Sector (XLK) chart</p></div><div class="chart-container"><h3>Health Care Sector (XLV)</h3><p>No sufficient OHLC data for Health Care Sector (XLV) chart</p></div><div class="chart-container"><h3>Utilities Sector (XLU)</h3><p>No sufficient OHLC data for Utilities Sector (XLU) chart</p></div></div></div></body></html>

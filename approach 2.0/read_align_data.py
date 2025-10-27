@@ -2,6 +2,61 @@ import pandas as pd
 from datetime import datetime
 import pytz
 import pickle
+import os
+
+def process_mt5_data(latest_data):
+    """
+    Process MT5 data and integrate it with existing data.
+    MT5 data can override existing data for the same symbols.
+    
+    Args:
+        latest_data (dict): Dictionary with existing asset class data
+        
+    Returns:
+        dict: Updated latest_data with MT5 data integrated
+    """
+    try:
+        # Check if MT5 standardized data exists
+        mt5_file = 'data/mt5/mt5_standardized.csv'
+        if not os.path.exists(mt5_file):
+            print("MT5 data not found, continuing with existing data...")
+            return latest_data
+            
+        print("Processing MT5 data...")
+        mt5_df = pd.read_csv(mt5_file, parse_dates=['timestamp'])
+        
+        if mt5_df.empty:
+            print("MT5 data file is empty, continuing with existing data...")
+            return latest_data
+            
+        # Process MT5 data similar to other asset classes
+        # For now, we'll treat all MT5 data as forex/indices depending on symbol patterns
+        # Later we can categorize more precisely
+        
+        # Add timezone if not present
+        if mt5_df['timestamp'].dt.tz is None:
+            # Assume MT5 data is in UTC (common for financial data)
+            mt5_df['timestamp'] = mt5_df['timestamp'].dt.tz_localize('UTC')
+        
+        # Convert to target timezone
+        target_tz = 'Asia/Kolkata'
+        mt5_df['timestamp'] = mt5_df['timestamp'].dt.tz_convert(target_tz)
+        
+        # Create MT5 dataframes in the same format as existing data
+        mt5_latest = mt5_df.loc[mt5_df.groupby('symbol')['timestamp'].idxmax()]
+        mt5_formatted = mt5_latest[['symbol', 'timestamp', 'open', 'high', 'low', 'close']]
+        
+        # For now, we'll add MT5 data as a separate category
+        # Later we can merge it with existing categories
+        latest_data['mt5'] = mt5_formatted
+        
+        print(f"✓ Processed MT5 data for {len(mt5_formatted)} symbols")
+        return latest_data
+        
+    except Exception as e:
+        print(f"Warning: Error processing MT5 data: {str(e)}")
+        return latest_data
+
 def read_and_align_data():
     """
     Read all asset class CSVs, align timezones, and select the latest data for each asset.
@@ -66,6 +121,9 @@ def read_and_align_data():
         latest_data['sectors'] = sectors_combined
         latest_data.pop('sector_s1', None)
         latest_data.pop('sector_s2', None)
+
+    # Process MT5 data and integrate it
+    latest_data = process_mt5_data(latest_data)
 
     output_path = 'data/latest_market_data.pkl'
     with open(output_path, 'wb') as f:

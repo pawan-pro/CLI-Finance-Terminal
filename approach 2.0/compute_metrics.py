@@ -84,6 +84,15 @@ def calculate_cross_asset_metrics(latest_data):
         print(f"\nCOMMODITIES:")
         for _, row in commodities_df.iterrows():
             print(f"{row['symbol']}: ${row['value']:.2f}")
+    if 'mt5' in latest_data:
+        mt5_df = latest_data['mt5']
+        print(f"\nMT5 REAL-TIME DATA (Latest):")
+        # Show top 10 MT5 symbols by timestamp
+        mt5_recent = mt5_df.sort_values('timestamp', ascending=False).head(10)
+        for _, row in mt5_recent.iterrows():
+            symbol = row['symbol']
+            close_price = row['close']
+            print(f"{symbol}: {close_price:.5f}")
     return metrics
 
 def generate_market_summary(latest_data):

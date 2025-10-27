@@ -1,0 +1,36 @@
+Report Symbol/name, Symbol,Asset Type, Notes
+USD/JPY,USDJPYm,Forex
+Australia, AUS200m, CFD
+Japan (Nikkei), JPN225m, CFD
+India (MSCI India), IND50m, CFD
+China (MSCI China), HK50m,CFD
+Germany (DAX), DE30m, CFD
+Germany Equity, DE30, CFD
+France, FR40m, CFD
+United Kingdom (FTSE), UK100m, CFD
+Euro Stoxx 50, STOXX50m, CFD
+Dow Jones Industrial Average, US30m, CFD
+Russell 2000, NA, NA
+Nasdaq 100, USTECm, CFD
+S&P 500	, US500m, CFD
+Emerging Markets, NA, NA
+US2Y, NA, NA
+XAU/USD, XAUUSDm,Forex
+XAG/USD, XAGUSDm,Forex, not there in report-to be added
+Crude Oil WTI, USOILm,Commodity, not there in report-to be added
+ADA/USD, ADAUSDm,Crypto
+BTC/USD, BTCUSDm,Crypto
+ETH/USD, ETHUSDm,Crypto
+LTC/USD, LTCUSDm,Crypto
+XRP/USD, XRPUSDm,Crypto
+AUD/USD, AUDUSDm,Forex 
+EUR/USD, EURUSDm,Forex
+GBP/USD, GBPUSDm,Forex
+USD/CAD, USDCADm,Forex
+USD/CHF, USDCHFm,Forex
+USD/JPY, USDJPYm,Forex
+UVXY, NA, NA
+VIX Short-Term Futures ETN, NA, NA
+
+
+

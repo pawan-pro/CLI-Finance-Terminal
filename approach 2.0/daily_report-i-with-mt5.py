@@ -6,6 +6,25 @@ import pytz
 import plotly.graph_objects as go
 import plotly.io as pio
 
+def load_symbol_mapping():
+    """Loads the symbol mapping from the CSV file."""
+    mapping_file = "approach 2.0/data/mt5/symbol_mapping.csv"
+    try:
+        df = pd.read_csv(mapping_file)
+        # Clean up the column names by stripping spaces
+        df.columns = df.columns.str.strip()
+        # Create a mapping from report symbol to MT5 symbol
+        symbol_map = {}
+        for _, row in df.iterrows():
+            report_symbol = row['Report Symbol/name'].strip()
+            mt5_symbol = row['Symbol'].strip()
+            if mt5_symbol != 'NA':  # Only include if there's an MT5 equivalent
+                symbol_map[report_symbol] = mt5_symbol
+        return symbol_map
+    except Exception as e:
+        print(f"Error loading symbol mapping: {e}")
+        return {}
+
 # --- Symbol to Descriptive Name Mapping ---
 SYMBOL_TO_NAME_MAP = {
     # Major Indices
@@ -26,27 +45,30 @@ SYMBOL_TO_NAME_MAP = {
     'GLD': 'Gold', 'SLV': 'Silver', 'USO': 'Crude Oil',
     # Bonds (Examples)
     'TLT': '20+ Year Treasury Bond ETF',
-    # MT5 Symbols (Forex pairs)
+    # MT5 Symbols (Forex pairs and CFDs)
     'EURUSDm': 'Euro vs US Dollar (MT5)', 'GBPUSDm': 'British Pound vs US Dollar (MT5)', 
     'USDJPYm': 'US Dollar vs Japanese Yen (MT5)', 'AUDUSDm': 'Australian Dollar vs US Dollar (MT5)',
     'USDCADm': 'US Dollar vs Canadian Dollar (MT5)', 'USDCHFm': 'US Dollar vs Swiss Franc (MT5)',
-    'USDSEKm': 'US Dollar vs Swedish Krona (MT5)',
     'XAUUSDm': 'Gold vs US Dollar (MT5)', 'XAGUSDm': 'Silver vs US Dollar (MT5)',
-    'USOILm': 'US Oil (MT5)', 'XNGUSDm': 'Natural Gas vs US Dollar (MT5)',
-    'BTCUSDm': 'Bitcoin vs US Dollar (MT5)', 'ETHUSDm': 'Ethereum vs US Dollar (MT5)',
-    'XRPUSDm': 'Ripple vs US Dollar (MT5)', 'ADAUSDm': 'Cardano vs US Dollar (MT5)',
-    'LTCUSDm': 'Litecoin vs US Dollar (MT5)', 'SOLUSDm': 'Solana vs US Dollar (MT5)',
-    # MT5 Indices
-    'US500m': 'US 500 Index (MT5)', 'US30m': 'US 30 Index (MT5)', 'USTECm': 'US Tech 100 Index (MT5)',
-    'DE30m': 'Germany 30 Index (MT5)', 'FR40m': 'France 40 Index (MT5)', 'UK100m': 'UK 100 Index (MT5)',
-    'STOXX50m': 'Euro Stoxx 50 Index (MT5)', 'AUS200m': 'Australia 200 Index (MT5)', 
-    'JP225m': 'Japan 225 Index (MT5)', 'HK50m': 'Hong Kong 50 Index (MT5)', 'IN50m': 'India 50 Index (MT5)',
-    # MT5 Stocks
-    'AAPLm': 'Apple Inc. (MT5)', 'MSFTm': 'Microsoft Corp. (MT5)', 'GOOGLm': 'Alphabet Inc. (MT5)',
-    'AMZNm': 'Amazon.com Inc. (MT5)', 'NVDAm': 'NVIDIA Corp. (MT5)', 'FBm': 'Meta Platforms Inc. (MT5)',
-    'JPMm': 'JPMorgan Chase & Co. (MT5)', 'BACm': 'Bank of America Corp. (MT5)', 
-    'JNJm': 'Johnson & Johnson (MT5)', 'PFEm': 'Pfizer Inc. (MT5)', 'XOMm': 'Exxon Mobil Corp. (MT5)',
-    'TSLAm': 'Tesla Inc. (MT5)', 'MCDm': 'McDonald\'s Corp. (MT5)'
+    'USOILm': 'US Oil (MT5)', 'BTCUSDm': 'Bitcoin vs US Dollar (MT5)',
+    'ETHUSDm': 'Ethereum vs US Dollar (MT5)',
+    'XAGUSDm': 'Silver vs US Dollar (MT5)',  # Added as requested
+    'ADAUSDm': 'Cardano vs US Dollar (MT5)',
+    'LTCUSDm': 'Litecoin vs US Dollar (MT5)',
+    'XRPUSDm': 'Ripple vs US Dollar (MT5)',
+    'USDSEKm': 'US Dollar vs Swedish Krona (MT5)', 
+    'STOXX50m': 'Euro Stoxx 50 (MT5)',
+    'UK100m': 'UK 100 (FTSE) (MT5)',
+    'FR40m': 'France 40 (CAC 40) (MT5)',
+    'DE30m': 'Germany 30 (DAX) (MT5)',
+    'AUS200m': 'Australia 200 (ASX 200) (MT5)',
+    'JPN225m': 'Japan 225 (Nikkei 225) (MT5)',
+    'HK50m': 'Hong Kong 50 (Hang Seng) (MT5)',
+    'IN50m': 'India 50 (Nifty 50) (MT5)',
+    'USTECm': 'US Tech 100 (Nasdaq 100) (MT5)',
+    'US30m': 'US 30 (Dow Jones) (MT5)',
+    'US500m': 'US 500 (S&P 500) (MT5)',
+    'SOLUSDm': 'Solana vs US Dollar (MT5)'
 }
 
 
@@ -61,7 +83,34 @@ def load_historical_csv(symbol, asset, days=1):
     """
     Loads historical data for a specific symbol.
     **UPDATE**: Now handles multiple CSV files for a single asset class (e.g., 'sectors').
+    **UPDATE**: Now also checks MT5 data when available.
     """
+    # Load symbol mapping
+    symbol_mapping = load_symbol_mapping()
+    
+    # Check if this symbol has an MT5 equivalent
+    mt5_symbol = symbol_mapping.get(symbol)
+    
+    # If MT5 symbol exists, try loading MT5 data first
+    if mt5_symbol or asset == 'mt5':
+        try:
+            # If asset is 'mt5', use the symbol directly as it might be an MT5 symbol
+            target_symbol = mt5_symbol if mt5_symbol else symbol
+            
+            # Load MT5 standardized data
+            mt5_df = pd.read_csv("approach 2.0/data/mt5/mt5_standardized.csv", parse_dates=['timestamp'])
+            mt5_data = mt5_df[mt5_df['symbol'] == target_symbol].copy()
+            
+            if not mt5_data.empty:
+                # Filter by time
+                end_time = mt5_data['timestamp'].max()
+                start_time = end_time - pd.Timedelta(days=days)
+                mt5_data = mt5_data[(mt5_data['timestamp'] >= start_time) & (mt5_data['timestamp'] <= end_time)]
+                return mt5_data
+        except Exception as e:
+            print(f"Error loading MT5 data for {target_symbol if 'target_symbol' in locals() else symbol}: {e}")
+    
+    # If no MT5 data available or error occurred, use the original method
     file_map = {
         'indices': 'indices_15min.csv',
         # **UPDATE**: 'sectors' now points to a list of files.
@@ -389,6 +438,9 @@ def html_report(analysis_results):
         'Global / Emerging Markets': ['EEM']
     }
     
+    # Load symbol mapping to check for MT5 equivalents
+    symbol_mapping = load_symbol_mapping()
+    
     # Process indices first in geographic order
     if 'indices' in latest_data:
         indices_df = latest_data['indices']
@@ -405,7 +457,15 @@ def html_report(analysis_results):
                 for _, row in region_data.iterrows():
                     symbol = row['symbol']
                     display_name = SYMBOL_TO_NAME_MAP.get(symbol, symbol)
-                    hist = load_historical_csv(symbol, 'indices', days=1)
+                    
+                    # Check if this symbol has an MT5 equivalent
+                    mt5_symbol = symbol_mapping.get(symbol)
+                    if mt5_symbol:
+                        # Use MT5 data for this symbol
+                        hist = load_historical_csv(symbol, 'mt5', days=1)  # Using mt5 as asset class to trigger MT5 loading
+                    else:
+                        hist = load_historical_csv(symbol, 'indices', days=1)
+                    
                     val, delta, pct = value_and_pct_change(hist, 'close')
                     val_disp = f"{val:,.4f}" if pd.notna(val) else "-"
                     delta_disp = f"{delta:+.4f}" if pd.notna(delta) else "-"
@@ -429,24 +489,24 @@ def html_report(analysis_results):
                 sector_chart_html = generate_sector_performance_chart(df, SYMBOL_TO_NAME_MAP)
                 html_body.append(f'<div class="chart-container">{sector_chart_html}</div>')
             elif asset_class == 'mt5':
-                # Handle MT5 data here - display it as a separate section
+                # Handle MT5 data here - display top performers
                 html_body.append('<h2 class="asset-class-header">MT5 Real-Time Data</h2>')
-                table_rows = []
-                # Sort by timestamp to show most recent data first
-                mt5_sorted = df.sort_values('timestamp', ascending=False)
+                # Sort by timestamp to show most recent data
+                mt5_sorted = df.sort_values('timestamp', ascending=False).head(20)  # Show top 20
                 
+                table_rows = []
                 for _, row in mt5_sorted.iterrows():
                     symbol = row['symbol']
                     display_name = SYMBOL_TO_NAME_MAP.get(symbol, symbol)
                     # For MT5 data, we already have the OHLC data in the dataframe
                     val = row['close']
-                    # Calculate session change (close - open)
-                    open_price = row['open']
-                    delta = val - open_price if pd.notna(open_price) else 0
-                    pct = (delta / open_price * 100) if pd.notna(open_price) and open_price != 0 else 0
+                    # Calculate session change (open to close)
+                    prev_close = row['open']  # Simplified approach for MT5 data
+                    delta = val - prev_close if pd.notna(prev_close) else 0
+                    pct = (delta / prev_close * 100) if pd.notna(prev_close) and prev_close != 0 else 0
                     
-                    val_disp = f"{val:,.5f}" if pd.notna(val) else "-"
-                    delta_disp = f"{delta:+.5f}" if pd.notna(delta) else "-"
+                    val_disp = f"{val:,.4f}" if pd.notna(val) else "-"
+                    delta_disp = f"{delta:+.4f}" if pd.notna(delta) else "-"
                     pct_disp = f"{pct:+.2f}%" if pd.notna(pct) else "-"
                     
                     color_class = ""
@@ -465,7 +525,14 @@ def html_report(analysis_results):
                 for _, row in df.iterrows():
                     symbol = row['symbol']
                     display_name = SYMBOL_TO_NAME_MAP.get(symbol, symbol)
-                    hist = load_historical_csv(symbol, asset_class, days=1)
+                    
+                    # Check if this symbol has an MT5 equivalent
+                    if symbol in symbol_mapping:
+                        # Use MT5 data for this symbol
+                        hist = load_historical_csv(symbol, 'mt5', days=1)  # Using mt5 as asset class to trigger MT5 loading
+                    else:
+                        hist = load_historical_csv(symbol, asset_class, days=1)
+                    
                     price_col = get_price_col(asset_class, hist)
                     val, delta, pct = value_and_pct_change(hist, price_col)
                     val_disp = f"{val:,.4f}" if pd.notna(val) else "-"
@@ -487,7 +554,14 @@ def html_report(analysis_results):
             for _, row in df.iterrows():
                 symbol = row['symbol']
                 display_name = SYMBOL_TO_NAME_MAP.get(symbol, symbol)
-                hist = load_historical_csv(symbol, asset_class, days=1)
+                
+                # Check if this symbol has an MT5 equivalent
+                if symbol in symbol_mapping:
+                    # Use MT5 data for this symbol
+                    hist = load_historical_csv(symbol, 'mt5', days=1)  # Using mt5 as asset class to trigger MT5 loading
+                else:
+                    hist = load_historical_csv(symbol, asset_class, days=1)
+                
                 price_col = get_price_col(asset_class, hist)
                 val, delta, pct = value_and_pct_change(hist, price_col)
                 val_disp = f"{val:,.4f}" if pd.notna(val) else "-"
@@ -509,7 +583,7 @@ def html_report(analysis_results):
     html_body.append(f'<div class="performance-section"><div>{leaders_table}</div><div>{laggards_table}</div></div>')
     
     # Add charts section at the end
-    key_assets = ['SPY', 'QQQ', 'DIA', 'IWM', 'VXX', 'UVXY', 'XLE', 'XLF', 'XLK', 'XLV', 'XLU']  # Key assets for charts (including XLU - Utilities)
+    key_assets = ['SPY', 'QQQ', 'DIA', 'IWM', 'VXX', 'UVXY', 'XLE', 'XLF', 'XLK', 'XLV', 'XLU', 'XAGUSD']  # Key assets for charts (including XLU - Utilities and XAGUSD as requested)
     html_body.append('<div class="charts-section"><h2>Key Assets 15-Min Charts</h2>')
     
     for asset in key_assets:
@@ -517,7 +591,11 @@ def html_report(analysis_results):
             if asset in df['symbol'].values:
                 display_name = SYMBOL_TO_NAME_MAP.get(asset, asset)
                 # Get historical data for chart
-                hist = load_historical_csv(asset, asset_class, days=7)
+                # Check if asset has MT5 equivalent
+                if asset in symbol_mapping:
+                    hist = load_historical_csv(asset, 'mt5', days=7)  # Use MT5 data
+                else:
+                    hist = load_historical_csv(asset, asset_class, days=7)
                 chart_html = generate_candle_chart_html(asset, display_name, hist)
                 html_body.append(f'<div class="chart-container"><h3>{display_name} ({asset})</h3>{chart_html}</div>')
                 break
@@ -527,14 +605,14 @@ def html_report(analysis_results):
 
 # --- Main execution block ---
 if __name__ == '__main__':
-    fp = 'data/market_analysis_results.pkl'
+    fp = 'approach 2.0/data/market_analysis_results.pkl'
     out_path = 'daily_report-i.html'
     try:
         analysis_results = load_analysis_results(fp)
         html_content = html_report(analysis_results)
         with open(out_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        print(f"✓ Report updated to handle multiple sector files: {out_path}")
+        print(f"✓ Report updated to handle MT5 data integration: {out_path}")
     except FileNotFoundError:
         print(f"Error: The input file was not found at {fp}")
     except Exception as e:
