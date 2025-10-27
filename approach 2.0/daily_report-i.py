@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, time
 import pytz
 import plotly.graph_objects as go
 import plotly.io as pio
+import os
 
 # --- Symbol to Descriptive Name Mapping ---
 SYMBOL_TO_NAME_MAP = {
@@ -31,8 +32,10 @@ SYMBOL_TO_NAME_MAP = {
     'USDJPYm': 'US Dollar vs Japanese Yen (MT5)', 'AUDUSDm': 'Australian Dollar vs US Dollar (MT5)',
     'USDCADm': 'US Dollar vs Canadian Dollar (MT5)', 'USDCHFm': 'US Dollar vs Swiss Franc (MT5)',
     'USDSEKm': 'US Dollar vs Swedish Krona (MT5)',
-    'XAUUSDm': 'Gold vs US Dollar (MT5)', 'XAGUSDm': 'Silver vs US Dollar (MT5)',
-    'USOILm': 'US Oil (MT5)', 'XNGUSDm': 'Natural Gas vs US Dollar (MT5)',
+    'XAUUSDm': 'Gold vs US Dollar (MT5)',
+    'XAGUSDm': 'Silver vs US Dollar (MT5)',
+    'USOILm': 'Crude Oil WTI (MT5)',
+    'XNGUSDm': 'Natural Gas vs US Dollar (MT5)',
     'BTCUSDm': 'Bitcoin vs US Dollar (MT5)', 'ETHUSDm': 'Ethereum vs US Dollar (MT5)',
     'XRPUSDm': 'Ripple vs US Dollar (MT5)', 'ADAUSDm': 'Cardano vs US Dollar (MT5)',
     'LTCUSDm': 'Litecoin vs US Dollar (MT5)', 'SOLUSDm': 'Solana vs US Dollar (MT5)',
@@ -74,7 +77,7 @@ def load_historical_csv(symbol, asset, days=1):
         'vix': 'vix_15min.csv'
     }
     try:
-        base_path = "data/"
+        base_path = os.path.join(os.path.dirname(__file__), "data")
         
         filenames = file_map.get(asset)
         if not filenames:
@@ -88,7 +91,8 @@ def load_historical_csv(symbol, asset, days=1):
         all_dfs = []
         for fname in filenames:
             try:
-                temp_df = pd.read_csv(f"{base_path}{fname}", parse_dates=['timestamp'])
+                full_path = os.path.join(base_path, fname)
+                temp_df = pd.read_csv(full_path, parse_dates=['timestamp'])
                 all_dfs.append(temp_df)
             except FileNotFoundError:
                 print(f"Warning: File not found and will be skipped: {base_path}{fname}")
@@ -428,37 +432,6 @@ def html_report(analysis_results):
                 # Generate and append the sector performance chart
                 sector_chart_html = generate_sector_performance_chart(df, SYMBOL_TO_NAME_MAP)
                 html_body.append(f'<div class="chart-container">{sector_chart_html}</div>')
-            elif asset_class == 'mt5':
-                # Handle MT5 data here - display it as a separate section
-                html_body.append('<h2 class="asset-class-header">MT5 Real-Time Data</h2>')
-                table_rows = []
-                # Sort by timestamp to show most recent data first
-                mt5_sorted = df.sort_values('timestamp', ascending=False)
-                
-                for _, row in mt5_sorted.iterrows():
-                    symbol = row['symbol']
-                    display_name = SYMBOL_TO_NAME_MAP.get(symbol, symbol)
-                    # For MT5 data, we already have the OHLC data in the dataframe
-                    val = row['close']
-                    # Calculate session change (close - open)
-                    open_price = row['open']
-                    delta = val - open_price if pd.notna(open_price) else 0
-                    pct = (delta / open_price * 100) if pd.notna(open_price) and open_price != 0 else 0
-                    
-                    val_disp = f"{val:,.5f}" if pd.notna(val) else "-"
-                    delta_disp = f"{delta:+.5f}" if pd.notna(delta) else "-"
-                    pct_disp = f"{pct:+.2f}%" if pd.notna(pct) else "-"
-                    
-                    color_class = ""
-                    if pd.notna(pct):
-                        if pct > 0: color_class = "positive"
-                        elif pct < 0: color_class = "negative"
-                        
-                    table_rows.append(f'<tr><td>{display_name}</td><td>{val_disp}</td><td class="{color_class}">{delta_disp}</td><td class="{color_class}">{pct_disp}</td></tr>')
-                    if pd.notna(pct):
-                        all_assets_performance.append({'symbol': symbol, 'asset_class': 'mt5', 'pct_change': pct})
-                        
-                html_body.append(f"""<table class="data-table"><thead><tr><th>Asset (MT5 Real-Time)</th><th>Latest Price</th><th>Change (Session)</th><th>% Change (Session)</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table>""")
             elif asset_class != 'indices':
                 html_body.append(f'<h2 class="asset-class-header">{asset_class.title()}</h2>')
                 table_rows = []
@@ -527,8 +500,9 @@ def html_report(analysis_results):
 
 # --- Main execution block ---
 if __name__ == '__main__':
-    fp = 'data/market_analysis_results.pkl'
-    out_path = 'daily_report-i.html'
+    base_path = os.path.dirname(__file__)
+    fp = os.path.join(base_path, 'data/market_analysis_results.pkl')
+    out_path = os.path.join(base_path, 'daily_report-i.html')
     try:
         analysis_results = load_analysis_results(fp)
         html_content = html_report(analysis_results)

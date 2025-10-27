@@ -19,7 +19,8 @@ def test_mt5_data_integration():
     print("Testing MT5 data integration...")
     
     # Check if MT5 data file exists
-    mt5_file = Path("data/mt5/mt5_standardized.csv")
+    base_path = os.path.dirname(__file__)
+    mt5_file = Path(os.path.join(base_path, "data/mt5/mt5_standardized.csv"))
     if not mt5_file.exists():
         print("MT5 standardized data file not found")
         return False
@@ -41,7 +42,8 @@ def test_aligned_data_includes_mt5():
     """
     print("\nTesting that aligned data includes MT5...")
     
-    aligned_data_file = Path("data/latest_market_data.pkl")
+    base_path = os.path.dirname(__file__)
+    aligned_data_file = Path(os.path.join(base_path, "data/latest_market_data.pkl"))
     if not aligned_data_file.exists():
         print("Aligned data file not found")
         return False
@@ -54,9 +56,15 @@ def test_aligned_data_includes_mt5():
         for asset_class in latest_data:
             print(f"  - {asset_class}: {len(latest_data[asset_class])} symbols")
         
-        if 'mt5' in latest_data:
+        # Check for MT5 symbols in the other asset classes
+        mt5_symbols_found = False
+        for asset_class in latest_data:
+            if latest_data[asset_class]['symbol'].str.contains('m$', regex=True).any():
+                mt5_symbols_found = True
+                break
+
+        if mt5_symbols_found:
             print("✓ MT5 data found in aligned data")
-            print(f"  MT5 symbols: {len(latest_data['mt5'])}")
             return True
         else:
             print("✗ MT5 data not found in aligned data")

@@ -4,6 +4,101 @@ import pytz
 import pickle
 import os
 
+def switch_to_mt5_based_on_mapping(latest_data):
+    """
+    Switches data source from T12 to MT5 for symbols defined in symbol_mapping.csv
+    and adds new symbols as specified.
+    """
+    base_path = os.path.dirname(__file__)
+    mapping_file = os.path.join(base_path, 'data/mt5/symbol_mapping.csv')
+    if not os.path.exists(mapping_file):
+        print(f"Warning: Symbol mapping file not found at {mapping_file}. Skipping data source switch.")
+        return latest_data
+
+    if 'mt5' not in latest_data or latest_data['mt5'].empty:
+        print("Warning: No MT5 data available to perform the switch.")
+        return latest_data
+
+    print("Applying MT5 symbol mapping...")
+    mapping_df = pd.read_csv(mapping_file, skipinitialspace=True)
+    mt5_data = latest_data['mt5'].copy()
+
+    # This mapping helps connect the descriptive name in the CSV to the T12 symbol used in the data files.
+    # This is based on the SYMBOL_TO_NAME_MAP in daily_report-i.py
+    name_to_t12_symbol = {
+        'S&P 500': 'SPY', 'Nasdaq 100': 'QQQ', 'Dow Jones Industrial Average': 'DIA',
+        'Russell 2000': 'IWM', 'United Kingdom (FTSE)': 'EWU', 'Japan (Nikkei)': 'EWJ',
+        'Euro Stoxx 50': 'FEZ', 'Germany (DAX)': 'DAX', 'Emerging Markets': 'EEM',
+        'India (MSCI India)': 'INDA', 'China (MSCI China)': 'MCHI', 'Germany Equity': 'EWG',
+        'France': 'EWQ', 'Australia': 'EWA'
+        # Forex and others can be handled by logic, e.g. 'EUR/USD' -> 'EURUSD'
+    }
+
+    asset_type_map = {
+        'forex': 'forex', 'cfd': 'indices', 'commodity': 'commodities', 'crypto': 'crypto'
+    }
+
+    for _, row in mapping_df.iterrows():
+        report_name = row['Report Symbol/name'].strip()
+        mt5_symbol = row['Symbol']
+
+        if mt5_symbol == 'NA' or pd.isna(mt5_symbol):
+            continue
+
+        asset_type = str(row['Asset Type']).lower().strip()
+        notes = str(row['Notes'])
+
+        mt5_row_df = mt5_data[mt5_data['symbol'] == mt5_symbol]
+        if mt5_row_df.empty:
+            print(f"Info: MT5 data for '{mt5_symbol}' not in latest fetch. Skipping.")
+            continue
+
+        asset_class_key = asset_type_map.get(asset_type)
+        if not asset_class_key:
+            print(f"Warning: Unknown asset type '{asset_type}' for '{report_name}'.")
+            continue
+
+        # Ensure the target asset class dataframe exists
+        if asset_class_key not in latest_data:
+            print(f"Info: Creating new asset class dataframe for '{asset_class_key}'.")
+            latest_data[asset_class_key] = pd.DataFrame(columns=mt5_row_df.columns)
+
+        # --- Add new symbols ---
+        if "to be added" in notes:
+            if mt5_symbol not in latest_data[asset_class_key]['symbol'].values:
+                latest_data[asset_class_key] = pd.concat(
+                    [latest_data[asset_class_key], mt5_row_df], ignore_index=True
+                )
+                print(f"✓ Added new symbol '{mt5_symbol}' to '{asset_class_key}'.")
+            continue
+
+        # --- Replace existing symbols ---
+        t12_symbol_to_remove = name_to_t12_symbol.get(report_name)
+        if not t12_symbol_to_remove and asset_type == 'forex':
+            t12_symbol_to_remove = report_name.replace('/', '')
+
+        if not t12_symbol_to_remove:
+            print(f"Info: No T12 symbol found for '{report_name}'. Adding MT5 symbol '{mt5_symbol}' directly.")
+        else:
+            df = latest_data[asset_class_key]
+            if t12_symbol_to_remove in df['symbol'].values:
+                df = df[df['symbol'] != t12_symbol_to_remove]
+                latest_data[asset_class_key] = df
+                print(f"✓ Removed T12 symbol '{t12_symbol_to_remove}' from '{asset_class_key}'.")
+
+        # Add the MT5 data, ensuring no duplicates
+        if mt5_symbol not in latest_data[asset_class_key]['symbol'].values:
+            latest_data[asset_class_key] = pd.concat(
+                [latest_data[asset_class_key], mt5_row_df], ignore_index=True
+            )
+            print(f"✓ Added MT5 symbol '{mt5_symbol}' to '{asset_class_key}'.")
+
+    latest_data.pop('mt5', None)
+    print("✓ MT5 data has been integrated into respective asset classes.")
+
+    return latest_data
+
+
 def process_mt5_data(latest_data):
     """
     Process MT5 data and integrate it with existing data.
@@ -17,7 +112,8 @@ def process_mt5_data(latest_data):
     """
     try:
         # Check if MT5 standardized data exists
-        mt5_file = 'data/mt5/mt5_standardized.csv'
+        base_path = os.path.dirname(__file__)
+        mt5_file = os.path.join(base_path, 'data/mt5/mt5_standardized.csv')
         if not os.path.exists(mt5_file):
             print("MT5 data not found, continuing with existing data...")
             return latest_data
@@ -62,15 +158,17 @@ def read_and_align_data():
     Read all asset class CSVs, align timezones, and select the latest data for each asset.
     Returns a dictionary with latest data for each asset class.
     """
+    # Correct file paths to be relative to the script's location
+    base_path = os.path.dirname(__file__)
     data_files = {
-        'bonds': {'file': 'data/bonds_15min.csv', 'tz_source': 'America/New_York'},
-        'commodities': {'file': 'data/commodities_15min.csv', 'tz_source': 'UTC'},
-        'crypto': {'file': 'data/crypto_15min.csv', 'tz_source': 'UTC'},
-        'forex': {'file': 'data/forex_15min.csv', 'tz_source': 'UTC'},
-        'indices': {'file': 'data/indices_15min.csv', 'tz_source': 'America/New_York'},
-        'sector_s1': {'file': 'data/sector_etf_15min.csv', 'tz_source': 'America/New_York'},
-        'sector_s2': {'file': 'data/sector2_etf_15min.csv', 'tz_source': 'America/New_York'},
-        'vix': {'file': 'data/vix_15min.csv', 'tz_source': 'America/New_York'}
+        'bonds': {'file': os.path.join(base_path, 'data/bonds_15min.csv'), 'tz_source': 'America/New_York'},
+        'commodities': {'file': os.path.join(base_path, 'data/commodities_15min.csv'), 'tz_source': 'UTC'},
+        'crypto': {'file': os.path.join(base_path, 'data/crypto_15min.csv'), 'tz_source': 'UTC'},
+        'forex': {'file': os.path.join(base_path, 'data/forex_15min.csv'), 'tz_source': 'UTC'},
+        'indices': {'file': os.path.join(base_path, 'data/indices_15min.csv'), 'tz_source': 'America/New_York'},
+        'sector_s1': {'file': os.path.join(base_path, 'data/sector_etf_15min.csv'), 'tz_source': 'America/New_York'},
+        'sector_s2': {'file': os.path.join(base_path, 'data/sector2_etf_15min.csv'), 'tz_source': 'America/New_York'},
+        'vix': {'file': os.path.join(base_path, 'data/vix_15min.csv'), 'tz_source': 'America/New_York'}
     }
 
     latest_data = {}
@@ -122,10 +220,13 @@ def read_and_align_data():
         latest_data.pop('sector_s1', None)
         latest_data.pop('sector_s2', None)
 
-    # Process MT5 data and integrate it
+    # Process MT5 data first to make it available for switching
     latest_data = process_mt5_data(latest_data)
 
-    output_path = 'data/latest_market_data.pkl'
+    # Switch data source to MT5 based on the mapping file
+    latest_data = switch_to_mt5_based_on_mapping(latest_data)
+
+    output_path = os.path.join(base_path, 'data/latest_market_data.pkl')
     with open(output_path, 'wb') as f:
         pickle.dump(latest_data, f)
     print(f"\n✓ Latest data saved to '{output_path}' for analysis")
