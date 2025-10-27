@@ -15,5 +15,5 @@ pandas_ta
 scipy
 scikit-learn
 seaborn
-plotly
+plotly==5.15.0
 pytest
