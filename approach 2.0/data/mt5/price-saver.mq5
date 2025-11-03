@@ -5,28 +5,31 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2025, Quantwater Tech"
 #property link      "https://www.quantwater.tech"
-#property version   "4.00" // Daily file creation logic added
+#property version   "4.01" // Updated for Equiti standard account symbols (.sd suffix)
 
 //--- Global variable for the file handle
 int ExtFileHandle = INVALID_HANDLE;
 
-//--- [VALIDATED] Final list of 41 assets for the report ---
+//--- [VALIDATED] Final list of 41 assets for Equiti Standard Account (.sd suffix for forex, .lv for stocks/crypto, rolling indices/commodities)
+// Indices use rolling contract notation "Roll" suffix where applicable
 string ExtAssets[] =
   {
-   // Indices (11) #Russell 2000 not presently available
-   "US500m", "US30m", "USTECm","DE30m", "FR40m", "UK100m", "STOXX50m", "AUS200m", "JP225m", "HK50m", "IN50m",
+   // Indices (11)
+   "US500Roll", "US30Roll", "UT100Roll", "DE40Roll", "FRA40Roll", "UK100Roll", "EU50Roll", "AUS200Roll", "JP225Roll", "HK50Roll", "India50Roll",
 
    // Commodities (4)
-   "XAUUSDm", "XAGUSDm", "USOILm", "XNGUSDm",
+   "XAUUSD", "XAGUSD", "USOILRoll", "NGDec25", "XPTUSD",  // Natural Gas quarterly contract, confirm symbol on your platform
 
-   // Crypto (6)
-   "BTCUSDm", "ETHUSDm", "XRPUSDm", "ADAUSDm", "LTCUSDm", "SOLUSDm",
+   // Volatility Indices (3)
+   "VIXRoll", 
+   // Crypto (6) - .lv suffix
+   "BTCUSD.lv", "ETHUSD.lv", "XRPUSD.lv", "ADAUSD.lv", "LTCUSD.lv", "SOLUSD.lv",
 
-   // Forex (7)
-   "EURUSDm", "USDJPYm", "GBPUSDm", "AUDUSDm", "USDCADm", "USDCHFm", "USDSEKm",
+   // Forex (7) - .sd suffix
+   "EURUSD.sd", "USDJPY.sd", "GBPUSD.sd", "AUDUSD.sd", "USDCAD.sd", "USDCHF.sd", "USDSEK.sd",
 
-   // Key Stocks (13)
-   "AAPLm", "MSFTm", "GOOGLm", "AMZNm", "NVDAm", "FBm", "JPMm", "BACm", "JNJm", "PFEm", "XOMm", "TSLAm", "MCDm"
+   // Key Stocks (13) - .lv suffix
+   "Apple", "Microsoft", "Alphabet", "Amazon", "NVIDIA", "Tesla", "Facebook", "JPMorgan", "Johnson&Johnson", "Walmart", "Visa", "Procter&Gamble", "Mastercard", "Disney","McDonalds"
   };
 
 //+------------------------------------------------------------------+
@@ -54,8 +57,9 @@ int OnInit()
   {
    // Set a timer to trigger every 60 seconds
    EventSetTimer(60);
-   Print("PriceDataExporter v4.0 started. Tracking ", ArraySize(ExtAssets), " symbols.");
+   Print("PriceDataExporter v4.01 started. Tracking ", ArraySize(ExtAssets), " symbols.");
    Print("Data will be saved to a new file each day in MQL5\\Files\\ (format: yyyymmdd.csv).");
+   Print("Configured for Equiti Standard Account symbols (.sd for forex, .lv for stocks/crypto).");
    
    return(INIT_SUCCEEDED);
   }
@@ -67,9 +71,8 @@ void OnDeinit(const int reason)
   {
    // Clean up the timer when the EA is stopped
    EventKillTimer();
-   Print("PriceDataExporter v4.0 stopped.");
+   Print("PriceDataExporter v4.01 stopped.");
    
-   // Ensure the file handle is closed if it was left open
    if(ExtFileHandle != INVALID_HANDLE)
      {
       FileClose(ExtFileHandle);
@@ -81,35 +84,27 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTimer()
   {
-   // Get the filename for the current day
    string csvFileName = GetDailyCSVFileName();
-   
-   // Ensure the file for today exists and has a header.
    WriteHeaderIfNeeded(csvFileName);
    
-   // Open the daily CSV file in append mode.
    ExtFileHandle = FileOpen(csvFileName, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
    if(ExtFileHandle == INVALID_HANDLE)
      {
       Print("CRITICAL ERROR: Could not open ", csvFileName, " for writing. Error: ", GetLastError());
-      return; // Stop this run if the file can't be opened
+      return;
      }
 
-   // Move the file pointer to the end of the file to append new data
    FileSeek(ExtFileHandle, 0, SEEK_END);
 
-   MqlRates rates[1]; // Array to hold the bar data
+   MqlRates rates[1];
 
-   // Loop through every asset in our list
    for(int i = 0; i < ArraySize(ExtAssets); i++)
      {
       string symbol = ExtAssets[i];
       
-      // Attempt to copy the most recently COMPLETED M1 bar
       if(CopyRates(symbol, PERIOD_M1, 1, 1, rates) > 0)
         {
          MqlRates latest_bar = rates[0];
-         
          int symbol_digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
 
          string time_str = TimeToString(latest_bar.time, TIME_DATE | TIME_MINUTES);
@@ -130,7 +125,6 @@ void OnTimer()
         }
      }
 
-   // Close the file handle ONCE after all symbols have been processed.
    FileClose(ExtFileHandle);
    ExtFileHandle = INVALID_HANDLE;
    
@@ -142,18 +136,16 @@ void OnTimer()
 //+------------------------------------------------------------------+
 void WriteHeaderIfNeeded(string filename)
   {
-   // Try to open for reading. If it fails, the file doesn't exist.
    int fileHandle = FileOpen(filename, FILE_READ, ',');
 
-   if(fileHandle == INVALID_HANDLE) // File does not exist
+   if(fileHandle == INVALID_HANDLE)
      {
       Print("New day detected. Creating new file: ", filename);
-      // Create the file and write the header
       fileHandle = FileOpen(filename, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
       if(fileHandle != INVALID_HANDLE)
         {
          FileWrite(fileHandle, "time", "symbol", "open", "high", "low", "close", "volume");
-         FileClose(fileHandle); // Close it immediately after writing header
+         FileClose(fileHandle);
          Print("CSV header written successfully.");
         }
       else
@@ -161,9 +153,12 @@ void WriteHeaderIfNeeded(string filename)
          Print("CRITICAL ERROR: Could not create ", filename, ". Error: ", GetLastError());
         }
      }
-   else // File already exists
+   else
      {
-      FileClose(fileHandle); // Just close it; we're ready to append.
+      FileClose(fileHandle);
      }
   }
 //+------------------------------------------------------------------+
+
+
+

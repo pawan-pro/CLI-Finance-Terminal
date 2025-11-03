@@ -1,4 +1,4 @@
-#!/Users/pawan/CLI-Finance-Terminal/.venv/bin/python
+#!/Users/pawan/CLI-Finance-Terminal/.venv/bin/python3.13
 import sys
 from pytest import console_main
 if __name__ == '__main__':

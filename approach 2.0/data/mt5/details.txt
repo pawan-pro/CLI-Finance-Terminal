@@ -1,0 +1,1 @@
+path: C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\DD0DD2E2D928BE723A6D245A160D3117\MQL5\Files
