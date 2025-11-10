@@ -1,0 +1,6 @@
+location = C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\DD0DD2ED928BE723A6D245A160D3117\MQL5\Files
+public dns = ec2-13-40-182-210.eu-west-2.compute.amazonaws.com
+username = Administrator
+instance id = i- 041295d497d6ae028 (equiti-py)
+public ip4 = 13.40.182.210
+private ip4 = 172.31.32.28

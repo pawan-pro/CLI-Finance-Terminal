@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 setup(
     name="finterm",
     version="0.1.0",
-    packages=find_packages(),
+    packages=find_packages() + ['adk'],
     include_package_data=True,
     install_requires=requirements,
     entry_points={

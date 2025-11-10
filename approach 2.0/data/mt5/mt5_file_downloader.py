@@ -5,11 +5,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 # Configuration
-REMOTE_HOST = "13.53.175.35"
+REMOTE_HOST = "ec2-13-40-182-210.eu-west-2.compute.amazonaws.com"
 REMOTE_USER = "Administrator"
-REMOTE_PATH = r"C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\DD0DD2E2D928BE723A6D245A160D3117\MQL5\Files"
+REMOTE_PATH = r"C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\DD0DD2ED928BE723A6D245A160D3117\MQL5\Files"
 LOCAL_PATH = "/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/mt5/"
-PEM_KEY_PATH = "/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/mt5/gold-ea.pem"
+PEM_KEY_PATH = "/Users/pawan/CLI-Finance-Terminal/approach 2.0/data/mt5/equiti-aws-vps-mt5/VPS-MT5.pem"
 
 # Get password from environment variable (fallback to prompt)
 PASSWORD = os.getenv('MT5_SSH_PASSWORD')

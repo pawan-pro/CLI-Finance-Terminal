@@ -1,0 +1,554 @@
+[
+  {
+    "asset": "EUR/USD",
+    "title": "Dollar Gains and Gold Falls on Hawkish Fed Comments",
+    "url": "https://www.barchart.com/story/news/35834726/dollar-gains-and-gold-falls-on-hawkish-fed-comments",
+    "summary": "The dollar index (DXY00 ) on Friday rose by +0.27% and posted a fresh 2.75-month high. Hawkish comments on Friday from Kansas City Fed President Jeff Schmid,..."
+  },
+  {
+    "asset": "EUR/USD",
+    "title": "Dollar Pushes Higher on Reduced Fed Rate Cut Speculation",
+    "url": "https://www.barchart.com/story/news/35805306/dollar-pushes-higher-on-reduced-fed-rate-cut-speculation",
+    "summary": "The dollar index (DXY00 ) climbed to a 2.75-month high on Thursday and finished up by +0.29%. Higher T-note yields on Thursday were positive for the dollar..."
+  },
+  {
+    "asset": "EUR/USD",
+    "title": "Dollar Climbs with Bond Yields",
+    "url": "https://www.barchart.com/story/news/35797142/dollar-climbs-with-bond-yields",
+    "summary": "The dollar index (DXY00 ) climbed to a 3-week high today and is up by +0.19%. Higher T-note yields today are positive for the dollar as the 10-year T-note..."
+  },
+  {
+    "asset": "EUR/USD",
+    "title": "Dollar Rallies on Hawkish Powell",
+    "url": "https://www.barchart.com/story/news/35772140/dollar-rallies-on-hawkish-powell",
+    "summary": "The dollar index (DXY00 ) rallied to a 2-week high on Wednesday and finished up by +0.62%. The dollar found support on Wednesday amid easing global trade..."
+  },
+  {
+    "asset": "USD/CAD",
+    "title": "Is the \u201cSuper FOMO Rally\u201d for Gold Coming to an End?",
+    "url": "https://finance.yahoo.com/news/super-fomo-rally-gold-coming-093519908.html",
+    "summary": "In this review, we will focus on several trading opportunities, which might potentially unfold this week."
+  },
+  {
+    "asset": "AUD/USD",
+    "title": "China GDP Slows, Industrial Output Jumps after Export Surge; AUD/USD and Hang Seng Climb",
+    "url": "https://www.fxempire.com/news/article/china-gdp-slows-industrial-output-jumps-after-export-surge-aud-usd-and-hang-seng-climb-1555733",
+    "summary": "China housing slump lingers while factory output rebounds. Investors watch for policy signals and trade talks at APEC."
+  },
+  {
+    "asset": "AUD/USD",
+    "title": "China Exports Soar 8.3% in September, Defying Trump\u2019s Tariffs; AUD/USD Rallies, HSI Slides",
+    "url": "https://www.fxempire.com/news/article/china-exports-soar-8-3-in-september-defying-trumps-tariffs-aud-usd-rallies-hsi-slides-1554322",
+    "summary": "Strong Chinese trade data boost risk sentiment, but US-China tensions keep investors cautious ahead of inflation data and APEC Summit talks."
+  },
+  {
+    "asset": "GBP/USD",
+    "title": "Oil prices dip as investors brace for OPEC+ output hike",
+    "url": "https://uk.finance.yahoo.com/news/oil-prices-opec-output-gold-pound-latest-101508000.html",
+    "summary": "Oil prices dipped on Friday, ahead of an anticipated output hike by the Organization of the Petroleum Exporting Countries and its allies."
+  },
+  {
+    "asset": "GBP/USD",
+    "title": "UK politics attempts to copy \u00a35B Trump crypto script, without his levers or power",
+    "url": "https://cryptoslate.com/uk-politics-attempts-to-adopt-5b-trump-crypto-script-without-his-levers-or-power/",
+    "summary": "At a London conference this week, Reform UK leader Nigel Farage cast himself as \u201cyour champion\u201d for digital assets and sketched a platform that includes a flat 10% capital gains tax on crypto, creation of a roughly \u00a35 billion state Bitcoin reserve anchored in\u2026"
+  },
+  {
+    "asset": "GBP/USD",
+    "title": "exness-data-preprocess added to PyPI",
+    "url": "https://pypi.org/project/exness-data-preprocess/",
+    "summary": "Professional Exness forex tick data preprocessing with optimal compression (Parquet Zstd-22) and DuckDB OHLC generation. Provides efficient storage (9% smaller than ZIP) with lossless precision and direct queryability."
+  },
+  {
+    "asset": "ADA/USD",
+    "title": "Whales Quietly Accumulate ADA as Cardano Nears Bullish Triangle Breakout, Is $5 Next?",
+    "url": "http://www.newsbtc.com/news/cardano/whales-quietly-accumulate-ada-as-cardano-nears-bullish-triangle-breakout-is-5-next/",
+    "summary": "The Cardano (ADA) price is flying under the radar amid growing accumulation by large-holders (\u201cwhales\u201d) and a technical formation that traders seldom ignore, a symmetrical triangle. Related Reading: Is The Dogecoin Bull Run Over? Analyst Predicts When DOGE Ra\u2026"
+  },
+  {
+    "asset": "ADA/USD",
+    "title": "Cardano Gears Up for Major Rally as Technicals Flash Buy Signal and Traders Eye $2.50 Target",
+    "url": "http://www.newsbtc.com/news/cardano/cardano-gears-up-for-major-rally-as-technicals-flash-buy-signal-and-traders-eye-2-50-target/",
+    "summary": "Cardano (ADA) appears to be preparing for a major rally, as bullish technical signals and network milestones spark renewed optimism among traders. Related Reading: HYPE Soars Beyond $40 Following Robinhood Listing: What\u2019s Next For Hyperliquid\u2019s Price? After m\u2026"
+  },
+  {
+    "asset": "ADA/USD",
+    "title": "Whales Accumulate Millions in ADA as Bearish Momentum Persists, Can Cardano Repeat Its 60% Rally?",
+    "url": "https://bitcoinist.com/whales-ada-as-bearish-persists-cardano-repeat-rally/",
+    "summary": "Cardano (ADA) slipped about 4% to $0.64, trading below the 20-, 50- and 200-day moving averages ($0.735, $0.804, $0.741), a setup that keeps short- and medium-term pressure tilted lower. Even so, on-chain flow shows whales accumulating roughly 200 million ADA\u2026"
+  },
+  {
+    "asset": "ADA/USD",
+    "title": "Analysts Caution Cardano (ADA) May Drop Further Before $1 Rebound After 12% Dip",
+    "url": "http://www.newsbtc.com/news/cardano/analysts-caution-cardano-ada-may-drop-further-before-1-rebound-after-12-dip/",
+    "summary": "Cardano (ADA) fell roughly 27% this week, slipping below the $0.66 support as risk-off flows hit crypto. Bitcoin\u2019s slide toward $104,000 and softer altcoin liquidity magnified downside, and on-chain data shows large holders leaning defensive. Related Reading:\u2026"
+  },
+  {
+    "asset": "Dow Jones Industrial Average",
+    "title": "Ahead of Market: 10 things that will decide stock market action on Monday",
+    "url": "https://economictimes.indiatimes.com/markets/stocks/news/ahead-of-market-10-things-that-will-decide-stock-market-action-on-monday/articleshow/125032600.cms",
+    "summary": "Indian stock markets closed lower on Friday. The Sensex and Nifty experienced a second day of declines. Investors booked profits amid mixed corporate results and cautious global sentiment. A stronger US dollar and the Federal Reserve's stance on rate cuts imp\u2026"
+  },
+  {
+    "asset": "Dow Jones Industrial Average",
+    "title": "What Commodity Sector Looks Best This Holiday Season?",
+    "url": "https://www.barchart.com/story/news/35850891/what-commodity-sector-looks-best-this-holiday-season",
+    "summary": "As the calendar page turned to November, the start of the Holiday Season, the Grains sector stood out in the Commodity complex."
+  },
+  {
+    "asset": "Dow Jones Industrial Average",
+    "title": "S&P 500 enters final two months with 16% gain after seven-month-long dream run as market sentiment continues to remain positive",
+    "url": "https://economictimes.indiatimes.com/news/international/us/sp-500-enters-final-two-months-with-16-gain-after-seven-month-long-dream-run-as-market-sentiment-continues-to-remain-positive/articleshow/125031791.cms",
+    "summary": "The S&P 500 has achieved a significant 16% gain by November 2025, driven by tech giants like Amazon. However, this rally shows divergence, with gains concentrated in mega-cap stocks while the equal-weighted index declined. Investors are cautiously optimistic,\u2026"
+  },
+  {
+    "asset": "Dow Jones Industrial Average",
+    "title": "Weekly Market Wrap: First Solar, Amazon lead, Starbucks slips",
+    "url": "https://www.thestreet.com/investing/stocks/weekly-market-wrap-first-solar-amazon-lead-starbucks-slips",
+    "summary": "An overall mixed week in terms of the major indices\u2019 performances and the stock market\u2019s reaction to earnings from big tech companies. The S&P 500 was up..."
+  },
+  {
+    "asset": "Nasdaq 100",
+    "title": "Stock Market News Review: SPY, QQQ Accelerate as Trump Weighs Another China Tariff Reduction; Rate Cut Odds Stumble",
+    "url": "https://biztoc.com/x/a1fab87babf0b574",
+    "summary": "Both the S&P 500 ETF (SPY) and the Nasdaq 100 ETF (QQQ) closed in positive territory ahead of another busy week of earnings.\nElevate Your Investing Strategy:\n- Take advantage of TipRanks Premium at 50% off! Unlock powerful investing tools, advanced data, and \u2026"
+  },
+  {
+    "asset": "Nasdaq 100",
+    "title": "Weekly Market Wrap: First Solar, Amazon lead, Starbucks slips",
+    "url": "https://www.thestreet.com/investing/stocks/weekly-market-wrap-first-solar-amazon-lead-starbucks-slips",
+    "summary": "An overall mixed week in terms of the major indices\u2019 performances and the stock market\u2019s reaction to earnings from big tech companies. The S&P 500 was up..."
+  },
+  {
+    "asset": "Nasdaq 100",
+    "title": "ASX 200 Ends Wild October with Tiny Loss \u2014 But the Month Was Anything But Calm",
+    "url": "https://www.ibtimes.com.au/asx-200-ends-wild-october-tiny-loss-month-was-anything-calm-1861014",
+    "summary": "ASX 200 slipped 0.04% on Friday to close at 8,881.90, capping a volatile October that saw the index erase two months of gains. Hot CPI data killed rate cut hopes while Domino's Pizza surged 36% on takeover speculation and CSL crashed 15% on a revenue warning."
+  },
+  {
+    "asset": "USD/CHF",
+    "title": "After gold\u2019s big plunge, here\u2019s what history shows could happen next",
+    "url": "https://www.marketwatch.com/story/golds-plunge-raises-questions-about-its-role-in-one-of-the-most-popular-trades-of-the-year-d495ac82",
+    "summary": "The retreat in gold prices raises questions about the metal\u2019s role in one of the year\u2019s most popular trades."
+  },
+  {
+    "asset": "Russell 2000",
+    "title": "SMDV Is A Dividend ETF That Makes Sense",
+    "url": "https://biztoc.com/x/54933ba235b60100",
+    "summary": "I have written a series of articles on ETFs over the past two weeks that have been very negative. One of the key questions from readers has been: If not this ETF, then what? That is a good\nSummary\n- ProShares Russell 2000 Dividend Growers ETF offers unique ex\u2026"
+  },
+  {
+    "asset": "Russell 2000",
+    "title": "How to watch Scotland vs USA: live stream Autumn Nations Series 2025 rugby from anywhere",
+    "url": "https://www.techradar.com/how-to-watch/rugby/scotland-vs-usa-autumn-nations-series-2025-rugby",
+    "summary": "As the Eagles land at Murrayfield for the first time in 25 years, here's how you can watch Scotland vs USA live streams from wherever you are in the world."
+  },
+  {
+    "asset": "Russell 2000",
+    "title": "November could be a stock market goldmine \u2014 here\u2019s where Bank of America says to bet big",
+    "url": "https://economictimes.indiatimes.com/news/international/us/november-could-be-a-stock-market-goldmine-heres-where-bank-of-america-says-to-bet-big/articleshow/125016000.cms",
+    "summary": "November\u2019s shaping up to be a stock market goldmine. Bank of America sees a powerful setup as easing inflation, cooling yields, and strong spending drive optimism. Since 1927, the S&P 500 has gained nearly 59% of Novembers, averaging 1%, and when October ends\u2026"
+  },
+  {
+    "asset": "China (MSCI China)",
+    "title": "Emerging market stocks rose every month this year for first time since 1993",
+    "url": "https://www.bloomberg.com/news/articles/2025-10-31/em-stocks-rise-every-month-this-year-first-time-since-1993",
+    "summary": "The MSCI Emerging Markets Index has rallied every month from January to October \u2014 a feat last seen in 1993 \u2014 and is up around 30% this year. On Friday, it fell 0.7% but closed out the month with a 4% gain"
+  },
+  {
+    "asset": "China (MSCI China)",
+    "title": "GTT : Q3 2025 Activity Update - Press Release",
+    "url": "https://www.globenewswire.com/news-release/2025/10/31/3178530/0/en/GTT-Q3-2025-Activity-Update-Press-Release.html",
+    "summary": "Revenue of 600\u00a0million\u00a0euros for the first nine months of 2025, strong growth of 29%; annual objectives revised upwards   9M 2025 revenue:......"
+  },
+  {
+    "asset": "China (MSCI China)",
+    "title": "Canadian Pension Plans Maintain Momentum Through Third Quarter",
+    "url": "https://financialpost.com/pmn/business-wire-news-releases-pmn/canadian-pension-plans-maintain-momentum-through-third-quarter",
+    "summary": "TORONTO \u2014 Canadian pension plans had positive returns in the third quarter of 2025, buoyed by equity markets, according to the Northern Trust Canada Universe. The median Canadian Pension Plan returned 3.6% for the quarter and 4.3% year-to-date for the period \u2026"
+  },
+  {
+    "asset": "China (MSCI China)",
+    "title": "Asia Market Open: Crypto Rally Stalls as Bitcoin Sinks Below $113K Ahead of Fed Rate Call",
+    "url": "https://cryptonews.com/news/asia-market-open-crypto-rally-stalls-as-bitcoin-sinks-below-113k-ahead-of-fed-rate-call/",
+    "summary": "Good morning, Asia. Here\u2019s what\u2019s moving before the bell.Bitcoin lost steam into the Asia session, down 1.1% to $112,806 as traders trimmed risk before the..."
+  },
+  {
+    "asset": "ETH/USD",
+    "title": "Ethereum Price Slips below $4,000 as Institutions Continue Accumulating Despite Market Pullback",
+    "url": "https://bitcoinist.com/ethereum-price-slips-4000-institutions-accumulating/",
+    "summary": "Ethereum (ETH) has fallen below the critical $4,000 level amid renewed market uncertainty following comments from Federal Reserve Chair Jerome Powell. Related Reading: Bitcoin Price To Recover? Here Are Some Developments You Should Be Aware Of Powell\u2019s indica\u2026"
+  },
+  {
+    "asset": "ETH/USD",
+    "title": "Circle Launches Arc Testnet With Visa, Mastercard, and BlackRock to Bridge TradFi and Blockchain",
+    "url": "https://bitcoinist.com/circle-launches-arc-testnet-with-visa-mastercard-and-blackrock-to-bridge-tradfi-and-blockchain/",
+    "summary": "Stablecoin leader Circle, the issuer of USDC, has officially launched its Arc testnet with VISA, Mastercard and other major partners, a new Layer-1 blockchain designed to serve as the \u201ceconomic operating system for the internet.\u201d Related Reading: Solana Price\u2026"
+  },
+  {
+    "asset": "ETH/USD",
+    "title": "Ethereum Forecast: Lack Of Conviction Keeps ETH Trapped Below $4K",
+    "url": "http://www.newsbtc.com/analysis/eth/ethereum-forecast-eth-trapped-below-4k/",
+    "summary": "Ethereum price started a downside correction below $4,120. ETH is moving lower below $4,000 and might decline further if it trades below $3,880. Ethereum started a downside correction below $4,050 and $4,000. The price is trading below $4,000 and the 100-hour\u2026"
+  },
+  {
+    "asset": "ETH/USD",
+    "title": "Ethereum Turns Lower \u2014 Market Sentiment Softens As $4K Level Gives Way",
+    "url": "http://www.newsbtc.com/analysis/eth/ethereum-turns-lower-4k/",
+    "summary": "Ethereum price started a downside correction from $4,250. ETH is moving lower below $4,000 and might decline further if it trades below $3,920. Ethereum started a downside correction below $4,150 and $4,050. The price is trading below $4,050 and the 100-hourl\u2026"
+  },
+  {
+    "asset": "India (MSCI India)",
+    "title": "FIIs boosted holdings in state-run banks in the September quarter. Is the smart money betting on a breakout?",
+    "url": "https://economictimes.indiatimes.com/markets/stocks/news/fiis-boosted-holdings-in-state-run-banks-in-the-september-quarter-is-the-smart-money-betting-on-a-breakout/articleshow/125009649.cms",
+    "summary": "Foreign investors are boosting their holdings in Indian public sector banks. This move signals growing confidence ahead of potential government policy changes. An increase in foreign ownership limits could unlock significant capital. Analysts see this as a po\u2026"
+  },
+  {
+    "asset": "India (MSCI India)",
+    "title": "PSU Banks gain up to 5%. Here are 3 factors driving the surge in state-run lenders",
+    "url": "https://economictimes.indiatimes.com/markets/stocks/news/psu-banks-gain-up-to-5-here-are-3-factors-driving-the-surge-in-state-run-lenders/articleshow/124987386.cms",
+    "summary": "State-run bank stocks rallied sharply on Friday, driven by expectations of higher FII caps, rising foreign interest in Indian lenders, and strong technical indicators supporting further upside in major PSU banks."
+  },
+  {
+    "asset": "India (MSCI India)",
+    "title": "Amazon's stock has been badly lagging the market. Now investors are pinning big hopes on earnings.",
+    "url": "https://www.businessinsider.com/amazon-stock-price-q3-earnings-magnificent-7-underperformance-2025-10",
+    "summary": "Amazon stock has climbed less than half the benchmark S&P 500 over the past five years."
+  },
+  {
+    "asset": "India (MSCI India)",
+    "title": "Canadian Pension Plans Maintain Momentum Through Third Quarter",
+    "url": "https://financialpost.com/pmn/business-wire-news-releases-pmn/canadian-pension-plans-maintain-momentum-through-third-quarter",
+    "summary": "TORONTO \u2014 Canadian pension plans had positive returns in the third quarter of 2025, buoyed by equity markets, according to the Northern Trust Canada Universe. The median Canadian Pension Plan returned 3.6% for the quarter and 4.3% year-to-date for the period \u2026"
+  },
+  {
+    "asset": "XAU/USD",
+    "title": "NordFX Launches Half Off Gold Commissions Promo",
+    "url": "https://www.globenewswire.com/news-release/2025/11/01/3178702/0/en/NordFX-Launches-Half-Off-Gold-Commissions-Promo.html",
+    "summary": "GROS-ISLET, Saint Lucia, Nov. 01, 2025 (GLOBE NEWSWIRE) -- NordFX\r\n\u00a0has introduced a new promotion that offers traders a 50% reduction in trading commissions on gold. The initiative comes as gold prices continue to strengthen, providing an excellent opportuni\u2026"
+  },
+  {
+    "asset": "XAU/USD",
+    "title": "Markets Lay Low Ahead of the FED",
+    "url": "https://finance.yahoo.com/news/markets-lay-low-ahead-fed-104020526.html",
+    "summary": "The financial markets are stabilizing ahead of the FED\u2019s meeting."
+  },
+  {
+    "asset": "XAU/USD",
+    "title": "Gold Prices Keep Falling After Worst Rout in Over 12 Years",
+    "url": "https://biztoc.com/x/437390d99aa2a883",
+    "summary": "Gold and silver's worst routs in years put an abrupt halt to a scorching rally\nNicole Sy explains what happened, and where precious metals go from here.\nRead more: https://www.bloomberg.com/news/articles/2025-10-21/gold-xauusd-and-silver-stabilize-after-massi\u2026"
+  },
+  {
+    "asset": "XAU/USD",
+    "title": "Gold to Snap Nine-Week Winning Streak as Heat Comes Out of Rally",
+    "url": "https://biztoc.com/x/b92f55ba1aee1566",
+    "summary": ""
+  },
+  {
+    "asset": "USD/JPY",
+    "title": "Dollar Gains and Gold Falls on Hawkish Fed Comments",
+    "url": "https://www.barchart.com/story/news/35834726/dollar-gains-and-gold-falls-on-hawkish-fed-comments",
+    "summary": "The dollar index (DXY00 ) on Friday rose by +0.27% and posted a fresh 2.75-month high. Hawkish comments on Friday from Kansas City Fed President Jeff Schmid,..."
+  },
+  {
+    "asset": "USD/JPY",
+    "title": "Dollar Pushes Higher on Reduced Fed Rate Cut Speculation",
+    "url": "https://www.barchart.com/story/news/35805306/dollar-pushes-higher-on-reduced-fed-rate-cut-speculation",
+    "summary": "The dollar index (DXY00 ) climbed to a 2.75-month high on Thursday and finished up by +0.29%. Higher T-note yields on Thursday were positive for the dollar..."
+  },
+  {
+    "asset": "USD/JPY",
+    "title": "Dollar Climbs with Bond Yields",
+    "url": "https://www.barchart.com/story/news/35797142/dollar-climbs-with-bond-yields",
+    "summary": "The dollar index (DXY00 ) climbed to a 3-week high today and is up by +0.19%. Higher T-note yields today are positive for the dollar as the 10-year T-note..."
+  },
+  {
+    "asset": "USD/JPY",
+    "title": "Dollar Rallies on Hawkish Powell",
+    "url": "https://www.barchart.com/story/news/35772140/dollar-rallies-on-hawkish-powell",
+    "summary": "The dollar index (DXY00 ) rallied to a 2-week high on Wednesday and finished up by +0.62%. The dollar found support on Wednesday amid easing global trade..."
+  },
+  {
+    "asset": "Germany Equity",
+    "title": "YT Industries USA is closing and contact info no longer on the customer care page",
+    "url": "https://www.singletracks.com/mtb-gear/yt-industries-usa-is-closing-and-contact-info-no-longer-on-the-customer-care-page/",
+    "summary": "YT Industries USA has announced its closure after failing to reach an agreement with its German counterpart, impacting sales, support, and operations across North America.\nThe article YT Industries USA is closing and contact info no longer on the customer car\u2026"
+  },
+  {
+    "asset": "Germany Equity",
+    "title": "Zohran Annoyed a Lot of New York Public School Parents With This One. But He\u2019s Got a Point.",
+    "url": "https://slate.com/life/2025/11/zohran-mamdani-election-policy-gifted-talented-education.html",
+    "summary": "The idea of assessing preschoolers for intelligence strikes many as impossible. It might be."
+  },
+  {
+    "asset": "Germany Equity",
+    "title": "Lukoil to Sell Assets to Gunvor Amid Sanctions",
+    "url": "https://www.rigzone.com/news/wire/lukoil_to_sell_assets_to_gunvor_amid_sanctions-01-nov-2025-182213-article/",
+    "summary": "Russian oil producer Lukoil PJSC has agreed to sell its international assets to energy trader Gunvor Group."
+  },
+  {
+    "asset": "Germany Equity",
+    "title": "Finovate Global Canada: Wealthsimple\u2019s $10 Billion Valuation and a Look at Investment Trends",
+    "url": "https://finovate.com/finovate-global-canada-wealthsimples-10-billion-valuation-and-a-look-at-investment-trends/",
+    "summary": "This week\u2019s edition of Finovate Global features recent fintech news from Canada. Wealthsimple secures $750 million at valuation of $10 billion Canadian fintech Wealthsimple has raised CAD $750 million at a post-money valuation of CAD $10 billion. The funding \u2026"
+  },
+  {
+    "asset": "UVXY",
+    "title": "ProShares Ultra VIX Short-Term Futures ETF (BATS:UVXY) Shares Down 0.9% \u2013 Time to Sell?",
+    "url": "https://www.etfdailynews.com/2025/10/07/proshares-ultra-vix-short-term-futures-etf-batsuvxy-shares-down-0-9-time-to-sell/",
+    "summary": "ProShares Ultra VIX Short-Term Futures ETF (BATS:UVXY \u2013 Get Free Report) were down 0.9% during mid-day trading on Monday . The stock traded as low as $10.43 and last traded at $10.50. Approximately 18,253,111 shares traded hands during trading, The stock had \u2026"
+  },
+  {
+    "asset": "Euro Stoxx 50",
+    "title": "Stocks Finish Higher on Earnings Optimism",
+    "url": "https://www.barchart.com/story/news/35836083/stocks-finish-higher-on-earnings-optimism",
+    "summary": "The S&P 500 Index ($SPX ) (SPY ) on Friday closed up +0.26%, the Dow Jones Industrials Index ($DOWI ) (DIA ) closed up +0.09%, and the Nasdaq 100 Index..."
+  },
+  {
+    "asset": "Euro Stoxx 50",
+    "title": "Stocks Rally on Strong Amazon Earnings",
+    "url": "https://www.barchart.com/story/news/35827861/stocks-rally-on-strong-amazon-earnings",
+    "summary": "The S&P 500 Index ($SPX ) (SPY ) today is up +0.46%, the Dow Jones Industrials Index ($DOWI ) (DIA ) is up +0.10%, and the Nasdaq 100 Index ($IUXX ) (QQQ..."
+  },
+  {
+    "asset": "Euro Stoxx 50",
+    "title": "Bitcoin Slips, Weekly ETF Outflows Hit $600M on Macro Jitters: Crypto Daybook Americas",
+    "url": "https://www.coindesk.com/daybook-us/2025/10/31/bitcoin-slips-weekly-etf-outflows-hit-usd600m-on-macro-jitters-crypto-daybook-americas",
+    "summary": "The day ahead in crypto: Oct. 31, 2025"
+  },
+  {
+    "asset": "Euro Stoxx 50",
+    "title": "Nasdaq Futures Soar as Amazon and Apple Results Boost Sentiment",
+    "url": "https://www.barchart.com/story/news/35821822/nasdaq-futures-soar-as-amazon-and-apple-results-boost-sentiment",
+    "summary": "December Nasdaq 100 E-Mini futures (NQZ25) are trending up +1.15% this morning as strong quarterly results and guidance from Amazon and Apple boosted..."
+  },
+  {
+    "asset": "Japan (Nikkei)",
+    "title": "Fujifilm exhibits \u201cLensless Camera\u201d prototype at Industrial Romanticism exhibition",
+    "url": "https://photorumors.com/2025/11/01/fujifilm-exhibits-lensless-camera-prototype-at-industrial-romanticism-exhibition/",
+    "summary": "Fujifilm exhibited a \u201cLensless Camera\u201d prototype designed by Taki Yoshimura at the Industrial Romanticism exhibition in Japan: The \u201clensless camera\u201d exhibited by Fujifilm is a tool for reexamining photos taken with a smartphone. By selecting a subject categor\u2026"
+  },
+  {
+    "asset": "Japan (Nikkei)",
+    "title": "China eyes export ban exemption for some Nexperia orders amid chip supply chain turmoil",
+    "url": "https://finance.yahoo.com/news/china-eyes-export-ban-exemption-093000489.html",
+    "summary": "China's Ministry of Commerce on Saturday said it is looking to exempt some Nexperia orders from an export ban that it imposed after the Netherlands seized..."
+  },
+  {
+    "asset": "Japan (Nikkei)",
+    "title": "Market Wrap: Sensex slides 465 pts, Nifty below 25,730 as private banks drag after Sebi tightens Bank Nifty norms",
+    "url": "https://economictimes.indiatimes.com/markets/stocks/news/market-wrap-sensex-slides-465-pts-nifty-below-25730-as-private-banks-drag-after-sebi-tightens-bank-nifty-norms/articleshow/124991884.cms",
+    "summary": "Indian stocks concluded Friday with a decline, marking a second consecutive day of losses for the Sensex and Nifty. Investors engaged in profit-booking amidst mixed corporate results and cautious global sentiment, influenced by a stronger U.S. dollar and the \u2026"
+  },
+  {
+    "asset": "XRP/USD",
+    "title": "Forget Billions\u2014XRP Could Hit Trillions, Leading Expert Says",
+    "url": "http://www.newsbtc.com/altcoin/forget-billions-xrp-could-hit-trillions-leading-expert-says/",
+    "summary": "Ripple\u2019s recent moves are drawing new attention after Western Union picked Solana for a USDPT rollout in 2026. According to supporters of XRP, that headline misses a bigger picture: Ripple has been buying firms that touch much larger pools of money. Related R\u2026"
+  },
+  {
+    "asset": "XRP/USD",
+    "title": "XRP Mirrors 2017 Bull Cycle, Analysts Eye $20 as Institutional Inflows Grow",
+    "url": "http://www.newsbtc.com/news/ripple/xrp-mirrors-2017-bull-cycle-analysts-eye-20-as-institutional-inflows-grow/",
+    "summary": "The cryptocurrency XRP is once again drawing parallels to its explosive 2017 rally as analysts point to mounting institutional demand and bullish chart patterns. Trading in the $2.50\u2013$2.70 range, XRP may be in the early stages of a new upward leg driven by ET\u2026"
+  },
+  {
+    "asset": "XRP/USD",
+    "title": "XRP Could Drive The \u2018Biggest Economic Shift\u2019 In Decades: Crypto Expert",
+    "url": "http://www.newsbtc.com/news/xrp-could-drive-the-biggest-economic-shift-in-decades-crypto-expert/",
+    "summary": "Vincent Scott, a well-known voice in the XRP community, urged patience while restating a big claim: he called XRP and the XRP Ledger humanity\u2019s \u201cbest chance\u201d to change how money moves around the globe. His message, shared on X, mixed optimism about Ripple\u2019s c\u2026"
+  },
+  {
+    "asset": "XRP/USD",
+    "title": "What The XRP RSI Making Higher Highs Means For The Price",
+    "url": "http://www.newsbtc.com/analysis/xrp/what-the-xrp-rsi-making-higher-highs/",
+    "summary": "A key technical indicator on the XRP price chart is sending an important signal about the strength of its ongoing price action. The Relative Strength Index (RSI), which measures momentum, is climbing higher in tandem with price, a development that popular XRP\u2026"
+  },
+  {
+    "asset": "S&P 500",
+    "title": "What happened the last time the S&P 500's forward P/E was this high",
+    "url": "https://finance.yahoo.com/news/what-happened-the-last-time-the-sp-500s-forward-pe-was-this-high-150129441.html",
+    "summary": "As long as valuations are elevated, expect to hear more about how the market is at greater risk of tumbling"
+  },
+  {
+    "asset": "S&P 500",
+    "title": "Would Jesus buy this stock?\u00a0The rise of Biblically Responsible Investing",
+    "url": "https://www.foxnews.com/opinion/would-jesus-buy-stock-the-rise-biblically-responsible-investing",
+    "summary": "BRI investing combines stewardship mindset with financial strategy, enabling Christians to invest in companies that reflect biblical virtues and values."
+  },
+  {
+    "asset": "S&P 500",
+    "title": "Green investors enjoy huge returns as stock market powers through Trump\u2019s attacks",
+    "url": "https://finance.yahoo.com/news/green-investors-enjoy-huge-returns-150000583.html",
+    "summary": "The S&P\u2019s main gauge tracking clean energy is up about 50% this year; the MSCI World Index has gained less than 20% in the same period.  Much of that..."
+  },
+  {
+    "asset": "S&P 500",
+    "title": "A Different Way Of Looking At The Rally In The Price Of Gold",
+    "url": "https://www.forbes.com/sites/johntamny/2025/11/02/a-different-way-of-looking-at-the-rally-in-the-price-of-gold/",
+    "summary": "There\u2019s inflation as measured by the BLS (CPI), and there\u2019s inflation as measured in gold."
+  },
+  {
+    "asset": "France",
+    "title": "What I Wish I Had Known Before Riding Remy\u2019s Ratatouille Adventure in EPCOT",
+    "url": "https://www.disneyfoodblog.com/2025/11/02/what-i-wish-i-had-known-before-riding-remys-ratatouille-adventure-in-epcot/",
+    "summary": "If you\u2019re planning to ride Remy\u2019s Ratatouille Adventure soon, here are three key tips that will save you time, help you get a better experience, and maybe even save you from a queasy afternoon in World Showcase.\nThe post What I Wish I Had Known Before Riding \u2026"
+  },
+  {
+    "asset": "France",
+    "title": "3 Problems Plaguing EPCOT\u2019s France Pavilion Right Now",
+    "url": "https://allears.net/2025/11/02/3-problems-plaguing-epcots-france-pavilion-right-now/",
+    "summary": "These are 3 problems we see at EPCOT in the France pavilion right now, but here is how to conquer them!\nThe post 3 Problems Plaguing EPCOT\u2019s France Pavilion Right Now appeared first on AllEars.Net."
+  },
+  {
+    "asset": "France",
+    "title": "Shein accused of selling childlike sex dolls in France",
+    "url": "https://www.bbc.com/news/articles/c4gjjyvg1nqo?xtor=AL-72-%5Bpartner%5D-%5Byahoo.north.america%5D-%5Bheadline%5D-%5Bnews%5D-%5Bbizdev%5D-%5Bisapi%5D",
+    "summary": "The fast fashion giant says it delisted the items \"immediately\" from its website and is investigating."
+  },
+  {
+    "asset": "France",
+    "title": "Belite Bio Announces UK\u2019s Medicines and Healthcare Products Regulatory Agency Agrees to Conditional Marketing Authorization Application Based on Interim Analysis Results for the Treatment of Stargardt Disease with Tinlarebant",
+    "url": "https://www.globenewswire.com/news-release/2025/11/02/3178795/0/en/Belite-Bio-Announces-UK-s-Medicines-and-Healthcare-Products-Regulatory-Agency-Agrees-to-Conditional-Marketing-Authorization-Application-Based-on-Interim-Analysis-Results-for-the-Tr.html",
+    "summary": "SAN DIEGO, Nov. 02, 2025 (GLOBE NEWSWIRE) -- Belite Bio, Inc. (NASDAQ: BLTE), a clinical-stage drug development company focused on advancing novel therapeutics targeting degenerative retinal diseases that have significant unmet medical needs, today announced \u2026"
+  },
+  {
+    "asset": "Emerging Markets",
+    "title": "Green investors enjoy huge returns as stock market powers through Trump\u2019s attacks",
+    "url": "https://finance.yahoo.com/news/green-investors-enjoy-huge-returns-150000583.html",
+    "summary": "The S&P\u2019s main gauge tracking clean energy is up about 50% this year; the MSCI World Index has gained less than 20% in the same period.  Much of that..."
+  },
+  {
+    "asset": "Emerging Markets",
+    "title": "Bitcoin Mining: The Unlikely Catalyst For Cheaper Energy In Texas",
+    "url": "https://www.forbes.com/sites/beccabratcher/2025/11/02/bitcoin-mining-the-unlikely-catalyst-for-cheaper-energy-in-texas/",
+    "summary": "Bitcoin mining is driving energy innovation by absorbing excess power, boosting renewables, and strengthening the electric grid in Texas."
+  },
+  {
+    "asset": "Emerging Markets",
+    "title": "Where the blockbuster weight loss drug market stands today \u2014 and what\u2019s coming next",
+    "url": "https://www.cnbc.com/2025/11/02/whats-next-for-the-weight-loss-drug-market-pills-rivals-insurance.html",
+    "summary": "Competition is heating up, but questions remain about insurance coverage, drug pricing, copycat drugs and the role of pills in the space."
+  },
+  {
+    "asset": "Emerging Markets",
+    "title": "Data Engineer / Data Analyst - Ad & Media Solutions Section, Data Solutions Department, Marketing Solutions Business (A&M) - Rakuten Group, Inc. - Tokyo, Japan",
+    "url": "http://www.careerwebsite.com/job/data-engineer-data-analyst-ad-media-solutions-section-data-solutions-department-marketing-solutions-business-am/80976564/22351/",
+    "summary": "A new Data Engineer / Data Analyst - Ad & Media Solutions Section, Data Solutions Department, Marketing Solutions Business (A&M) job is available in Tokyo. Check it out on PR News Online."
+  },
+  {
+    "asset": "LTC/USD",
+    "title": "These Two Altcoin ETFs Are About To Start Trading On NASDAQ \u2013 It\u2019s Not XRP Or Dogecoin",
+    "url": "https://bitcoinist.com/altcoin-etfs-xrp-or-dogecoin/",
+    "summary": "Crypto reporter Eleanor Terrett shared that two new altcoin exchange-traded funds (ETFs) are about to start trading on the NASDAQ, beating out Dogecoin and XRP spot ETFs. According to the journalist, everything needed to begin trading is already in place, eve\u2026"
+  },
+  {
+    "asset": "LTC/USD",
+    "title": "Here\u2019s Why Litecoin Is Rising To The Limelight Again: Is This The Future Of Crypto Payments?",
+    "url": "https://bitcoinist.com/litecoin-crypto-payments/",
+    "summary": "Litecoin (LTC) is stepping back into the spotlight, positioning itself as more than just a digital asset but a reliable medium for everyday transactions. Recent reports reveal that global investment giant T. Rowe Price has filed for a crypto ETF that includes\u2026"
+  },
+  {
+    "asset": "LTC/USD",
+    "title": "Chainlink (LINK) Price Builds Momentum as Reserves Grow and Jovay Network Integration Nears",
+    "url": "https://bitcoinist.com/chainlink-link-price-builds-momentum-reserves-grow/",
+    "summary": "Chainlink (LINK) is grinding higher above a key pivot, trading near $22.5 with a $15.25 billion market cap and roughly $1.68B in 24-hour volume. Related Reading: Ripple Execs Meet Luxembourg\u2019s Finance Minister: A Deal In The Making? Positioning looks construc\u2026"
+  },
+  {
+    "asset": "LTC/USD",
+    "title": "LTC Price Soars 11% to $129: Analysts Eye $135 Breakout as ETF Approval Buzz Grows",
+    "url": "http://www.newsbtc.com/analysis/ltc/ltc-price-soars-11-to-129-analysts-eye-135-breakout-as-etf-approval-buzz-grows/",
+    "summary": "Litecoin (LTC) ripped as much as 11% to $129\u2013$131, outpacing Bitcoin and Ethereum during a market pullback as fresh spot ETF momentum stoked bids. Trading volume exploded 143% to $1.66B, while futures open interest jumped 25% to $1.21B, signaling new leverage\u2026"
+  },
+  {
+    "asset": "Germany (DAX)",
+    "title": "European markets open in negative territory ahead of earnings, growth data and ECB decision",
+    "url": "https://www.cnbc.com/2025/10/30/european-markets-on-octpoint30-stoxx-600-ftse-dax-ez-gdp-ecb-decision.html",
+    "summary": "European stocks opened lower as regional investors await corporate earnings, growth data and a European Central Bank rate decision."
+  },
+  {
+    "asset": "Germany (DAX)",
+    "title": "Nvidia's $5 trillion market cap is equivalent to around 25 Disneys, 50 Nikes and more than 3,000 JetBlues",
+    "url": "https://www.cnbc.com/2025/10/29/nvidia-5-trillion-market-cap-ai-disney-mcdonalds-ford-macys.html",
+    "summary": "Nvidia's market cap dwarfs that of other well-known companies, as well as entire sectors and even full international markets."
+  },
+  {
+    "asset": "Germany (DAX)",
+    "title": "FTSE 100 today: Index steady amid U.S.-China trade optimism; pound strengthens",
+    "url": "https://finance.yahoo.com/news/ftse-100-today-index-steady-084007575.html",
+    "summary": "Investing.com -- U.K. stocks were flat at Monday\u2019s open amid renewed optimism over progress in U.S.-China trade talks, while wider European markets traded in..."
+  },
+  {
+    "asset": "Australia",
+    "title": "Trent Parke: Light and Shadow Poetry",
+    "url": "https://fstoppers.com/documentary/trent-parke-light-and-shadow-poetry-714619",
+    "summary": "Trent Parke stands among Australia\u2019s most celebrated contemporary photographers, known for his ability to transform ordinary scenes into something extraordinary. His work, with the use of deep contrasts along a cinematic intensity, explores the boundaries of \u2026"
+  },
+  {
+    "asset": "Australia",
+    "title": "Amol Mazumdar's 'Chak De! India' moment?: The man who never played for India one step away from cricketing folklore",
+    "url": "https://economictimes.indiatimes.com/news/sports/amol-mazumdars-chak-de-india-moment-the-man-who-never-played-for-india-one-step-away-from-cricketing-folklore/articleshow/125035645.cms",
+    "summary": "Amol Mazumdar leads the Indian women's cricket team to the World Cup final.  He aims to secure their first-ever title against South Africa.  Mazumdar's coaching has inspired a remarkable comeback after early losses.  His guidance instilled belief and intensit\u2026"
+  },
+  {
+    "asset": "Australia",
+    "title": "In Maner, RJD looks to retain its win for fourth time amid calls for change",
+    "url": "https://timesofindia.indiatimes.com/city/patna/in-maner-rjd-looks-to-retain-its-win-for-fourth-time-amid-calls-for-change/articleshow/125035658.cms",
+    "summary": "Maner, a culturally and religiously significant seat in Bihar, is set for a political contest with RJD's Bhai Virendra facing NDA's Jitendra Yadav. With unemployment and development being key issues, voters will decide the fate of the three-term MLA amidst a \u2026"
+  },
+  {
+    "asset": "Australia",
+    "title": "Arsenal Women\u2019s Euro 2025 star out for season after ACL tear on England duty",
+    "url": "https://www.justarsenal.com/arsenal-womens-euro-2025-star-out-for-season-after-acl-tear-on-england-duty/403143",
+    "summary": "Arsenal Women\u2019s young forward Michelle Agyemang has suffered a serious setback after sustaining a knee injury while on international duty with England\u2019s Lionesses. Agyemang, who has impressed on loan at Brighton, was stretchered off during the Lionesses\u2019 3-0 \u2026"
+  },
+  {
+    "asset": "United Kingdom (FTSE)",
+    "title": "FTSE Russell and StepStone Group launch global fund-level daily private market indices",
+    "url": "https://www.globenewswire.com/news-release/2025/10/30/3177371/0/en/FTSE-Russell-and-StepStone-Group-launch-global-fund-level-daily-private-market-indices.html",
+    "summary": "LONDON and NEW YORK, Oct. 30, 2025 (GLOBE NEWSWIRE) -- FTSE Russell, the global index provider, and StepStone Group (Nasdaq: STEP), a global private market investment firm, today announced the launch of the FTSE StepStone Global Private Market Indices. This s\u2026"
+  },
+  {
+    "asset": "United Kingdom (FTSE)",
+    "title": "UK Dividend Stocks To Consider For Your Portfolio",
+    "url": "https://finance.yahoo.com/news/uk-dividend-stocks-consider-portfolio-063152557.html",
+    "summary": "The United Kingdom's FTSE 100 index has recently experienced a downturn, influenced by weak trade data from China and the struggles of major companies tied..."
+  },
+  {
+    "asset": "United Kingdom (FTSE)",
+    "title": "Jaguar Land Rover\u2019s cyberattack holds an ominous lesson for British businesses",
+    "url": "https://www.cnbc.com/2025/10/29/jaguar-land-rover-cyberattack-holds-ominous-lesson-for-british-firms.html",
+    "summary": "The attack on Jaguar Land Rover could be the most economically damaging in UK history. Now, attention turns to what happens next."
+  },
+  {
+    "asset": "United Kingdom (FTSE)",
+    "title": "3 UK Penny Stocks With Market Caps Under \u00a31B",
+    "url": "https://finance.yahoo.com/news/3-uk-penny-stocks-market-070501719.html",
+    "summary": "The UK market has recently faced challenges, with the FTSE 100 and FTSE 250 indices experiencing declines due to weak trade data from China, highlighting..."
+  },
+  {
+    "asset": "BTC/USD",
+    "title": "17 Years Later, Bitcoin Still Runs \u2014 Unstoppable Since Day One",
+    "url": "https://bitcoinist.com/17-years-later-bitcoin-still-runs-unstoppable-since-day-one/",
+    "summary": "Bitcoin reached a milestone this week as the nine-page whitepaper that launched it passed its 17th anniversary. The document titled \u201cBitcoin: A Peer-to-Peer Electronic Cash System\u201d was first posted on October 31, 2008. Related Reading: SBF Defends FTX: \u2018We Ha\u2026"
+  },
+  {
+    "asset": "BTC/USD",
+    "title": "Massive Bitcoin Outflow Hits Galaxy Digital Wallets: 1,531 BTC Moved",
+    "url": "http://www.newsbtc.com/news/massive-bitcoin-outflow-hits-galaxy-digital-wallets-1531-btc-moved/",
+    "summary": "Mike Novogratz\u2019s Galaxy Digital has moved more Bitcoin out of its wallets, stirring fresh debate about whether big players are selling or just handling client business. Related Reading: Bitcoin Drop Shaves $5 Billion From Satoshi Nakamoto\u2019s Untouched Fortune \u2026"
+  },
+  {
+    "asset": "BTC/USD",
+    "title": "Does Bitcoin Power Law model still work in 2025 after S2F failed?",
+    "url": "https://cryptoslate.com/does-the-bitcoin-power-law-model-still-hold-after-stock-to-flow-failed/",
+    "summary": "With S2F in the rearview, the live power-law channel indicates that\u00a0BTC is\u00a0roughly 20% below fair value, but ETF flows could push it to either extreme. Bitbo\u2019s implementation of Giovanni Santostasi\u2019s model places the price near $109,700, the fair value near $\u2026"
+  },
+  {
+    "asset": "BTC/USD",
+    "title": "SBF Defends FTX: \u2018We Had $8 Billion, Not Insolvency\u2019",
+    "url": "https://bitcoinist.com/sbf-defends-ftx-we-had-8-billion-not-insolvency/",
+    "summary": "Sam Bankman-Fried on Friday pushed back against the common view of FTX\u2019s collapse, saying the exchange was not insolvent when it failed in November 2022. Related Reading: IBM Unveils Digital Asset Haven For Banks And Governments \u2013 Details According to a docum\u2026"
+  }
+]
