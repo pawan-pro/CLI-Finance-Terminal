@@ -42,11 +42,32 @@ def load_config():
 settings = load_config()
 
 # API Keys from environment variables
+def load_alpha_vantage_keys():
+    """Loads all Alpha Vantage API keys from environment variables."""
+    keys = []
+    base_key_name = "ALPHA_VANTAGE_API_KEY"
+
+    # Load the primary key
+    primary_key = os.getenv(base_key_name)
+    if primary_key:
+        keys.append(primary_key)
+
+    # Load numbered keys (e.g., ALPHA_VANTAGE_API_KEY_1, _2, etc.)
+    i = 1
+    while True:
+        numbered_key = os.getenv(f"{base_key_name}_{i}")
+        if numbered_key:
+            keys.append(numbered_key)
+            i += 1
+        else:
+            break
+
+    return keys
+
 api_keys = {
-    "alpha_vantage": os.getenv("ALPHA_VANTAGE_API_KEY"),
+    "alpha_vantage": load_alpha_vantage_keys(),
     "polygon": os.getenv("POLYGON_API_KEY"),
     "newsapi": os.getenv("NEWS_API_KEY"),
-    "finnhub": os.getenv("FINNHUB_API_KEY"),
 }
 
 settings["api_keys"] = api_keys

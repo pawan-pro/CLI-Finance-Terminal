@@ -1,82 +1,69 @@
 #!/usr/bin/env python3
 """
-Debug script to test chart generation
+Tests for chart generation using mocked Alpha Vantage data.
 """
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('.'))
-
-from src.data.providers.mt5_data import MT5DataFetcher
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import pandas as pd
+import pytest
 
-def test_chart_generation():
-    """Test chart generation for available symbols"""
-    print("Testing chart generation...")
+# Ensure the src directory is in the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
+
+@pytest.fixture
+def fetcher():
+    """Provides an instance of the AlphaVantageDataFetcher."""
+    return AlphaVantageDataFetcher(use_cache=False)
+
+def test_chart_generation_with_mock_data(fetcher, mock_api_request):
+    """Test chart generation for a predefined list of symbols using mocked data."""
+    print("Testing chart generation with mocked Alpha Vantage data...")
     
-    try:
-        fetcher = MT5DataFetcher(use_wine_mt5=True)  # Try to force Wine MT5
-        available_symbols = fetcher.get_available_symbols()
-        print(f"Available symbols: {available_symbols[:10]}...")  # Show first 10
+    test_symbols = ['US500Roll', 'EURUSD', 'BTCUSD']
+    print(f"Testing chart generation for symbols: {test_symbols}")
+
+    for symbol in test_symbols:
+        print(f"\nTesting chart for: {symbol}")
+
+        # Get historical data for the symbol for the last 30 days
+        data = fetcher.get_historical_data(symbol, days=30)
+        print(f"  Mocked historical data points: {len(data)}")
         
-        # Try to generate charts for available symbols
-        test_symbols = [s for s in available_symbols if s in ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'XAGUSD', 'SPX500', 'DJI30', 'NDX100', 'DAX30', 'FTSE100']]
-        if not test_symbols:
-            # If the preferred symbols aren't available, just use first few
-            test_symbols = available_symbols[:5]
+        assert data is not None and not data.empty, f"Should receive historical data for {symbol}"
         
-        print(f"Testing chart generation for symbols: {test_symbols}")
+        # Create a simple chart
+        plt.figure(figsize=(12, 6))
+        plt.plot(data['time'], data['close'], label=f'{symbol} Close')
+        plt.title(f'{symbol} Price Chart (Last 30 days)')
+        plt.xlabel('Time')
+        plt.ylabel('Price')
+        plt.legend()
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
         
-        for symbol in test_symbols:
-            print(f"\nTesting chart for: {symbol}")
-            try:
-                # Get historical data for the symbol
-                end_time = datetime.now()
-                start_time = end_time - timedelta(days=30)  # Last 30 days
-                
-                data = fetcher.fetch_historical_data(symbol, 60, start_time, end_time)  # TIMEFRAME_H1 = 60
-                print(f"  Historical data points: {len(data)}")
-                
-                if not data.empty:
-                    # Create a simple chart
-                    plt.figure(figsize=(12, 6))
-                    plt.plot(data['time'], data['close'], label=f'{symbol} Close')
-                    plt.title(f'{symbol} Price Chart (Last 30 days)')
-                    plt.xlabel('Time')
-                    plt.ylabel('Price')
-                    plt.legend()
-                    plt.grid(True)
-                    plt.xticks(rotation=45)
-                    plt.tight_layout()
-                    
-                    # Save chart
-                    chart_file = f'./test/{symbol}_test_chart.png'
-                    plt.savefig(chart_file)
-                    plt.close()
-                    print(f"  Chart saved to: {chart_file}")
-                    
-                    # Print some sample data
-                    print(f"  Sample data - Latest close: {data['close'].iloc[-1]:.5f}, Open: {data['open'].iloc[-1]:.5f}")
-                else:
-                    print(f"  No historical data available for {symbol}")
-                    
-            except Exception as e:
-                print(f"  Error generating chart for {symbol}: {e}")
-                import traceback
-                traceback.print_exc()
+        # Save chart to a dedicated test output directory
+        chart_dir = './test/test_charts/'
+        if not os.path.exists(chart_dir):
+            os.makedirs(chart_dir)
+        chart_file = os.path.join(chart_dir, f'{symbol}_test_chart.png')
         
-        fetcher.shutdown()
+        plt.savefig(chart_file)
+        plt.close()
+        print(f"  Chart saved to: {chart_file}")
+        assert os.path.exists(chart_file), f"Chart file was not created for {symbol}"
         
-    except Exception as e:
-        print(f"Error in chart generation test: {e}")
-        import traceback
-        traceback.print_exc()
+        # Print some sample data
+        print(f"  Sample data - Latest close: {data['close'].iloc[-1]:.5f}")
+
+    print("  ✓ Chart generation tests passed.")
 
 if __name__ == "__main__":
-    print("=== Testing Chart Generation ===")
-    test_chart_generation()
-    print("\n=== Chart Test Complete ===")
+    pytest.main([__file__])

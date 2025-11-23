@@ -1,75 +1,70 @@
 #!/usr/bin/env python3
 """
-Debug script to test symbol mapping and data fetching
+Tests for symbol mapping and data fetching with the AlphaVantageDataFetcher using mocks.
 """
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('.'))
+import pytest
 
-from src.data.providers.mt5_data import MT5DataFetcher
-from src.data.providers.alpha_vantage_data import AlphaVantageData
+# Ensure the src directory is in the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def test_mt5_connection():
-    """Test MT5 connection and available symbols"""
-    print("Testing MT5 connection...")
-    try:
-        fetcher = MT5DataFetcher(use_wine_mt5=True)  # Try to force Wine MT5
-        print(f"MT5 connection successful: {fetcher is not None}")
-        
-        # Get available symbols
-        symbols = fetcher.get_available_symbols()
-        print(f"Available symbols ({len(symbols)}): {symbols}")
-        
-        # Test specific symbols that are causing issues
-        test_symbols = ['US500Roll', 'US30Roll', 'UT100Roll', 'DE40Roll', 'UK100Roll', 
-                       'SPX500', 'DJI30', 'NDX100', 'DAX30', 'FTSE100',
-                       'EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'XAGUSD',
-                       'USOIL', 'UKOIL']
-        
-        print("\nTesting symbol mapping:")
-        for symbol in test_symbols:
-            print(f"\nTesting symbol: {symbol}")
-            symbol_info = fetcher.get_symbol_info(symbol)
-            if symbol_info:
-                print(f"  Found: {symbol_info.get('name', 'N/A')} - Ask: {symbol_info.get('ask', 0)}, Bid: {symbol_info.get('bid', 0)}")
-            else:
-                print(f"  Not found: {symbol}")
-                
-        # Test 24h change for available symbols
-        print("\nTesting 24h change:")
-        for symbol in ['EURUSD', 'SPX500', 'DJI30']:
-            change, pct_change = fetcher.get_24h_change(symbol)
-            print(f"  {symbol} - Change: {change}, % Change: {pct_change}%")
-            
-        fetcher.shutdown()
-    except Exception as e:
-        print(f"Error testing MT5: {e}")
-        import traceback
-        traceback.print_exc()
+from src.data.providers.alphavantage_data import AlphaVantageDataFetcher
+from src.config.symbol_map import map_symbol_for_request
 
-def test_alpha_vantage():
-    """Test Alpha Vantage connection"""
-    print("\nTesting Alpha Vantage connection...")
-    try:
-        av = AlphaVantageData()
-        # Test with a few common symbols
-        test_symbols = ['SPY', 'TLT', 'IEF', 'SHY', 'LQD', 'GLD', 'SLV', 'USO']
-        data = av.get_bond_etf_data(test_symbols)
-        print(f"Alpha Vantage data fetched: {len(data)} records")
-        if not data.empty:
-            print("Sample data:")
-            for idx, row in data.head().iterrows():
-                print(f"  {row.get('name', 'N/A')}: Price: {row.get('Price', 'N/A')}, Change: {row.get('change', 'N/A')}, % Change: {row.get('pct_change', 'N/A')}")
-        else:
-            print("No data received from Alpha Vantage")
-    except Exception as e:
-        print(f"Error testing Alpha Vantage: {e}")
-        import traceback
-        traceback.print_exc()
+@pytest.fixture
+def fetcher():
+    """Provides an instance of the AlphaVantageDataFetcher."""
+    return AlphaVantageDataFetcher(use_cache=False)
+
+# Test cases for symbol mapping
+mapping_tests = {
+    'US500Roll': 'SPY',
+    'US30Roll': 'DIA',
+    'DE40Roll': '^GDAXI',
+    'XAUUSD': 'GLD',
+    'USOILRoll': 'USO',
+    'VIXRoll': '^VIX',
+    'TLT': 'TLT', # Should remain unchanged
+    'BTCUSD': 'BTC',
+    'EURUSD': 'EUR/USD'
+}
+
+@pytest.mark.parametrize("internal_symbol, expected_av_symbol", mapping_tests.items())
+def test_symbol_mapping(internal_symbol, expected_av_symbol):
+    """Test that internal symbols are correctly mapped to Alpha Vantage symbols."""
+    print(f"Testing mapping: {internal_symbol} -> {expected_av_symbol}")
+    mapped_symbol = map_symbol_for_request(internal_symbol)
+    assert mapped_symbol == expected_av_symbol
+
+@pytest.mark.parametrize("symbol, expected_price", [
+    ('US500Roll', "500.00"),
+    ('EURUSD', "1.08"),
+    ('BTCUSD', "70000.00")
+])
+def test_data_fetching_with_mapping(fetcher, mock_api_request, symbol, expected_price):
+    """Test that data can be fetched using an internal symbol that requires mapping."""
+    print(f"Testing mocked data fetching for mapped symbol: {symbol}")
+    quote = fetcher.get_global_quote(symbol)
+    assert quote is not None, f"Failed to fetch quote for {symbol}"
+    assert quote.get('price') is not None, f"Price for {symbol} should not be None"
+    assert float(quote.get('price')) == float(expected_price)
+    print(f"  Successfully fetched mocked quote for {symbol}: Price={quote.get('price')}")
+
+def test_unmapped_symbol_passthrough(fetcher, mock_api_request):
+    """Test that a symbol not in the map is passed through directly and fetches data."""
+    unmapped_symbol = "IBM" # A standard stock ticker
+    print(f"Testing passthrough for unmapped symbol: {unmapped_symbol}")
+    mapped_symbol = map_symbol_for_request(unmapped_symbol)
+    assert mapped_symbol == unmapped_symbol
+
+    # Also test that it fetches data correctly using the mock
+    quote = fetcher.get_global_quote(unmapped_symbol)
+    assert quote is not None, f"Failed to fetch quote for unmapped symbol {unmapped_symbol}"
+    assert quote.get('price') is not None, f"Price for {unmapped_symbol} should not be None"
+    assert str(quote.get('price')) == "150.00"
+    print(f"  Successfully fetched mocked quote for {unmapped_symbol}: Price={quote.get('price')}")
 
 if __name__ == "__main__":
-    print("=== Testing Symbol Mapping and Data Fetching ===")
-    test_mt5_connection()
-    test_alpha_vantage()
-    print("\n=== Test Complete ===")
+    pytest.main([__file__])

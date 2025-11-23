@@ -1,407 +1,202 @@
-"""
-Alpha Vantage Data Provider
-This module provides data fetching capabilities using the Alpha Vantage API,
-replacing the previous MT5/Finhub-based implementations.
-"""
 import pandas as pd
 from datetime import datetime, timedelta
-import pytz
 import requests
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 import logging
-import json
-import time
 from urllib.parse import urlencode
+import time
+from io import StringIO
 
 # Local imports
 from src.data.cache_manager import cache_manager
-from src.config.symbol_map import map_symbol_for_request, get_internal_symbol
+from src.config.symbol_map import map_symbol_for_request, FOREX_SYMBOLS, CRYPTO_SYMBOLS
+from src.data.providers.api_key_manager import api_key_manager
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class AlphaVantageDataFetcher:
-    """Class to fetch data from Alpha Vantage API"""
+    """Optimized class to fetch data from Alpha Vantage API using a rotating API key and aggressive caching."""
     
-    def __init__(self, api_key: str, use_cache: bool = True, cache_ttl: int = 3600):
-        """
-        Initialize Alpha Vantage connection
-        
-        Args:
-            api_key: Alpha Vantage API key
-            use_cache: Whether to use caching
-            cache_ttl: Cache time-to-live in seconds
-        """
-        self.api_key = api_key
+    def __init__(self, use_cache: bool = True):
         self.base_url = "https://www.alphavantage.co/query"
         self.use_cache = use_cache
-        self.cache_ttl = cache_ttl
-        
-        # Validate API key
-        if not self.api_key:
-            raise ValueError("Alpha Vantage API key is required")
-    
+
     def _get_cache_key(self, *args) -> str:
-        """Generate cache key from arguments"""
-        return f"alphavantage_{'_'.join(str(arg) for arg in args)}"
-    
-    def _make_request(self, params: Dict) -> Optional[Dict]:
-        """
-        Make a request to the Alpha Vantage API
+        # Create a key from sorted tuple of dictionary items for consistency
+        key_args = []
+        for arg in args:
+            if isinstance(arg, dict):
+                key_args.append(str(tuple(sorted(arg.items()))))
+            else:
+                key_args.append(str(arg))
+        return f"alphavantage_{'_'.join(key_args)}"
+
+    def _make_request(self, params: Dict, ttl: int) -> Optional[Dict]:
+        """Makes a request to the Alpha Vantage API, handling rate limiting and caching with a specified TTL."""
+        params['apikey'] = api_key_manager.get_key()
+        # Create a cache key from the params, ignoring the API key, for reliable caching
+        cache_key_params = {k: v for k, v in params.items() if k != 'apikey'}
+        cache_key = self._get_cache_key(cache_key_params)
         
-        Args:
-            params: Request parameters (function, symbol, etc.)
-            
-        Returns:
-            Response data or None
-        """
-        # Add API key to parameters
-        params['apikey'] = self.api_key
+        if self.use_cache:
+            cached = cache_manager.get(cache_key, ttl)
+            if cached:
+                logger.info(f"Returning cached data for {params.get('function')} on {params.get('symbol') or params.get('from_currency')}.")
+                return cached
+
+        logger.info(f"Making API request for {params['function']} on {params.get('symbol') or params.get('from_currency')}")
         
-        url = f"{self.base_url}?{urlencode(params)}"
-        
+        time.sleep(1) # A small delay to be a good API citizen
+
         try:
-            # Add delay to respect API rate limits (5 calls per minute free tier)
-            time.sleep(12)  # 12 seconds to stay well under the limit
-            
-            response = requests.get(url)
+            response = requests.get(self.base_url, params=params)
             response.raise_for_status()
-            data = response.json()
             
-            # Check for API errors
-            if "Error Message" in data:
-                logger.error(f"Alpha Vantage error: {data['Error Message']}")
+            if 'text/csv' in response.headers.get('Content-Type', ''):
+                data = response.text
+            else:
+                data = response.json()
+
+            if isinstance(data, dict) and ("Error Message" in data or "Note" in data):
+                logger.warning(f"API Info/Error for {params.get('symbol')}: {data.get('Error Message') or data.get('Note')}")
                 return None
-            if "Note" in data:
-                logger.warning(f"Alpha Vantage note: {data['Note']}")
-                return None
-            if "Information" in data:
-                logger.info(f"Alpha Vantage info: {data['Information']}")
-                return None
-                
+
+            if self.use_cache:
+                cache_manager.set(cache_key, data)
             return data
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error making request to {url}: {e}")
-            return None
-        except json.JSONDecodeError as e:
-            logger.error(f"Error decoding JSON response from {url}: {e}")
+            logger.error(f"Request failed for {params.get('symbol')}: {e}")
             return None
 
-    def get_available_symbols(self) -> List[str]:
-        """
-        Get list of available symbols in Alpha Vantage
-        This is a simplified implementation - in practice you might want to fetch
-        a specific exchange or sector rather than all symbols.
-        """
-        cache_key = self._get_cache_key("symbols")
-        
-        # Try to get from cache first
-        if self.use_cache:
-            cached = cache_manager.get(cache_key, self.cache_ttl)
-            if cached is not None:
-                logger.info("Returning symbols from cache")
-                return cached
-        
-        # Note: Alpha Vantage doesn't have a universal symbol endpoint, but we can get symbols for specific exchanges
-        # For now, we'll return a placeholder list that represents major asset classes
-        symbols = [
-            "^GSPC", "^DJI", "^IXIC", "^GDAXI", "^FTSE", "^FCHI", "^N225", "^HSI",  # Indices
-            "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "XOM",  # Stocks
-            "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF",  # Forex
-            "XAUUSD", "XAGUSD", "CL=F", "GC=F",  # Commodities
-        ]
-        
-        # Cache the result
-        if self.use_cache:
-            cache_manager.set(cache_key, symbols)
-        
-        logger.info(f"Retrieved {len(symbols)} symbols from Alpha Vantage")
-        return symbols
-    
-    def get_quote(self, symbol: str) -> Optional[Dict]:
-        """
-        Fetches the latest quote for a specific symbol, using cache.
-        
-        Args:
-            symbol: Symbol to fetch quote for (internal application symbol)
-            
-        Returns:
-            Quote information dictionary
-        """
-        # Map internal symbol to Alpha Vantage symbol
-        av_symbol = map_symbol_for_request(symbol, "alphavantage")
-        cache_key = self._get_cache_key("quote", symbol)
-        
-        # Try to get from cache first
-        if self.use_cache:
-            cached = cache_manager.get(cache_key, self.cache_ttl)
-            if cached is not None:
-                logger.info(f"Returning quote for {symbol} from cache")
-                return cached
-        
-        # Log data fetch attempt
-        logger.info(f"Attempting to fetch quote for: {symbol} (mapped to {av_symbol})")
-        
-        # Get quote data from Alpha Vantage using GLOBAL_QUOTE
-        params = {
-            "function": "GLOBAL_QUOTE",
-            "symbol": av_symbol
-        }
-        quote_response = self._make_request(params)
-        
-        if quote_response is None or "Global Quote" not in quote_response:
-            logger.error(f"Failed to get quote for {symbol} (mapped to {av_symbol})")
-            return None
-        
-        quote_data = quote_response["Global Quote"]
-        if not quote_data:
-            logger.error(f"No quote data found for {symbol} (mapped to {av_symbol})")
-            return None
-        
-        # Construct quote dictionary matching expected format
-        quote_dict = {
-            'name': symbol,  # Use original symbol name for consistency
-            'description': f"{av_symbol} data",  # Description based on the API response
-            'ask': float(quote_data.get('05. price', 0)),  # Current price
-            'bid': float(quote_data.get('05. price', 0)),  # Using current price as bid (for now)
-            'last': float(quote_data.get('05. price', 0)),  # Last traded price
-            'volume': int(quote_data.get('06. volume', 0)),  # Volume
-            'spread': 0,  # Calculate spread if available
-            'digits': 2,  # Default to 2 decimal places
-            'high': float(quote_data.get('03. high', 0)),  # High price
-            'low': float(quote_data.get('04. low', 0)),   # Low price
-            'time': datetime.now(),  # Time (Alpha Vantage doesn't always provide exact timestamp in global quote)
-            'change': float(quote_data.get('09. change', 0)),  # Change
-            'change_percent': float(quote_data.get('10. change percent', '0').replace('%', '')),  # Change percentage
-        }
-        
-        # Cache the result
-        if self.use_cache:
-            cache_manager.set(cache_key, quote_dict)
-        
-        logger.info(f"Got quote for {symbol}")
-        return quote_dict
+    def get_global_quote(self, symbol: str) -> Optional[Dict]:
+        """Fetches a quote for any asset class, calculating 24h change where necessary."""
+        quote_ttl = 300 # 5 minutes
+        internal_symbol = symbol
+        av_symbol = map_symbol_for_request(internal_symbol)
 
-    def get_symbol_info(self, symbol: str) -> Optional[Dict]:
-        """
-        Fetches information about a specific symbol, using cache.
-        This method is an alias for get_quote to maintain compatibility with the existing interface.
-        
-        Args:
-            symbol: Symbol to fetch info for (internal application symbol)
-            
-        Returns:
-            Symbol information dictionary
-        """
-        return self.get_quote(symbol)
+        if internal_symbol in FOREX_SYMBOLS:
+            from_currency, to_currency = av_symbol.split('/')
+            params = {'function': 'CURRENCY_EXCHANGE_RATE', 'from_currency': from_currency, 'to_currency': to_currency}
+            data = self._make_request(params, ttl=quote_ttl)
+            if not (data and 'Realtime Currency Exchange Rate' in data): return None
 
-    def fetch_historical_data(self, symbol: str, resolution: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
-        """
-        Fetch historical data for a symbol
-        
-        Args:
-            symbol: Symbol to fetch data for (internal application symbol)
-            resolution: Time resolution (e.g., 'D', 'W', 'M', '1', '5', etc.)
-            start_time: Start time for historical data
-            end_time: End time for historical data
+            rate_data = data['Realtime Currency Exchange Rate']
+            price = float(rate_data.get('5. Exchange Rate', 0))
             
-        Returns:
-            DataFrame with historical data
-        """
-        # Map internal symbol to Alpha Vantage symbol
-        av_symbol = map_symbol_for_request(symbol, "alphavantage")
-        cache_key = self._get_cache_key("historical", symbol, resolution, 
-                                       start_time.isoformat(), end_time.isoformat())
-        
-        # Try to get from cache first
-        if self.use_cache:
-            cached = cache_manager.get(cache_key, self.cache_ttl)
-            if cached is not None:
-                logger.info(f"Returning historical data for {symbol} from cache")
-                df = pd.DataFrame(cached)
-                if not df.empty and 'time' in df.columns:
-                    df['time'] = pd.to_datetime(df['time'])
-                return df
-        
-        # Determine the appropriate function based on resolution
-        if resolution in ['1', '5', '15', '30', '60']:
-            # Intraday data
-            params = {
-                'function': f'TIME_SERIES_INTRADAY',
-                'symbol': av_symbol,
-                'interval': f'{resolution}min',
-                'outputsize': 'full'  # Get full history, we'll filter by time
+            hist_data = self.get_historical_data(internal_symbol, days=2)
+            change_pct = 0.0
+            if hist_data is not None and not hist_data.empty and len(hist_data) > 1:
+                prev_close = hist_data['close'].iloc[-2]
+                change_pct = ((price - prev_close) / prev_close) * 100 if prev_close != 0 else 0
+
+            return {'symbol': internal_symbol, 'price': price, 'change_percent': f"{change_pct:.2f}", 'volume': 'N/A'}
+
+        elif internal_symbol in CRYPTO_SYMBOLS:
+            params = {'function': 'DIGITAL_CURRENCY_DAILY', 'symbol': av_symbol, 'market': 'USD'}
+            data = self._make_request(params, ttl=quote_ttl)
+            if not (data and 'Time Series (Digital Currency Daily)' in data): return None
+
+            time_series = data['Time Series (Digital Currency Daily)']
+            dates = sorted(time_series.keys())
+            if len(dates) < 2: return None
+
+            latest_date, prev_date = dates[-1], dates[-2]
+            price = float(time_series[latest_date].get('4a. close (USD)', 0))
+            prev_close = float(time_series[prev_date].get('4a. close (USD)', 0))
+            change_pct = ((price - prev_close) / prev_close) * 100 if prev_close != 0 else 0
+            volume = float(time_series[latest_date].get('5. volume', 0))
+
+            return {'symbol': internal_symbol, 'price': price, 'change_percent': f"{change_pct:.2f}", 'volume': volume}
+
+        else: # Stocks, ETFs, Indices
+            params = {'function': 'GLOBAL_QUOTE', 'symbol': av_symbol}
+            data = self._make_request(params, ttl=quote_ttl)
+            if not (data and 'Global Quote' in data and data['Global Quote']): return None
+            
+            quote = data['Global Quote']
+            return {
+                'symbol': internal_symbol, 'price': quote.get('05. price'),
+                'change_percent': quote.get('10. change percent', '0%').strip('%'),
+                'volume': quote.get('06. volume')
             }
-            time_series_key = f'Time Series ({resolution}min)'
-        elif resolution in ['daily', 'D']:
-            # Daily data
-            params = {
-                'function': 'TIME_SERIES_DAILY',
-                'symbol': av_symbol,
-                'outputsize': 'full'  # Get full history, we'll filter by time
-            }
-            time_series_key = 'Time Series (Daily)'
-        elif resolution in ['weekly', 'W']:
-            # Weekly data
-            params = {
-                'function': 'TIME_SERIES_WEEKLY',
-                'symbol': av_symbol
-            }
-            time_series_key = 'Weekly Time Series'
-        elif resolution in ['monthly', 'M']:
-            # Monthly data
-            params = {
-                'function': 'TIME_SERIES_MONTHLY',
-                'symbol': av_symbol
-            }
-            time_series_key = 'Monthly Time Series'
+
+    def get_historical_data(self, symbol: str, days: int = 90) -> pd.DataFrame:
+        """Fetches daily historical data with a long cache TTL."""
+        historical_ttl = 86400 # 24 hours
+        av_symbol = map_symbol_for_request(symbol)
+
+        if symbol in FOREX_SYMBOLS:
+            params = {'function': 'FX_DAILY', 'from_symbol': av_symbol.split('/')[0], 'to_symbol': av_symbol.split('/')[1], 'outputsize': 'full'}
+            data_key, price_col = 'Time Series FX (Daily)', '4. close'
+        elif symbol in CRYPTO_SYMBOLS:
+            params = {'function': 'DIGITAL_CURRENCY_DAILY', 'symbol': av_symbol, 'market': 'USD'}
+            data_key, price_col = 'Time Series (Digital Currency Daily)', '4a. close (USD)'
         else:
-            # Default to daily
-            params = {
-                'function': 'TIME_SERIES_DAILY',
-                'symbol': av_symbol,
-                'outputsize': 'full'
-            }
-            time_series_key = 'Time Series (Daily)'
+            params = {'function': 'TIME_SERIES_DAILY_ADJUSTED', 'symbol': av_symbol, 'outputsize': 'full'}
+            data_key, price_col = 'Time Series (Daily)', '5. adjusted close'
+
+        data = self._make_request(params, ttl=historical_ttl)
+        if not data or data_key not in data: return pd.DataFrame()
+
+        df = pd.DataFrame.from_dict(data[data_key], orient='index')
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index().tail(days + 1) # Get a little extra for change calculations
+        df['close'] = pd.to_numeric(df[price_col])
+        return df[['close']].reset_index().rename(columns={'index': 'time'})
+
+    def get_intraday_data(self, symbol: str, interval: str = '60min') -> pd.DataFrame:
+        """Fetches intraday data with a medium cache TTL."""
+        intraday_ttl = 3600 # 1 hour
+        av_symbol = map_symbol_for_request(symbol)
         
-        response = self._make_request(params)
-        
-        if response is None or time_series_key not in response:
-            logger.warning(f"Failed to fetch historical data for {symbol} (mapped to {av_symbol})")
-            return pd.DataFrame()
-        
-        time_series_data = response[time_series_key]
-        
-        # Create DataFrame and filter by requested date range
-        rows = []
-        for date_str, values in time_series_data.items():
-            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-            # If the date is within our requested range
-            if start_time <= date_obj <= end_time:
-                rows.append({
-                    'time': date_obj,
-                    'open': float(values['1. open']),
-                    'high': float(values['2. high']),
-                    'low': float(values['3. low']),
-                    'close': float(values['4. close']),
-                    'volume': int(values['5. volume'])
-                })
-        
-        # Create DataFrame
-        df = pd.DataFrame(rows)
-        
-        if not df.empty:
-            # Sort by time to ensure correct order
-            df = df.sort_values(by='time').reset_index(drop=True)
+        if symbol in FOREX_SYMBOLS:
+            params = {'function': 'FX_INTRADAY', 'from_symbol': av_symbol.split('/')[0], 'to_symbol': av_symbol.split('/')[1], 'interval': interval, 'outputsize': 'compact'}
+            data_key = f'Time Series FX ({interval})'
+        elif symbol in CRYPTO_SYMBOLS:
+            params = {'function': 'CRYPTO_INTRADAY', 'symbol': av_symbol, 'market': 'USD', 'interval': interval}
+            data_key = f'Time Series Crypto ({interval})'
         else:
-            logger.warning(f"No historical data found for {symbol} in the specified date range")
-        
-        # Cache the result
-        if self.use_cache:
-            # Convert DataFrame to dict for caching
-            # Convert Timestamp objects to strings to make them JSON serializable
-            df_copy = df.copy()
-            for col in df_copy.columns:
-                if df_copy[col].dtype == 'datetime64[ns]':
-                    df_copy[col] = df_copy[col].astype(str)
-            cache_data = df_copy.to_dict('records')
-            cache_manager.set(cache_key, cache_data)
-        
-        return df
+            params = {'function': 'TIME_SERIES_INTRADAY', 'symbol': av_symbol, 'interval': interval, 'outputsize': 'compact'}
+            data_key = f'Time Series ({interval})'
 
-    def get_24h_change(self, symbol: str) -> Tuple[float, float]:
-        """
-        Calculate the 24-hour change and percentage change for a symbol.
-        
-        Args:
-            symbol: Symbol to calculate change for (internal application symbol)
-            
-        Returns:
-            Tuple of (change, percentage_change)
-        """
-        current_info = self.get_quote(symbol)
-        if not current_info or current_info.get('ask', 0) == 0:
-            logger.warning(f"Could not get current info or ask price for {symbol}")
-            return 0.0, 0.0
+        data = self._make_request(params, ttl=intraday_ttl)
+        if not data or data_key not in data: return pd.DataFrame()
 
-        current_price = current_info['ask']
-        
-        # Get historical data for the last day
-        end_time = datetime.now(pytz.utc)
-        start_time = end_time - timedelta(days=1)
+        df = pd.DataFrame.from_dict(data[data_key], orient='index')
+        df.columns = ['open', 'high', 'low', 'close', 'volume']
+        df.index = pd.to_datetime(df.index)
+        df = df.apply(pd.to_numeric)
+        return df.sort_index().reset_index().rename(columns={'index': 'time'})
 
-        # Fetch daily historical data to get the previous day's closing price
-        # Use a larger time window to ensure we get at least the previous day's data
-        extended_start_time = start_time - timedelta(days=7)  # Look back a week to ensure we find data
-        historical_data = self.fetch_historical_data(symbol, 'daily', extended_start_time, start_time)
+    def get_news_sentiment(self, tickers: List[str] = None) -> Optional[List[Dict]]:
+        """Fetches news sentiment with a medium cache TTL."""
+        news_ttl = 7200 # 2 hours
+        params = {'function': 'NEWS_SENTIMENT', 'limit': 20}
+        if tickers:
+            params['tickers'] = ",".join(tickers)
         
-        if historical_data.empty:
-            logger.warning(f"No historical data available for {symbol} in the past week.")
-            return 0.0, 0.0
+        data = self._make_request(params, ttl=news_ttl)
+        return data.get('feed', []) if data else []
 
-        # Sort by time to ensure correct order and get the most recent historical price before now
-        historical_data = historical_data.sort_values(by='time', ascending=False).reset_index(drop=True)
+    def get_economic_calendar(self) -> pd.DataFrame:
+        """Fetches economic calendar data with a long cache TTL."""
+        calendar_ttl = 86400 # 24 hours
+        params = {'function': 'ECONOMIC_CALENDAR', 'horizon': '3month'}
+        data = self._make_request(params, ttl=calendar_ttl)
         
-        # Get the previous day's closing price (or most recent available before today)
-        if not historical_data.empty:
-            previous_price = historical_data.iloc[0]['close']
-        else:
-            logger.warning(f"No suitable historical data found for {symbol}")
-            return 0.0, 0.0
+        if data and isinstance(data, str):
+            try:
+                return pd.read_csv(StringIO(data))
+            except Exception as e:
+                logger.error(f"Failed to parse economic calendar CSV: {e}")
+        
+        logger.warning("Could not fetch or parse economic calendar.")
+        return pd.DataFrame()
 
-        change = current_price - previous_price
-        pct_change = (change / previous_price * 100) if previous_price != 0 else 0.0
-
-        return change, pct_change
-
-    def get_financial_news(self, category: str = "general", min_id: int = None) -> List[Dict]:
-        """
-        Fetch financial news from various sources.
-        Alpha Vantage doesn't provide a news endpoint in the free tier.
-        This method could be enhanced to use other free news APIs or return cached data.
-        """
-        cache_key = self._get_cache_key("news", category, min_id or 0)
-        
-        # Try to get from cache first
-        if self.use_cache:
-            cached = cache_manager.get(cache_key, self.cache_ttl)
-            if cached is not None:
-                logger.info("Returning news from cache")
-                return cached
-        
-        # Since Alpha Vantage free tier doesn't provide news, return empty list
-        # In a full implementation, we might want to integrate with NewsAPI or other sources
-        news_data = []
-        
-        # Cache the result
-        if self.use_cache:
-            cache_manager.set(cache_key, news_data)
-        
-        return news_data
-
-    def get_economic_calendar(self, from_date: str = None, to_date: str = None) -> List[Dict]:
-        """
-        Fetch economic calendar data.
-        Alpha Vantage doesn't provide detailed economic calendar in the free tier.
-        This method might be integrated with other economic data sources in a full implementation.
-        """
-        cache_key = self._get_cache_key("economic_calendar", from_date or "", to_date or "")
-        
-        # Try to get from cache first
-        if self.use_cache:
-            cached = cache_manager.get(cache_key, self.cache_ttl)
-            if cached is not None:
-                logger.info("Returning economic calendar from cache")
-                return cached
-        
-        # Alpha Vantage doesn't have an economic calendar endpoint in the free tier
-        # Return empty list - in a complete implementation we might want to use
-        # other services or a CSV file for this data
-        calendar_data = []
-        
-        # Cache the result
-        if self.use_cache:
-            cache_manager.set(cache_key, calendar_data)
-        
-        return calendar_data
+    def get_sector_performance(self) -> Optional[Dict]:
+        """Fetches sector performance data with a long cache TTL."""
+        sector_ttl = 86400 # 24 hours
+        params = {'function': 'SECTOR'}
+        data = self._make_request(params, ttl=sector_ttl)
+        return data if data and "Rank A: Real-Time Performance" in data else None
