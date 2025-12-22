@@ -11,7 +11,7 @@ pandas
 numpy
 python-pptx
 reportlab
-pandas_ta
+pandas-ta-classic
 scipy
 scikit-learn
 seaborn
