@@ -320,17 +320,17 @@ def process_asset_class(asset_class: str, symbols: List[str]) -> None:
         inter_asset_delay = 20  # Seconds
     
     # Log any errors
-    errors = [r for r in results if r['error'] is not None]
+    errors = [r for r in results if r is not None and r.get('error') is not None]
     if errors:
         logger.warning(f"Errors encountered for {asset_class}: {len(errors)} symbols failed")
         for error_result in errors:
-            logger.warning(f"  - {error_result['symbol']}: {error_result['error']}")
+            logger.warning(f"  - {error_result.get('symbol', 'Unknown')}: {error_result.get('error')}")
     
     # Save successful results to CSV
-    successful_results = [r for r in results if r['error'] is None]
+    successful_results = [r for r in results if r is not None and r.get('error') is None]
     if successful_results:
         save_data_to_csv(successful_results, asset_class)
-    
+
     logger.info(f"Completed processing {asset_class}")
     
     # Add a delay between asset classes to further ensure we don't hit rate limits
