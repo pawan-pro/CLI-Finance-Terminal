@@ -25,28 +25,7 @@ SYMBOL_TO_NAME_MAP = {
     # Commodities (Examples)
     'GLD': 'Gold', 'SLV': 'Silver', 'USO': 'Crude Oil',
     # Bonds (Examples)
-    'TLT': '20+ Year Treasury Bond ETF',
-    # MT5 Symbols (Forex pairs)
-    'EURUSDm': 'Euro vs US Dollar (MT5)', 'GBPUSDm': 'British Pound vs US Dollar (MT5)', 
-    'USDJPYm': 'US Dollar vs Japanese Yen (MT5)', 'AUDUSDm': 'Australian Dollar vs US Dollar (MT5)',
-    'USDCADm': 'US Dollar vs Canadian Dollar (MT5)', 'USDCHFm': 'US Dollar vs Swiss Franc (MT5)',
-    'USDSEKm': 'US Dollar vs Swedish Krona (MT5)',
-    'XAUUSDm': 'Gold vs US Dollar (MT5)', 'XAGUSDm': 'Silver vs US Dollar (MT5)',
-    'USOILm': 'US Oil (MT5)', 'XNGUSDm': 'Natural Gas vs US Dollar (MT5)',
-    'BTCUSDm': 'Bitcoin vs US Dollar (MT5)', 'ETHUSDm': 'Ethereum vs US Dollar (MT5)',
-    'XRPUSDm': 'Ripple vs US Dollar (MT5)', 'ADAUSDm': 'Cardano vs US Dollar (MT5)',
-    'LTCUSDm': 'Litecoin vs US Dollar (MT5)', 'SOLUSDm': 'Solana vs US Dollar (MT5)',
-    # MT5 Indices
-    'US500m': 'US 500 Index (MT5)', 'US30m': 'US 30 Index (MT5)', 'USTECm': 'US Tech 100 Index (MT5)',
-    'DE30m': 'Germany 30 Index (MT5)', 'FR40m': 'France 40 Index (MT5)', 'UK100m': 'UK 100 Index (MT5)',
-    'STOXX50m': 'Euro Stoxx 50 Index (MT5)', 'AUS200m': 'Australia 200 Index (MT5)', 
-    'JP225m': 'Japan 225 Index (MT5)', 'HK50m': 'Hong Kong 50 Index (MT5)', 'IN50m': 'India 50 Index (MT5)',
-    # MT5 Stocks
-    'AAPLm': 'Apple Inc. (MT5)', 'MSFTm': 'Microsoft Corp. (MT5)', 'GOOGLm': 'Alphabet Inc. (MT5)',
-    'AMZNm': 'Amazon.com Inc. (MT5)', 'NVDAm': 'NVIDIA Corp. (MT5)', 'FBm': 'Meta Platforms Inc. (MT5)',
-    'JPMm': 'JPMorgan Chase & Co. (MT5)', 'BACm': 'Bank of America Corp. (MT5)', 
-    'JNJm': 'Johnson & Johnson (MT5)', 'PFEm': 'Pfizer Inc. (MT5)', 'XOMm': 'Exxon Mobil Corp. (MT5)',
-    'TSLAm': 'Tesla Inc. (MT5)', 'MCDm': 'McDonald\'s Corp. (MT5)'
+    'TLT': '20+ Year Treasury Bond ETF'
 }
 
 
@@ -428,37 +407,6 @@ def html_report(analysis_results):
                 # Generate and append the sector performance chart
                 sector_chart_html = generate_sector_performance_chart(df, SYMBOL_TO_NAME_MAP)
                 html_body.append(f'<div class="chart-container">{sector_chart_html}</div>')
-            elif asset_class == 'mt5':
-                # Handle MT5 data here - display it as a separate section
-                html_body.append('<h2 class="asset-class-header">MT5 Real-Time Data</h2>')
-                table_rows = []
-                # Sort by timestamp to show most recent data first
-                mt5_sorted = df.sort_values('timestamp', ascending=False)
-                
-                for _, row in mt5_sorted.iterrows():
-                    symbol = row['symbol']
-                    display_name = SYMBOL_TO_NAME_MAP.get(symbol, symbol)
-                    # For MT5 data, we already have the OHLC data in the dataframe
-                    val = row['close']
-                    # Calculate session change (close - open)
-                    open_price = row['open']
-                    delta = val - open_price if pd.notna(open_price) else 0
-                    pct = (delta / open_price * 100) if pd.notna(open_price) and open_price != 0 else 0
-                    
-                    val_disp = f"{val:,.5f}" if pd.notna(val) else "-"
-                    delta_disp = f"{delta:+.5f}" if pd.notna(delta) else "-"
-                    pct_disp = f"{pct:+.2f}%" if pd.notna(pct) else "-"
-                    
-                    color_class = ""
-                    if pd.notna(pct):
-                        if pct > 0: color_class = "positive"
-                        elif pct < 0: color_class = "negative"
-                        
-                    table_rows.append(f'<tr><td>{display_name}</td><td>{val_disp}</td><td class="{color_class}">{delta_disp}</td><td class="{color_class}">{pct_disp}</td></tr>')
-                    if pd.notna(pct):
-                        all_assets_performance.append({'symbol': symbol, 'asset_class': 'mt5', 'pct_change': pct})
-                        
-                html_body.append(f"""<table class="data-table"><thead><tr><th>Asset (MT5 Real-Time)</th><th>Latest Price</th><th>Change (Session)</th><th>% Change (Session)</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table>""")
             elif asset_class != 'indices':
                 html_body.append(f'<h2 class="asset-class-header">{asset_class.title()}</h2>')
                 table_rows = []
