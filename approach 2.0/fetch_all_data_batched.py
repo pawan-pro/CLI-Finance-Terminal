@@ -57,7 +57,7 @@ def get_all_symbols_by_asset_class() -> Dict[str, List[str]]:
         ],
         
         # Sector ETFs - split into two groups like the original
-        'sectors_s1': ['XLK', 'XLF', 'XLE', 'XLV', 'XLY', 'XLP', 'XLI'],
+        'sectors_s1': ['XLK', 'XLF', 'XLE', 'XLV', 'XLY', 'XLP', 'XLI', 'XLU'],
         'sectors_s2': ['XLRE', 'XLB', 'XLC'],
         
         # VIX ETFs
