@@ -20,4 +20,4 @@ test_reports/
 # Other
 finterm.egg-info/
 .cache/
-*.log
+*.log.DS_Store

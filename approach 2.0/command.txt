@@ -1,0 +1,4 @@
+cd "/Users/pawan/CLI-Finance-Terminal"
+source .venv/bin/activate
+cd "/Users/pawan/CLI-Finance-Terminal/approach 2.0"
+python3 run_complete_workflow.py
