@@ -12,7 +12,6 @@ class MarketPulse:
     def _ensure_metadata_loaded(self, conn):
         if not os.path.exists(self.meta_path):
             return
-        # Using read_csv_auto to load metadata for the join
         conn.execute(f"CREATE TABLE IF NOT EXISTS symbol_metadata AS SELECT * FROM read_csv_auto('{self.meta_path}')")
 
     def get_snapshot(self, limit=200):
@@ -44,30 +43,23 @@ class MarketPulse:
         )
         SELECT 
             lp.symbol, 
-            -- 1. INSTITUTIONAL SECTOR MAPPING
+            -- STRICT PATTERN-BASED CLASSIFICATION
             CASE 
                 WHEN lp.symbol IN ('XAUUSD.sd', 'XAGUSD.sd', 'XPTUSD.sd') THEN 'METALS'
                 WHEN lp.symbol LIKE '%.lv' THEN 'CRYPTO' 
-                ELSE COALESCE(sm.asset_class, 'OTHER') 
+                WHEN lp.symbol LIKE '%OILRoll' THEN 'ENERGY'
+                WHEN lp.symbol LIKE '%Roll' THEN 'INDEX'
+                WHEN lp.symbol LIKE '%.sd' THEN 'FX'
+                ELSE COALESCE(sm.asset_class, 'STOCK') 
             END as asset_class,
             
-            -- 2. SECTOR PRIORITY (Capital Flow Order: Indices -> Metals -> FX -> Crypto -> Stocks)
-            CASE 
-                WHEN asset_class = 'INDEX' THEN 1
-                WHEN asset_class = 'METALS' THEN 2
-                WHEN asset_class = 'FX' THEN 3
-                WHEN asset_class = 'CRYPTO' THEN 4
-                WHEN asset_class = 'STOCK' THEN 5
-                ELSE 6
-            END as sector_priority,
-
             lp.last_price, 
             ROUND(((lp.last_price - COALESCE(bp.price_24h_ago, fp.first_price)) / 
                    COALESCE(bp.price_24h_ago, fp.first_price)) * 100, 2) as return_24h,
             ABS(ROUND(((lp.last_price - COALESCE(bp.price_24h_ago, fp.first_price)) / 
                    COALESCE(bp.price_24h_ago, fp.first_price)) * 100, 2)) as return_magnitude,
             
-            -- 3. CALIBRATED TIME (GMT+2 -> UTC -> IST)
+            -- UTC to IST (+5.5h)
             (lp.last_time + INTERVAL 5 HOURS + INTERVAL 30 MINUTES) as sync_ist,
             (COALESCE(bp.baseline_time, fp.first_time) + INTERVAL 5 HOURS + INTERVAL 30 MINUTES) as reference_ist,
             
@@ -81,7 +73,7 @@ class MarketPulse:
         LEFT JOIN symbol_metadata sm ON lp.symbol = sm.symbol
         LEFT JOIN baseline_prices bp ON lp.symbol = bp.symbol
         LEFT JOIN fallback_prices fp ON lp.symbol = fp.symbol
-        ORDER BY sector_priority ASC, return_magnitude DESC
+        ORDER BY return_magnitude DESC
         LIMIT {limit}
         """
         try:
@@ -93,9 +85,3 @@ class MarketPulse:
             conn.close()
             
         return df
-
-if __name__ == "__main__":
-    pulse = MarketPulse()
-    df = pulse.get_snapshot()
-    if not df.empty:
-        print(df[['symbol', 'asset_class', 'return_24h', 'sync_ist']].head(15))

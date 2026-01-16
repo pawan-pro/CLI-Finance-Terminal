@@ -1,9 +1,10 @@
 import warnings
 import os
 import duckdb
+import requests
+import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
 
-# Silence library warnings for clean CLI
 warnings.filterwarnings("ignore")
 os.environ["GRPC_VERBOSITY"] = "NONE"
 
@@ -17,31 +18,49 @@ class ResearchCopilot:
     def __init__(self):
         self.model = genai.GenerativeModel('gemini-3-flash-preview')
 
+    def _get_headlines(self, symbol):
+        """Zero-dependency news fetcher using Google News RSS"""
+        mapping = {"US500Roll": "S&P500", "UT100Roll": "Nasdaq", "XAUUSD.sd": "Gold", "XAGUSD.sd": "Silver"}
+        query = mapping.get(symbol, symbol.split('.')[0])
+        url = f"https://news.google.com/rss/search?q={query}+finance&hl=en-US&gl=US&ceid=US:en"
+        
+        try:
+            response = requests.get(url, timeout=5)
+            root = ET.fromstring(response.content)
+            return [item.find('title').text for item in root.findall('.//item')[:3]]
+        except:
+            return ["No recent headlines found."]
+
     def generate_intelligence_note(self):
         pulse = MarketPulse()
-        market_data = pulse.get_snapshot(limit=10).to_json(orient='records')
+        df = pulse.get_snapshot(limit=10)
+        if df.empty: return "No market data available."
         
-        # Fetch high-impact events from the last 24h
+        market_data = df.to_json(orient='records')
+        top_symbol = df.iloc[0]['symbol']
+        headlines = self._get_headlines(top_symbol)
+
         conn = duckdb.connect(pulse.db_path)
-        events = conn.execute("""
-            SELECT event_name, actual, forecast, currency
-            FROM economic_events 
-            WHERE impact = 'High' 
-            ORDER BY time_utc DESC LIMIT 5
-        """).df().to_json(orient='records')
+        # Fetch the spread we will ingest in Step 2
+        spread_query = conn.execute("""
+            SELECT 
+                (SELECT close FROM m15_bars WHERE symbol = 'US10Y' ORDER BY time_utc DESC LIMIT 1) -
+                (SELECT close FROM m15_bars WHERE symbol = 'US02Y' ORDER BY time_utc DESC LIMIT 1) as spread
+        """).df()
         conn.close()
+        
+        yield_spread = f"{spread_query['spread'].iloc[0]:.4f}" if not spread_query.empty else "Data Pending"
 
         prompt = f"""
-        You are the Quantwater Head Market Strategist. 
-        Analyze this session data from our Proprietary Lake.
+        You are the Quantwater Head Strategist.
+        MARKET MOVERS: {market_data}
+        TOP MOVER HEADLINES ({top_symbol}): {headlines}
+        US 10Y-02Y YIELD SPREAD: {yield_spread}
         
-        MARKET MOVERS (JSON): {market_data}
-        MACRO EVENTS (JSON): {events}
-
-        TASK: Write a 3-bullet Institutional Briefing.
-        1. CORRELATION: Link the top price move to the most relevant macro event if applicable.
-        2. ANOMALY: Flag any move that seems technical (no matching event).
-        3. RISK: Identify the most 'crowded' or 'overheated' trade right now.
+        TASK: Write a 3-bullet briefing.
+        1. NARRATIVE: Explain the {top_symbol} move using headlines.
+        2. MACRO: Link the Yield Spread ({yield_spread}) to market regime (Recession vs Growth).
+        3. RISK: Identify the most dangerous 'overcrowded' trade.
         """
         
         response = self.model.generate_content(prompt)
