@@ -1,0 +1,59 @@
+/Users/pawan/CLI-Finance-Terminal/approach 3.0/
+    2 ├── data/
+    3 │   └── silver/
+    4 │       └── market_data.duckdb
+    5 ├── EAs/
+    6 │   ├── SymbolDiscovery_exporter.mq5
+    7 │   ├── symbols-overview.md
+    8 │   └── test.py
+    9 ├── Hackathon/
+   10 │   ├── config/
+   11 │   ├── context-reports/
+   12 │   │   ├── 20260105.md
+   13 │   │   ├── 20260106.md
+   14 │   │   ├── 20260107.md
+   15 │   │   ├── 20260108.md
+   16 │   │   ├── 20260109.md
+   17 │   │   ├── 20260112.md
+   18 │   │   ├── 20260113.md
+   19 │   │   ├── 20260114.md
+   20 │   │   └── 20260115.md
+   21 │   ├── data/
+   22 │   │   ├── bronze/
+   23 │   │   ├── metadata/
+   24 │   │   │   └── SymbolMetadata_0_GMT.csv
+   25 │   │   └── silver/
+   26 │   │       └── market_data.duckdb
+   27 │   ├── documentation/
+   28 │   ├── mql5/
+   29 │   │   ├── CalendarExport.mq5
+   30 │   │   ├── MarketSnapshot.mq5
+   31 │   │   └── SymbolDiscovery.mq5
+   32 │   ├── reports/
+   33 │   │   ├── md/
+   34 │   │   └── pptx/
+   35 │   ├── session-context/
+   36 │   │   ├── 20260112-after.md
+   37 │   │   ├── 20260112-before.md
+   38 │   │   ├── 20260113.md
+   39 │   │   └── 20260114.md
+   40 │   ├── src/
+   41 │   │   ├── ai/
+   42 │   │   │   └── research_copilot.py
+   43 │   │   ├── analytics/
+   44 │   │   │   └── metrics_engine.py
+   45 │   │   ├── ingestion/
+   46 │   │   │   ├── .env
+   47 │   │   │   ├── fetch_bonds.py
+   48 │   │   │   ├── ingest_calendar.py
+   49 │   │   │   └── ingest_mt5_exports.py
+   50 │   │   └── terminal/
+   51 │   ├── .DS_Store
+   52 │   ├── .env
+   53 │   ├── path.txt
+   54 │   ├── quantwater.py
+   55 │   └── ROADMAP.md
+   56 ├── .DS_Store
+   57 ├── overview.md
+   58 ├── path.txt
+   59 └── todo.md
