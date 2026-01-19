@@ -5,19 +5,16 @@ from datetime import datetime
 
 class MarketPulse:
     def __init__(self):
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        self.db_path = os.path.normpath(os.path.join(base_path, "../../data/silver/market_data.duckdb"))
-        self.meta_path = os.path.normpath(os.path.join(base_path, "../../data/metadata/SymbolMetadata_0_GMT.csv"))
+        # EXACT ABSOLUTE PATHS
+        self.db_path = "/Users/pawan/CLI-Finance-Terminal/approach 3.0/Hackathon/data/silver/market_data.duckdb"
+        self.meta_path = "/Users/pawan/CLI-Finance-Terminal/approach 3.0/Hackathon/data/metadata/SymbolMetadata_0_GMT.csv"
 
     def _ensure_metadata_loaded(self, conn):
-        if not os.path.exists(self.meta_path):
-            return
+        if not os.path.exists(self.meta_path): return
         conn.execute(f"CREATE TABLE IF NOT EXISTS symbol_metadata AS SELECT * FROM read_csv_auto('{self.meta_path}')")
 
     def get_snapshot(self, limit=200):
-        if not os.path.exists(self.db_path):
-            return pd.DataFrame()
-            
+        if not os.path.exists(self.db_path): return pd.DataFrame()
         conn = duckdb.connect(self.db_path)
         self._ensure_metadata_loaded(conn)
         
@@ -43,26 +40,21 @@ class MarketPulse:
         )
         SELECT 
             lp.symbol, 
-            -- STRICT PATTERN-BASED CLASSIFICATION
             CASE 
                 WHEN lp.symbol IN ('XAUUSD.sd', 'XAGUSD.sd', 'XPTUSD.sd') THEN 'METALS'
+                WHEN lp.symbol LIKE '%.px' THEN 'BONDS'
                 WHEN lp.symbol LIKE '%.lv' THEN 'CRYPTO' 
                 WHEN lp.symbol LIKE '%OILRoll' THEN 'ENERGY'
                 WHEN lp.symbol LIKE '%Roll' THEN 'INDEX'
                 WHEN lp.symbol LIKE '%.sd' THEN 'FX'
                 ELSE COALESCE(sm.asset_class, 'STOCK') 
             END as asset_class,
-            
             lp.last_price, 
             ROUND(((lp.last_price - COALESCE(bp.price_24h_ago, fp.first_price)) / 
                    COALESCE(bp.price_24h_ago, fp.first_price)) * 100, 2) as return_24h,
             ABS(ROUND(((lp.last_price - COALESCE(bp.price_24h_ago, fp.first_price)) / 
                    COALESCE(bp.price_24h_ago, fp.first_price)) * 100, 2)) as return_magnitude,
-            
-            -- UTC to IST (+5.5h)
             (lp.last_time + INTERVAL 5 HOURS + INTERVAL 30 MINUTES) as sync_ist,
-            (COALESCE(bp.baseline_time, fp.first_time) + INTERVAL 5 HOURS + INTERVAL 30 MINUTES) as reference_ist,
-            
             CASE 
                 WHEN (EXTRACT(EPOCH FROM (SELECT global_max_time FROM market_context)) - 
                       EXTRACT(EPOCH FROM lp.last_time)) > 3600 
@@ -79,9 +71,8 @@ class MarketPulse:
         try:
             df = conn.execute(query).df()
         except Exception as e:
-            print(f"Metrics Engine Error: {e}")
+            print(f"Metrics Error: {e}")
             df = pd.DataFrame()
         finally:
             conn.close()
-            
         return df

@@ -16,14 +16,12 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 class ResearchCopilot:
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-3-flash-preview')
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def _get_headlines(self, symbol):
-        """Zero-dependency news fetcher using Google News RSS"""
         mapping = {"US500Roll": "S&P500", "UT100Roll": "Nasdaq", "XAUUSD.sd": "Gold", "XAGUSD.sd": "Silver"}
         query = mapping.get(symbol, symbol.split('.')[0])
         url = f"https://news.google.com/rss/search?q={query}+finance&hl=en-US&gl=US&ceid=US:en"
-        
         try:
             response = requests.get(url, timeout=5)
             root = ET.fromstring(response.content)
@@ -41,27 +39,29 @@ class ResearchCopilot:
         headlines = self._get_headlines(top_symbol)
 
         conn = duckdb.connect(pulse.db_path)
-        # Fetch the spread we will ingest in Step 2
-        spread_query = conn.execute("""
+        bond_query = conn.execute("""
             SELECT 
-                (SELECT close FROM m15_bars WHERE symbol = 'US10Y' ORDER BY time_utc DESC LIMIT 1) -
-                (SELECT close FROM m15_bars WHERE symbol = 'US02Y' ORDER BY time_utc DESC LIMIT 1) as spread
+                (SELECT close FROM m15_bars WHERE symbol = 'US10Y.px' ORDER BY time_utc DESC LIMIT 1) as p10,
+                (SELECT close FROM m15_bars WHERE symbol = 'US02Y.px' ORDER BY time_utc DESC LIMIT 1) as p02
         """).df()
         conn.close()
         
-        yield_spread = f"{spread_query['spread'].iloc[0]:.4f}" if not spread_query.empty else "Data Pending"
+        if not bond_query.empty and bond_query['p02'].iloc[0] > 0:
+            ratio = bond_query['p10'].iloc[0] / bond_query['p02'].iloc[0]
+            bond_context = f"Bond Price Ratio (10Y/2Y): {ratio:.4f}. (Falling ratio = Yield Curve Steepening)."
+        else:
+            bond_context = "Bond Term Structure: Data Pending"
 
         prompt = f"""
         You are the Quantwater Head Strategist.
-        MARKET MOVERS: {market_data}
-        TOP MOVER HEADLINES ({top_symbol}): {headlines}
-        US 10Y-02Y YIELD SPREAD: {yield_spread}
+        MARKET DATA: {market_data}
+        TOP MOVER NEWS ({top_symbol}): {headlines}
+        FIXED INCOME CONTEXT: {bond_context}
         
         TASK: Write a 3-bullet briefing.
-        1. NARRATIVE: Explain the {top_symbol} move using headlines.
-        2. MACRO: Link the Yield Spread ({yield_spread}) to market regime (Recession vs Growth).
-        3. RISK: Identify the most dangerous 'overcrowded' trade.
+        1. NARRATIVE: Explain {top_symbol} move using news.
+        2. MACRO: Define the regime (Reflation vs Recession) using Bond Context.
+        3. RISK: Identify the most 'dangerous' trade based on velocity.
         """
-        
         response = self.model.generate_content(prompt)
         return response.text

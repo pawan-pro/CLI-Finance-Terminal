@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings("ignore")
 
-# Path injection for internal modules
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from analytics.metrics_engine import MarketPulse
 from ai.research_copilot import ResearchCopilot
@@ -25,7 +24,7 @@ def cli():
 
 @cli.command()
 def pulse():
-    """📊 Heatmap: Top 15 Market Movers by Magnitude."""
+    """📊 Heatmap: Top 15 Market Movers."""
     df = MarketPulse().get_snapshot(limit=15)
     render_table(df, "Market Pulse [High Velocity]")
 
@@ -35,36 +34,39 @@ def board():
     df = MarketPulse().get_snapshot(limit=100)
     if not df.empty:
         df = df.sort_values(by='return_magnitude', ascending=False)
-        render_table(df, "Quantwater Master Board [Sorted by Velocity]")
+        render_table(df, "Quantwater Master Board")
 
 @cli.command()
 def sector():
-    """🏢 Sector View: Grouped by Institutional Flow Priority."""
+    """🏢 Sector View: Institutional Flow Priority."""
     df = MarketPulse().get_snapshot(limit=200)
-    if df.empty:
-        console.print("[yellow]Empty Data Lake.[/yellow]")
-        return
-
-    # Institutional Priority Order
-    INSTITUTIONAL_ORDER = ['INDEX', 'METALS', 'FX', 'CRYPTO', 'ENERGY', 'STOCK']
+    if df.empty: return
     
+    INSTITUTIONAL_ORDER = ['BONDS', 'INDEX', 'METALS', 'FX', 'CRYPTO', 'ENERGY', 'STOCK']
     found_classes = df['asset_class'].unique()
-    # Add any classes found in data but not in our list
     final_order = [c for c in INSTITUTIONAL_ORDER if c in found_classes]
-    final_order += [c for c in found_classes if c not in INSTITUTIONAL_ORDER]
-
+    
     for a_class in final_order:
         class_df = df[df['asset_class'] == a_class].sort_values(by='return_24h', ascending=False)
-        if class_df.empty: continue
-        
         render_table(class_df, f"Sector: {a_class}")
         console.print(" ")
+
+@cli.command()
+def bonds():
+    """🏦 Fixed Income: Treasury Bond Proxies."""
+    df = MarketPulse().get_snapshot(limit=200)
+    bond_df = df[df['asset_class'] == 'BONDS'].sort_values(by='symbol')
+    if bond_df.empty:
+        console.print("[yellow]No bonds. Run fetch_bonds.py first.[/yellow]")
+        return
+    render_table(bond_df, "Fixed Income [Bond Proxy Prices]")
+    console.print("\n[dim]Note: Prices move INVERSELY to yields.[/dim]")
 
 @cli.command()
 @click.option('--impact', default='High', help='High/Medium/Low')
 def calendar(impact):
     """📅 Calendar: IST-normalized macro triggers."""
-    db_path = os.path.join(os.path.dirname(__file__), "data/silver/market_data.duckdb")
+    db_path = "/Users/pawan/CLI-Finance-Terminal/approach 3.0/Hackathon/data/silver/market_data.duckdb"
     conn = duckdb.connect(db_path)
     df = conn.execute(f"SELECT * FROM economic_events WHERE impact = '{impact}' ORDER BY time_utc DESC LIMIT 15").df()
     
@@ -77,22 +79,16 @@ def calendar(impact):
 
     for _, row in df.iterrows():
         ist = row['time_utc'] + timedelta(hours=5, minutes=30)
-        actual = f"[green]{row['actual']}[/green]" if pd.notnull(row['actual']) and row['actual'] != 0 else "[dim]---[/dim]"
+        actual = f"[green]{row['actual']}[/green]" if pd.notnull(row['actual']) and row['actual'] != 0 else "---"
         forecast = str(row['forecast']) if pd.notnull(row['forecast']) and row['forecast'] != 0 else "---"
-        table.add_row(
-            ist.strftime('%H:%M %d %b'), 
-            str(row['currency']), 
-            row['event_name'], 
-            actual, 
-            forecast
-        )
+        table.add_row(ist.strftime('%H:%M %d %b'), str(row['currency']), row['event_name'], actual, forecast)
 
     console.print(table)
     conn.close()
 
 @cli.command()
 def research():
-    """🤖 Research: Gemini 3 Intelligence Synthesis."""
+    """🤖 Research: Gemini 1.5 Synthesis."""
     with console.status("[bold cyan]Consulting Quantwater Knowledge Graph..."):
         try:
             copilot = ResearchCopilot()
@@ -102,7 +98,7 @@ def research():
             console.print(f"[bold red]AI Error:[/bold red] {e}")
 
 @cli.command()
-@click.argument('cluster') # e.g. python3 quantwater.py thematic ai
+@click.argument('cluster')
 def thematic(cluster):
     """🔥 Thematic Clusters: [ai / metals / energy]"""
     clusters = {
@@ -110,20 +106,14 @@ def thematic(cluster):
         "metals": ["XAUUSD.sd", "XAGUSD.sd", "XPTUSD.sd"],
         "energy": ["USOILRoll", "UKOILRoll", "Exxon", "Chevron"]
     }
-    
     target_list = clusters.get(cluster.lower())
-    if not target_list:
-        console.print(f"[red]Cluster {cluster} not found.[/red]")
-        return
-        
+    if not target_list: return
     df = MarketPulse().get_snapshot(limit=200)
     filtered = df[df['symbol'].isin(target_list)]
-    
     render_table(filtered, f"Thematic Deep-Dive: {cluster.upper()}")
 
 def render_table(df, title):
     if df.empty: return
-    
     table = Table(title=title, style="bold magenta", header_style="bold white")
     table.add_column("Symbol", style="cyan", width=14)
     table.add_column("Price", justify="right", width=12)
@@ -135,16 +125,8 @@ def render_table(df, title):
         color = "green" if row['return_24h'] > 0 else "red"
         status_color = "green" if row['status'] == 'LIVE' else "dim red"
         fmt = "%H:%M %d %b"
-        
         price_val = f"{row['last_price']:.2f}" if row['last_price'] > 10 else f"{row['last_price']:.4f}"
-        
-        table.add_row(
-            row['symbol'], 
-            price_val, 
-            f"[{color}]{row['return_24h']:+.2f}%[/{color}]", 
-            row['sync_ist'].strftime(fmt),
-            f"[{status_color}]{row['status']}[/{status_color}]"
-        )
+        table.add_row(row['symbol'], price_val, f"[{color}]{row['return_24h']:+.2f}%[/{color}]", row['sync_ist'].strftime(fmt), f"[{status_color}]{row['status']}[/{status_color}]")
     console.print(table)
 
 if __name__ == "__main__":
