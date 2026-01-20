@@ -16,7 +16,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 class ResearchCopilot:
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-3-flash-preview')
 
     def _get_headlines(self, symbol):
         mapping = {"US500Roll": "S&P500", "UT100Roll": "Nasdaq", "XAUUSD.sd": "Gold", "XAGUSD.sd": "Silver"}

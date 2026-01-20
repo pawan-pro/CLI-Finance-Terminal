@@ -16,6 +16,30 @@ from analytics.metrics_engine import MarketPulse
 from ai.research_copilot import ResearchCopilot
 
 console = Console()
+DB_PATH = "/Users/pawan/CLI-Finance-Terminal/approach 3.0/Hackathon/data/silver/market_data.duckdb"
+
+def get_sparkline(symbol):
+    """Generates a clean 10-character ASCII trendline without arrows."""
+    try:
+        conn = duckdb.connect(DB_PATH)
+        # Fetch last 10 bars for a crisp trend
+        df = conn.execute(f"SELECT close FROM m15_bars WHERE symbol = '{symbol}' ORDER BY time_utc DESC LIMIT 10").df()
+        conn.close()
+        if df.empty or len(df) < 2: return "───"
+        
+        vals = df['close'].values[::-1]
+        mn, mx = min(vals), max(vals)
+        if mx == mn: return "───"
+        
+        chars = " ▂▃▄▅▆▇█"
+        line = ""
+        for v in vals:
+            n = int(((v - mn) / (mx - mn)) * 7)
+            line += chars[n]
+        
+        return line
+    except:
+        return "───"
 
 @click.group()
 def cli():
@@ -42,32 +66,40 @@ def sector():
     df = MarketPulse().get_snapshot(limit=200)
     if df.empty: return
     
-    INSTITUTIONAL_ORDER = ['BONDS', 'INDEX', 'METALS', 'FX', 'CRYPTO', 'ENERGY', 'STOCK']
+    INSTITUTIONAL_ORDER = ['BONDS', 'INDEX', 'SECTORS', 'METALS', 'FX', 'CRYPTO', 'ENERGY', 'STOCK']
     found_classes = df['asset_class'].unique()
     final_order = [c for c in INSTITUTIONAL_ORDER if c in found_classes]
     
     for a_class in final_order:
         class_df = df[df['asset_class'] == a_class].sort_values(by='return_24h', ascending=False)
-        render_table(class_df, f"Sector: {a_class}")
+        render_table(class_df, f"Sector Group: {a_class}")
         console.print(" ")
 
 @cli.command()
+def sectors():
+    """🏢 Sectors: Detailed S&P 500 Industry Performance."""
+    df = MarketPulse().get_snapshot(limit=200)
+    sec_df = df[df['asset_class'] == 'SECTORS'].sort_values(by='return_24h', ascending=False)
+    if sec_df.empty:
+        console.print("[yellow]No sectors found. Run fetch_high_freq.py.[/yellow]")
+        return
+    render_table(sec_df, "S&P 500 Sector Benchmarks")
+
+@cli.command()
 def bonds():
-    """🏦 Fixed Income: Treasury Bond Proxies."""
+    """🏦 Fixed Income: Treasury Bond Yield Estimates."""
     df = MarketPulse().get_snapshot(limit=200)
     bond_df = df[df['asset_class'] == 'BONDS'].sort_values(by='symbol')
     if bond_df.empty:
-        console.print("[yellow]No bonds. Run fetch_bonds.py first.[/yellow]")
+        console.print("[yellow]No bonds. Run fetch_high_freq.py.[/yellow]")
         return
-    render_table(bond_df, "Fixed Income [Bond Proxy Prices]")
-    console.print("\n[dim]Note: Prices move INVERSELY to yields.[/dim]")
+    render_table(bond_df, "Fixed Income [Estimated Yields %]")
 
 @cli.command()
 @click.option('--impact', default='High', help='High/Medium/Low')
 def calendar(impact):
     """📅 Calendar: IST-normalized macro triggers."""
-    db_path = "/Users/pawan/CLI-Finance-Terminal/approach 3.0/Hackathon/data/silver/market_data.duckdb"
-    conn = duckdb.connect(db_path)
+    conn = duckdb.connect(DB_PATH)
     df = conn.execute(f"SELECT * FROM economic_events WHERE impact = '{impact}' ORDER BY time_utc DESC LIMIT 15").df()
     
     table = Table(title=f"Macro Calendar [{impact} Impact]", style="yellow")
@@ -115,18 +147,33 @@ def thematic(cluster):
 def render_table(df, title):
     if df.empty: return
     table = Table(title=title, style="bold magenta", header_style="bold white")
-    table.add_column("Symbol", style="cyan", width=14)
-    table.add_column("Price", justify="right", width=12)
+    table.add_column("Symbol", style="cyan", width=12)
+    table.add_column("Name", style="white", width=18)
+    table.add_column("Price/Yield", justify="right", width=12)
     table.add_column("Return %", justify="right", width=10)
     table.add_column("Last Sync (IST)", justify="center", width=16)
+    table.add_column("Trend (2h)", justify="center", width=12) 
     table.add_column("Status", justify="center", width=10)
 
     for _, row in df.iterrows():
         color = "green" if row['return_24h'] > 0 else "red"
         status_color = "green" if row['status'] == 'LIVE' else "dim red"
         fmt = "%H:%M %d %b"
-        price_val = f"{row['last_price']:.2f}" if row['last_price'] > 10 else f"{row['last_price']:.4f}"
-        table.add_row(row['symbol'], price_val, f"[{color}]{row['return_24h']:+.2f}%[/{color}]", row['sync_ist'].strftime(fmt), f"[{status_color}]{row['status']}[/{status_color}]")
+        
+        # Display logic: Yield for bonds, else price
+        price_val = f"{row['display_price']:.3f}%" if row['asset_class'] == 'BONDS' else f"{row['display_price']:.2f}"
+        if row['asset_class'] != 'BONDS' and row['display_price'] < 10:
+            price_val = f"{row['display_price']:.4f}"
+
+        table.add_row(
+            row['symbol'], 
+            row['friendly_name'], 
+            price_val, 
+            f"[{color}]{row['return_24h']:+.2f}%[/{color}]", 
+            row['sync_ist'].strftime(fmt),
+            get_sparkline(row['symbol']),
+            f"[{status_color}]{row['status']}[/{status_color}]"
+        )
     console.print(table)
 
 if __name__ == "__main__":
