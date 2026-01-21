@@ -18,28 +18,13 @@ from ai.research_copilot import ResearchCopilot
 console = Console()
 DB_PATH = "/Users/pawan/CLI-Finance-Terminal/approach 3.0/Hackathon/data/silver/market_data.duckdb"
 
-def get_sparkline(symbol):
-    """Generates a clean 10-character ASCII trendline without arrows."""
-    try:
-        conn = duckdb.connect(DB_PATH)
-        # Fetch last 10 bars for a crisp trend
-        df = conn.execute(f"SELECT close FROM m15_bars WHERE symbol = '{symbol}' ORDER BY time_utc DESC LIMIT 10").df()
-        conn.close()
-        if df.empty or len(df) < 2: return "───"
-        
-        vals = df['close'].values[::-1]
-        mn, mx = min(vals), max(vals)
-        if mx == mn: return "───"
-        
-        chars = " ▂▃▄▅▆▇█"
-        line = ""
-        for v in vals:
-            n = int(((v - mn) / (mx - mn)) * 7)
-            line += chars[n]
-        
-        return line
-    except:
-        return "───"
+def generate_sparkline(data):
+    """Generates a crisp 10-character ASCII trendline."""
+    if not data or len(data) < 2: return "───"
+    chars = " ▂▃▄▅▆▇█"
+    mn, mx = min(data), max(data)
+    if mx == mn: return "───"
+    return "".join([chars[int(((v - mn) / (mx - mn)) * 7)] for v in data])
 
 @click.group()
 def cli():
@@ -47,81 +32,55 @@ def cli():
     pass
 
 @cli.command()
-def pulse():
-    """📊 Heatmap: Top 15 Market Movers."""
-    df = MarketPulse().get_snapshot(limit=15)
-    render_table(df, "Market Pulse [High Velocity]")
-
-@cli.command()
 def board():
-    """📈 Master Board: All assets sorted by absolute velocity."""
-    df = MarketPulse().get_snapshot(limit=100)
+    """📈 Master Board: All assets."""
+    df = MarketPulse().get_snapshot()
     if not df.empty:
         df = df.sort_values(by='return_magnitude', ascending=False)
         render_table(df, "Quantwater Master Board")
 
 @cli.command()
 def sector():
-    """🏢 Sector View: Institutional Flow Priority."""
-    df = MarketPulse().get_snapshot(limit=200)
-    if df.empty: return
-    
-    INSTITUTIONAL_ORDER = ['BONDS', 'INDEX', 'SECTORS', 'METALS', 'FX', 'CRYPTO', 'ENERGY', 'STOCK']
-    found_classes = df['asset_class'].unique()
-    final_order = [c for c in INSTITUTIONAL_ORDER if c in found_classes]
-    
-    for a_class in final_order:
-        class_df = df[df['asset_class'] == a_class].sort_values(by='return_24h', ascending=False)
-        render_table(class_df, f"Sector Group: {a_class}")
-        console.print(" ")
-
-@cli.command()
-def sectors():
-    """🏢 Sectors: Detailed S&P 500 Industry Performance."""
-    df = MarketPulse().get_snapshot(limit=200)
-    sec_df = df[df['asset_class'] == 'SECTORS'].sort_values(by='return_24h', ascending=False)
-    if sec_df.empty:
-        console.print("[yellow]No sectors found. Run fetch_high_freq.py.[/yellow]")
-        return
-    render_table(sec_df, "S&P 500 Sector Benchmarks")
+    """🏢 Sector View: Priority Flow."""
+    df = MarketPulse().get_snapshot()
+    order = ['BONDS', 'INDEX', 'SECTORS', 'METALS', 'FX', 'CRYPTO', 'STOCK']
+    for a_class in [o for o in order if o in df['asset_class'].unique()]:
+        render_table(df[df['asset_class'] == a_class], f"Sector Group: {a_class}")
 
 @cli.command()
 def bonds():
-    """🏦 Fixed Income: Treasury Bond Yield Estimates."""
-    df = MarketPulse().get_snapshot(limit=200)
+    """🏦 Fixed Income: Treasury Yield Estimates."""
+    engine = MarketPulse()
+    df = engine.get_snapshot()
     bond_df = df[df['asset_class'] == 'BONDS'].sort_values(by='symbol')
-    if bond_df.empty:
-        console.print("[yellow]No bonds. Run fetch_high_freq.py.[/yellow]")
-        return
-    render_table(bond_df, "Fixed Income [Estimated Yields %]")
+    
+    table = Table(title="Calibrated Fixed Income [Yield %]", style="bold green")
+    table.add_column("Symbol", style="cyan")
+    table.add_column("Name", style="white")
+    table.add_column("Est. Yield", justify="right", style="bold yellow")
+    table.add_column("24H (Price %)", justify="right")
+    table.add_column("Trend", justify="center")
+
+    for _, row in bond_df.iterrows():
+        color = "green" if row['return_24h'] > 0 else "red"
+        table.add_row(
+            row['symbol'], row['friendly_name'], 
+            f"{row['display_price']:.3f}%", 
+            f"[{color}]{row['return_24h']:+.2f}%[/{color}]",
+            generate_sparkline(engine.get_sparkline_data(row['symbol']))
+        )
+    console.print(table)
 
 @cli.command()
-@click.option('--impact', default='High', help='High/Medium/Low')
-def calendar(impact):
-    """📅 Calendar: IST-normalized macro triggers."""
-    conn = duckdb.connect(DB_PATH)
-    df = conn.execute(f"SELECT * FROM economic_events WHERE impact = '{impact}' ORDER BY time_utc DESC LIMIT 15").df()
-    
-    table = Table(title=f"Macro Calendar [{impact} Impact]", style="yellow")
-    table.add_column("Time (IST)", style="cyan")
-    table.add_column("Currency", style="bold white")
-    table.add_column("Event", style="white")
-    table.add_column("Actual", justify="right")
-    table.add_column("Forecast", justify="right")
-
-    for _, row in df.iterrows():
-        ist = row['time_utc'] + timedelta(hours=5, minutes=30)
-        actual = f"[green]{row['actual']}[/green]" if pd.notnull(row['actual']) and row['actual'] != 0 else "---"
-        forecast = str(row['forecast']) if pd.notnull(row['forecast']) and row['forecast'] != 0 else "---"
-        table.add_row(ist.strftime('%H:%M %d %b'), str(row['currency']), row['event_name'], actual, forecast)
-
-    console.print(table)
-    conn.close()
+def sectors():
+    """🏢 Sectors: Detailed Industry Performance."""
+    df = MarketPulse().get_snapshot()
+    render_table(df[df['asset_class'] == 'SECTORS'], "Industry Benchmarks")
 
 @cli.command()
 def research():
     """🤖 Research: Gemini 1.5 Synthesis."""
-    with console.status("[bold cyan]Consulting Quantwater Knowledge Graph..."):
+    with console.status("[bold cyan]Consulting Knowledge Graph..."):
         try:
             copilot = ResearchCopilot()
             note = copilot.generate_intelligence_note()
@@ -130,50 +89,32 @@ def research():
             console.print(f"[bold red]AI Error:[/bold red] {e}")
 
 @cli.command()
-@click.argument('cluster')
-def thematic(cluster):
-    """🔥 Thematic Clusters: [ai / metals / energy]"""
-    clusters = {
-        "ai": ["NVIDIA", "Microsoft", "Alphabet", "Apple", "Tesla", "Amazon", "Facebook"],
-        "metals": ["XAUUSD.sd", "XAGUSD.sd", "XPTUSD.sd"],
-        "energy": ["USOILRoll", "UKOILRoll", "Exxon", "Chevron"]
-    }
-    target_list = clusters.get(cluster.lower())
-    if not target_list: return
-    df = MarketPulse().get_snapshot(limit=200)
-    filtered = df[df['symbol'].isin(target_list)]
-    render_table(filtered, f"Thematic Deep-Dive: {cluster.upper()}")
+@click.option('--impact', default='High')
+def calendar(impact):
+    """📅 Calendar: Macro triggers."""
+    conn = duckdb.connect(DB_PATH)
+    try:
+        df = conn.execute(f"SELECT * FROM economic_events WHERE impact = '{impact}' ORDER BY time_utc DESC LIMIT 15").df()
+        table = Table(title=f"Macro Calendar [{impact}]", style="yellow")
+        table.add_column("Time (IST)"); table.add_column("Event"); table.add_column("Actual")
+        for _, row in df.iterrows():
+            ist = row['time_utc'] + timedelta(hours=5, minutes=30)
+            table.add_row(ist.strftime('%H:%M %d %b'), row['event_name'], str(row['actual']))
+        console.print(table)
+    except:
+        console.print("[red]Calendar empty.[/red]")
+    finally: conn.close()
 
 def render_table(df, title):
     if df.empty: return
-    table = Table(title=title, style="bold magenta", header_style="bold white")
-    table.add_column("Symbol", style="cyan", width=12)
-    table.add_column("Name", style="white", width=18)
-    table.add_column("Price/Yield", justify="right", width=12)
-    table.add_column("Return %", justify="right", width=10)
-    table.add_column("Last Sync (IST)", justify="center", width=16)
-    table.add_column("Trend (2h)", justify="center", width=12) 
-    table.add_column("Status", justify="center", width=10)
-
+    engine = MarketPulse()
+    table = Table(title=title, style="magenta")
+    table.add_column("Symbol"); table.add_column("Name"); table.add_column("Price/Yield"); table.add_column("Return %"); table.add_column("Trend"); table.add_column("Status")
     for _, row in df.iterrows():
         color = "green" if row['return_24h'] > 0 else "red"
         status_color = "green" if row['status'] == 'LIVE' else "dim red"
-        fmt = "%H:%M %d %b"
-        
-        # Display logic: Yield for bonds, else price
         price_val = f"{row['display_price']:.3f}%" if row['asset_class'] == 'BONDS' else f"{row['display_price']:.2f}"
-        if row['asset_class'] != 'BONDS' and row['display_price'] < 10:
-            price_val = f"{row['display_price']:.4f}"
-
-        table.add_row(
-            row['symbol'], 
-            row['friendly_name'], 
-            price_val, 
-            f"[{color}]{row['return_24h']:+.2f}%[/{color}]", 
-            row['sync_ist'].strftime(fmt),
-            get_sparkline(row['symbol']),
-            f"[{status_color}]{row['status']}[/{status_color}]"
-        )
+        table.add_row(row['symbol'], row['friendly_name'], price_val, f"[{color}]{row['return_24h']:+.2f}%[/{color}]", generate_sparkline(engine.get_sparkline_data(row['symbol'])), f"[{status_color}]{row['status']}[/]")
     console.print(table)
 
 if __name__ == "__main__":
