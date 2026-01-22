@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus Terminal | Twelve Data Integrated</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              nexus: {
+                900: '#020617',
+                800: '#0f172a',
+                700: '#1e293b',
+                600: '#334155',
+                accent: '#fbbf24', // Bloomberg Amber
+                up: '#22c55e',
+                down: '#ef4444',
+              }
+            },
+            animation: {
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #020617; }
+      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #475569; }
+      .mask-linear-fade { mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent); }
+      @keyframes ticker {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-ticker {
+        display: inline-flex;
+        animation: ticker 30s linear infinite;
+      }
+      .plotly-container .main-svg { background: transparent !important; }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+        "react/": "https://aistudiocdn.com/react@^19.2.1/",
+        "react": "https://aistudiocdn.com/react@^19.2.1",
+        "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+        "clsx": "https://cdn.skypack.dev/clsx",
+        "tailwind-merge": "https://cdn.skypack.dev/tailwind-merge"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-nexus-900 text-slate-200 antialiased overflow-hidden selection:bg-nexus-accent selection:text-nexus-900">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
