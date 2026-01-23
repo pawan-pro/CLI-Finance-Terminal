@@ -7,7 +7,7 @@ import { AIAssistant } from './components/AIAssistant';
 import { MacroDashboard } from './components/MacroDashboard';
 import { User, StockQuote, OHLCPoint, NewsItem, DateRange, MarketContext, MarketInstrument, EconomicEvent, RateProbability } from './types';
 import { getCurrentUser, setCurrentUser } from './services/storage';
-import { fetchQuote, fetchTimeSeries, fetchNews, fetchBatchQuotes, fetchMarketData, convertToMarketInstrument } from './services/marketDataService';
+import { fetchQuote, fetchTimeSeries, fetchNews, fetchBatchQuotes, fetchMarketData, convertToMarketInstrument, fetchSparkline } from './services/marketDataService';
 import { generateMacroData, updateMacroInstrument, generateEconomicEvents, generateRateProbs } from './services/dataService';
 import { LogOut, LayoutGrid, Clock, Newspaper, Search, Activity, ChevronRight, BarChart3, Globe2, AlertTriangle } from 'lucide-react';
 import { CONFIG } from './config';
@@ -17,8 +17,10 @@ const WATCHLIST = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'META', 'GOOGL', 'JPM', 'V'];
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [activeSymbol, setActiveSymbol] = useState('AAPL');
+  const [selectedSymbol, setSelectedSymbol] = useState('AAPL'); // New state for selected symbol
+  const [timeRange, setTimeRange] = useState<'1D' | '1W'>('1D'); // New state for chart time range
   const [view, setView] = useState<'EQUITY' | 'MACRO'>('EQUITY');
-  
+
   const [quote, setQuote] = useState<StockQuote | null>(null);
   const [history, setHistory] = useState<OHLCPoint[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -83,46 +85,104 @@ const App: React.FC = () => {
     // Load initially
     loadMacroInstruments();
 
-    // Refresh periodically along with other data
-    const interval = setInterval(loadMacroInstruments, CONFIG.POLLING.ACTIVE_ASSET);
+    // Refresh macro instruments every 30 seconds as specified
+    const interval = setInterval(loadMacroInstruments, 30000);
 
     return () => clearInterval(interval);
   }, [user]);
+
+  // Fetch sparkline data when activeSymbol changes
+  useEffect(() => {
+    const fetchSparklineData = async () => {
+      if (!user || !activeSymbol) return;
+      try {
+        const data = await fetchSparkline(activeSymbol);
+        // Convert sparkline data to OHLCPoint format if needed
+        const now = new Date();
+        const newHistory: OHLCPoint[] = data.map((price: number, index: number) => {
+          const date = new Date(now);
+          date.setMinutes(date.getMinutes() - (data.length - 1 - index)); // Assuming minute intervals
+
+          return {
+            datetime: date.toISOString().replace('T', ' ').substring(0, 19),
+            open: price,
+            high: price * (1 + Math.random() * 0.001), // Slight variation for high
+            low: price * (1 - Math.random() * 0.001),  // Slight variation for low
+            close: price,
+            volume: Math.floor(Math.random() * 1000000) + 50000
+          };
+        });
+        setHistory(newHistory);
+      } catch (error) {
+        console.error('Error fetching sparkline data:', error);
+      }
+    };
+
+    fetchSparklineData();
+  }, [activeSymbol, user]);
 
   // 1. Fetch Active Symbol Data (Quote + History)
   const refreshActiveAsset = useCallback(async () => {
     if (!user) return;
     setChartError(null);
     try {
+      // Ensure the quote lookup is done by symbol from the API
       const [q, h] = await Promise.all([
-        fetchQuote(activeSymbol),
-        fetchTimeSeries(activeSymbol)
+        fetchQuote(activeSymbol), // Use activeSymbol instead of selectedSymbol - this will look up by symbol field from API
+        fetchTimeSeries(activeSymbol, timeRange) // Use activeSymbol and timeRange
       ]);
       setQuote(q);
       setHistory(h);
     } catch (e: any) {
       setChartError(e.message);
     }
-  }, [activeSymbol, user]);
+  }, [activeSymbol, timeRange, user]);
 
-  // 2. Fetch News (Less Frequent)
+  // 2. Fetch News (Less Frequent - every 5 minutes to prevent quota exhaustion)
   const refreshNews = useCallback(async () => {
     if (!user) return;
     setNewsError(null);
     try {
-      const n = await fetchNews(activeSymbol);
+      const n = await fetchNews(activeSymbol); // Use activeSymbol instead of selectedSymbol
       setNews(n);
     } catch (e: any) {
       setNewsError(e.message);
     }
   }, [activeSymbol, user]);
 
-  // 3. Fetch Watchlist (Batch Mode)
+  // 3. Fetch Watchlist (Filter from market data where asset_class === 'STOCK')
   const refreshWatchlist = useCallback(async () => {
     if (!user) return;
     setWatchlistError(null);
     try {
-      const map = await fetchBatchQuotes(WATCHLIST);
+      const marketData = await fetchMarketData();
+      // Create a map of the stock quotes for only the symbols in WATCHLIST
+      const map: Record<string, StockQuote> = {};
+      for (const asset of marketData) {
+        if (WATCHLIST.includes(asset.symbol)) {
+          // Convert BackendAsset to StockQuote format - ensure we use the symbol field returned by API
+          const name = asset.friendly_name || asset.symbol;
+          const price = asset.price;
+          const change24h = asset.change_24h;
+
+          // Handle NaN or null values for returns
+          const percent_change = (change24h !== null && change24h !== undefined && !isNaN(change24h)) ? change24h : 0;
+          // Calculate change based on percentage of price
+          const change = price * (percent_change / 100);
+
+          map[asset.symbol] = {
+            symbol: asset.symbol, // Use the symbol field directly from API
+            name: name,
+            price: price,
+            change: change,
+            percent_change: percent_change,
+            volume: 0, // Volume not provided by backend
+            timestamp: Date.now() / 1000,
+            is_market_open: true,
+            status: asset.status
+          };
+        }
+      }
       setWatchlistQuotes(map);
     } catch (e: any) {
       setWatchlistError(e.message);
@@ -137,10 +197,10 @@ const App: React.FC = () => {
     refreshNews();
     refreshWatchlist();
 
-    // Using 15-second intervals as specified for live updates
-    const assetInt = setInterval(refreshActiveAsset, CONFIG.POLLING.ACTIVE_ASSET);
-    const watchlistInt = setInterval(refreshWatchlist, CONFIG.POLLING.WATCHLIST);
-    const newsInt = setInterval(refreshNews, CONFIG.POLLING.NEWS);
+    // Set the polling interval for market to 30 seconds and research to 5 minutes as specified
+    const assetInt = setInterval(refreshActiveAsset, 30000); // 30 seconds
+    const watchlistInt = setInterval(refreshWatchlist, 30000); // 30 seconds
+    const newsInt = setInterval(refreshNews, 300000); // 5 minutes
 
     return () => {
       clearInterval(assetInt);
@@ -157,11 +217,11 @@ const App: React.FC = () => {
   };
 
   const marketContext: MarketContext = useMemo(() => ({
-    symbol: activeSymbol,
+    symbol: selectedSymbol, // Use selectedSymbol instead of activeSymbol
     quote,
     selectedRange,
     recentHistory: history
-  }), [activeSymbol, quote, selectedRange, history]);
+  }), [selectedSymbol, quote, selectedRange, history]);
 
   if (!user) return <Auth onLogin={setUser} />;
 
@@ -245,16 +305,31 @@ const App: React.FC = () => {
             {WATCHLIST.map(sym => {
               const q = watchlistQuotes[sym];
               return (
-                <div 
+                <div
                   key={sym}
-                  onClick={() => { setActiveSymbol(sym); setView('EQUITY'); }}
+                  onClick={() => {
+                    setActiveSymbol(sym);
+                    setSelectedSymbol(sym); // Update selected symbol
+                    setView('EQUITY');
+                  }}
                   className={`p-3 border-b border-slate-800/50 cursor-pointer transition-all hover:bg-slate-800/40 ${activeSymbol === sym && view === 'EQUITY' ? 'bg-nexus-800 border-l-2 border-l-nexus-accent' : ''}`}
                 >
                   <div className="flex justify-between items-center mb-0.5">
                     <span className="font-mono font-bold text-xs text-white">{sym}</span>
-                    <span className={`text-xs font-mono font-bold ${q && !isNaN(q.change) && q.change >= 0 ? 'text-nexus-up' : 'text-nexus-down'}`}>
-                      {q ? (sym === 'DXY' && (isNaN(q.price) || q.price === 0) ? 'CALCULATING...' : (isNaN(q.price) ? 'CALC...' : q.price.toFixed(2))) : '---'}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs font-mono font-bold ${q && !isNaN(q.change) && q.change >= 0 ? 'text-nexus-up' : 'text-nexus-down'}`}>
+                        {q ? (sym === 'DXY' && (isNaN(q.price) || q.price === 0) ? 'CALCULATING...' : (isNaN(q.price) ? 'CALC...' : q.price.toFixed(2))) : '---'}
+                      </span>
+                      {q?.status && (
+                        <span className={`text-[8px] px-1 py-0.5 rounded ${
+                          q.status.toLowerCase() === 'live'
+                            ? 'bg-green-900/30 text-green-400 border border-green-800/50'
+                            : 'bg-red-900/30 text-red-400 border border-red-800/50'
+                        }`}>
+                          {q.status}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between items-center text-[9px] font-mono text-slate-500">
                     {q ? (
@@ -273,18 +348,43 @@ const App: React.FC = () => {
           <div className="flex-1 p-2 flex flex-col min-h-0 space-y-2 overflow-hidden">
             <div className="flex-1 min-h-[400px] relative">
               {view === 'EQUITY' ? (
-                <StockChart 
-                  quote={quote} 
-                  history={history} 
-                  error={chartError}
-                  onRangeChange={setSelectedRange} 
-                />
+                !quote || history.length === 0 ? (
+                  <div className="h-full w-full flex items-center justify-center bg-nexus-800 border border-slate-700 rounded-lg min-h-[400px]">
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-8 h-8 border-2 border-nexus-accent border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-mono text-slate-500 uppercase">SYNCHRONIZING WITH DATA LAKE...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <StockChart
+                    quote={quote}
+                    history={history}
+                    error={chartError}
+                    onRangeChange={setSelectedRange}
+                    timeRange={timeRange}
+                    onTimeRangeChange={setTimeRange}
+                  />
+                )
               ) : (
-                <MacroDashboard 
-                  instruments={macroInstruments}
-                  econEvents={econEvents}
-                  rateProbs={rateProbs}
-                />
+                !macroInstruments || macroInstruments.length === 0 ? (
+                  <div className="h-full w-full flex items-center justify-center bg-nexus-800 border border-slate-700 rounded-lg min-h-[400px]">
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-8 h-8 border-2 border-nexus-accent border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-mono text-slate-500 uppercase">SYNCHRONIZING WITH DATA LAKE...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <MacroDashboard
+                    instruments={macroInstruments}
+                    econEvents={econEvents}
+                    rateProbs={rateProbs}
+                    onSelectSymbol={(symbol) => {
+                      setActiveSymbol(symbol);
+                      setSelectedSymbol(symbol);
+                      setView('EQUITY');
+                    }}
+                  />
+                )
               )}
             </div>
 

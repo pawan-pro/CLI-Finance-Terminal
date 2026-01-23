@@ -8,8 +8,8 @@ export const CONFIG = {
   BACKEND_API_BASE: 'http://localhost:8000',
 
   // GEMINI CONFIGURATION
-  // Upgraded to gemini-3-pro-preview for complex technical analysis and reasoning
-  AI_MODEL: 'gemini-3-pro-preview',
+  // Updated to gemini-3-flash-preview for faster responses
+  AI_MODEL: 'gemini-3-flash-preview',
 
   // REFRESH INTERVALS (ms)
   // Using backend bridge for all market data

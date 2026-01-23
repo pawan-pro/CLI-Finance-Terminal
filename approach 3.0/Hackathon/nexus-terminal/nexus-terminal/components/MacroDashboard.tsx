@@ -8,22 +8,46 @@ interface MacroDashboardProps {
   rateProbs: RateProbability[];
 }
 
-const InstrumentCard: React.FC<{ inst: MarketInstrument }> = ({ inst }) => {
-  const isPositive = inst.change >= 0;
+interface InstrumentCardProps {
+  inst: MarketInstrument;
+  onClick?: () => void;
+}
 
-  // Format price differently for bonds (add % suffix)
-  const formattedPrice = inst.category === 'bond'
-    ? `${inst.price.toFixed(2)}%`
-    : inst.price.toFixed(inst.category === 'fx' ? 4 : 2);
+const InstrumentCard: React.FC<InstrumentCardProps> = ({ inst, onClick }) => {
+  const isPositive = inst.change >= 0;
+  const isLive = inst.status && inst.status.toLowerCase() === 'live';
+
+  // Format price differently for bonds (add % suffix) and special handling for DXY
+  let formattedPrice = '';
+  if (inst.symbol === 'DXY') {
+    // Force DXY to display with 2 decimal places regardless of category
+    formattedPrice = inst.price.toFixed(2);
+  } else if (inst.category === 'bond') {
+    formattedPrice = `${inst.price.toFixed(2)}%`;
+  } else {
+    formattedPrice = inst.price.toFixed(inst.category === 'fx' ? 4 : 2);
+  }
 
   return (
-    <div className="bg-nexus-800 border border-slate-700 p-3 rounded flex flex-col justify-between hover:border-nexus-accent transition-colors">
+    <div
+      className="bg-nexus-800 border border-slate-700 p-3 rounded flex flex-col justify-between hover:border-nexus-accent transition-colors cursor-pointer"
+      onClick={onClick}
+    >
       <div className="flex justify-between items-start mb-2">
         <div>
           <span className="text-nexus-accent font-mono font-bold text-sm block">{inst.symbol}</span>
           <span className="text-slate-500 text-xs font-mono">{inst.name}</span>
         </div>
-        {isPositive ? <TrendingUp className="w-4 h-4 text-nexus-up" /> : <TrendingDown className="w-4 h-4 text-nexus-down" />}
+        <div className="flex flex-col items-end">
+          {isPositive ? <TrendingUp className="w-4 h-4 text-nexus-up" /> : <TrendingDown className="w-4 h-4 text-nexus-down" />}
+          <span className={`text-[8px] px-1 py-0.5 rounded mt-1 ${
+            isLive
+              ? 'bg-green-900/30 text-green-400 border border-green-800/50'
+              : 'bg-red-900/30 text-red-400 border border-red-800/50'
+          }`}>
+            {isLive ? 'LIVE' : 'INACTIVE'}
+          </span>
+        </div>
       </div>
       <div className="flex justify-between items-baseline">
         <span className="text-slate-100 font-mono text-lg font-bold">{formattedPrice}</span>
@@ -35,13 +59,34 @@ const InstrumentCard: React.FC<{ inst: MarketInstrument }> = ({ inst }) => {
   );
 };
 
-export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, econEvents, rateProbs }) => {
-  
-  const futures = instruments.filter(i => i.category === 'future');
-  const bonds = instruments.filter(i => i.category === 'bond');
-  const fx = instruments.filter(i => i.category === 'fx');
+interface MacroDashboardProps {
+  instruments: MarketInstrument[];
+  econEvents: EconomicEvent[];
+  rateProbs: RateProbability[];
+  onSelectSymbol?: (symbol: string) => void; // New prop for handling symbol selection
+}
+
+// Loading indicator component
+const LoadingIndicator = () => (
+  <div className="h-full w-full flex items-center justify-center">
+    <div className="flex flex-col items-center space-y-2">
+      <Activity className="w-8 h-8 text-nexus-accent animate-spin" />
+      <span className="text-xs font-mono text-slate-500 uppercase">Loading macro data...</span>
+    </div>
+  </div>
+);
+
+export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, econEvents, rateProbs, onSelectSymbol }) => {
+  // Safety check at the very top as required
+  if (!instruments || instruments.length === 0) return null;
+  // For the UI, ensure the filter uses category === 'bond', category === 'future', and category === 'fx'
+  // Ensure DXY (if present in the instruments array) is filtered into the 'Indices' section
+  const futures = instruments.filter(i => i.category === 'future' || i.symbol === 'DXY'); // Includes INDEX assets and DXY
+  const bonds = instruments.filter(i => i.category === 'bond'); // Includes BONDS assets
+  const fx = instruments.filter(i => i.category === 'fx'); // Includes METALS assets
+  const em = instruments.filter(i => i.category === 'em'); // Includes SECTORS assets
+  const stocks = instruments.filter(i => i.category === 'stock');
   const spreads = instruments.filter(i => i.category === 'spread');
-  const em = instruments.filter(i => i.category === 'em');
 
   return (
     <div className="h-full overflow-y-auto p-4 bg-nexus-900 space-y-6 scrollbar-thin">
@@ -58,7 +103,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, eco
             </span>
           </div>
           <div className="p-3 grid grid-cols-2 gap-2">
-            {futures.map(i => <InstrumentCard key={i.symbol} inst={i} />)}
+            {futures.map(i => <InstrumentCard key={i.symbol} inst={i} onClick={() => onSelectSymbol && onSelectSymbol(i.symbol)} />)}
           </div>
         </div>
 
@@ -71,7 +116,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, eco
             </span>
           </div>
           <div className="p-3 grid grid-cols-2 lg:grid-cols-3 gap-2">
-            {bonds.map(i => <InstrumentCard key={i.symbol} inst={i} />)}
+            {bonds.map(i => <InstrumentCard key={i.symbol} inst={i} onClick={() => onSelectSymbol && onSelectSymbol(i.symbol)} />)}
           </div>
         </div>
       </div>
@@ -89,7 +134,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, eco
           </div>
           <div className="p-3 space-y-2">
             {fx.map(i => (
-               <div key={i.symbol} className="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0">
+               <div
+                 key={i.symbol}
+                 className="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                 onClick={() => onSelectSymbol && onSelectSymbol(i.symbol)}
+               >
                  <span className="text-sm font-mono text-nexus-accent">{i.symbol}</span>
                  <span className="text-sm font-mono text-white">{i.price.toFixed(4)}</span>
                  <span className={`text-xs font-mono ${i.change >= 0 ? 'text-nexus-up' : 'text-nexus-down'}`}>
@@ -107,7 +156,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, eco
           </div>
           <div className="p-3 space-y-2">
              {spreads.map(i => (
-               <div key={i.symbol} className="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0">
+               <div
+                 key={i.symbol}
+                 className="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                 onClick={() => onSelectSymbol && onSelectSymbol(i.symbol)}
+               >
                  <div>
                     <span className="text-sm font-mono text-white block">{i.name}</span>
                  </div>
@@ -132,7 +185,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({ instruments, eco
           </div>
           <div className="p-3 space-y-2">
             {em.map(i => (
-               <div key={i.symbol} className="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0">
+               <div
+                 key={i.symbol}
+                 className="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                 onClick={() => onSelectSymbol && onSelectSymbol(i.symbol)}
+               >
                  <span className="text-sm font-mono text-slate-200">{i.symbol}</span>
                  <span className="text-sm font-mono text-white">{i.price.toFixed(2)}</span>
                  <span className={`text-xs font-mono ${i.change >= 0 ? 'text-nexus-up' : 'text-nexus-down'}`}>

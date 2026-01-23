@@ -149,17 +149,17 @@ export const generateEconomicEvents = async (): Promise<EconomicEvent[]> => {
     }
     const data = await response.json();
 
-    // Assuming the backend returns calendar data in a compatible format
-    // If not, we'll need to map the fields appropriately
+    // Map backend fields to EconomicEvent format as per requirements
+    // Backend API returns: time, ctry, event, act, fcst
     return data.map((event: any) => ({
       id: event.id || event.event_id || Math.random().toString(36).substr(2, 9),
-      time: event.time || event.release_time || '--:--',
-      country: event.country || event.region || 'N/A',
-      event: event.event_name || event.title || 'Economic Event',
-      actual: event.actual_value || event.actual || '-',
-      forecast: event.forecast_value || event.forecast || '-',
-      previous: event.previous_value || event.previous || '-',
-      impact: event.impact_level || event.impact || 'medium'
+      time: event.time || '--:--',
+      country: event.ctry || event.country || 'N/A',
+      event: event.event || event.event_name || event.title || 'Economic Event',
+      actual: event.act || event.actual || event.actual_value || '-',
+      forecast: event.fcst || event.forecast || event.forecast_value || '-',
+      previous: event.previous || event.previous_value || '-',
+      impact: event.impact || event.impact_level || 'medium'
     }));
   } catch (error) {
     console.warn('Failed to fetch economic events from backend, using mock data:', error);

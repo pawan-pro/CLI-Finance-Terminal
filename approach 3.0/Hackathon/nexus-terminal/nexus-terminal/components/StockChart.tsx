@@ -13,12 +13,15 @@ import {
 } from 'recharts';
 import { OHLCPoint, DateRange, StockQuote } from '../types';
 import { Activity, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { fetchTimeSeries } from '../services/marketDataService';
 
 interface StockChartProps {
   quote: StockQuote | null;
   history: OHLCPoint[];
   error?: string | null;
   onRangeChange: (range: DateRange) => void;
+  timeRange?: '1D' | '1W';
+  onTimeRangeChange?: (range: '1D' | '1W') => void;
 }
 
 // Utility function to handle NaN values
@@ -29,7 +32,7 @@ const formatValue = (value: number | null | undefined): string => {
   return value.toString();
 };
 
-export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, onRangeChange }) => {
+export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, onRangeChange, timeRange = '1D', onTimeRangeChange }) => {
   const [activeRange, setActiveRange] = useState<DateRange>({ startDate: null, endDate: null });
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -113,8 +116,39 @@ export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, o
         </div>
         <div className="flex flex-col items-end">
           <div className="flex items-center space-x-2 mb-1">
-             <span className={`w-2 h-2 rounded-full ${quote.is_market_open ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-             <span className="text-[10px] font-mono text-slate-400 uppercase">{quote.is_market_open ? 'Market Open' : 'After Hours'}</span>
+            <div className="flex space-x-1 bg-nexus-800 rounded border border-slate-700">
+              <button
+                onClick={() => onTimeRangeChange && onTimeRangeChange('1D')}
+                className={`px-2 py-1 text-[10px] font-mono ${
+                  timeRange === '1D'
+                    ? 'bg-nexus-accent text-nexus-900 font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                1D
+              </button>
+              <button
+                onClick={() => onTimeRangeChange && onTimeRangeChange('1W')}
+                className={`px-2 py-1 text-[10px] font-mono ${
+                  timeRange === '1W'
+                    ? 'bg-nexus-accent text-nexus-900 font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                1W
+              </button>
+            </div>
+            <span className={`w-2 h-2 rounded-full ${quote.is_market_open ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+            <span className="text-[10px] font-mono text-slate-400 uppercase">{quote.is_market_open ? 'Market Open' : 'After Hours'}</span>
+            {quote.status && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase ${
+                quote.status.toLowerCase() === 'live'
+                  ? 'bg-green-900/30 text-green-400 border border-green-800/50'
+                  : 'bg-red-900/30 text-red-400 border border-red-800/50'
+              }`}>
+                {quote.status}
+              </span>
+            )}
           </div>
           {activeRange.startDate && (
              <div className="text-[10px] font-mono text-nexus-accent border border-nexus-accent/30 px-2 py-0.5 rounded bg-nexus-accent/5">

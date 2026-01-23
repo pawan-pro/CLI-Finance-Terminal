@@ -28,7 +28,7 @@ Recent Price Action: ${JSON.stringify(marketContext.recentHistory.slice(-5))}
     }));
 
     // Generate content using the correct SDK pattern: ai.models.generateContent
-    // Using the model defined in CONFIG (recommended: gemini-3-pro-preview for complex text tasks)
+    // Using the model defined in CONFIG (recommended: gemini-3-flash-preview for faster responses)
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: CONFIG.AI_MODEL,
       contents: [

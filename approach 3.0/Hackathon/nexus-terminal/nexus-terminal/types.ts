@@ -13,6 +13,7 @@ export interface StockQuote {
   volume: number;
   timestamp: number;
   is_market_open: boolean;
+  status?: string;
 }
 
 export interface OHLCPoint {
@@ -84,10 +85,11 @@ export interface Stock {
 export interface MarketInstrument {
   symbol: string;
   name: string;
-  category: 'future' | 'bond' | 'fx' | 'spread' | 'em';
+  category: 'future' | 'bond' | 'fx' | 'spread' | 'em' | 'stock';
   price: number;
   change: number;
   changePercent: number;
+  status?: string;
 }
 
 export interface EconomicEvent {
