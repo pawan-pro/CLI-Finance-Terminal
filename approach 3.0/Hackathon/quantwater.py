@@ -36,13 +36,18 @@ def board():
     """📈 Master Board: All assets."""
     df = MarketPulse().get_snapshot()
     if not df.empty:
-        df = df.sort_values(by='return_magnitude', ascending=False)
+        # Rename columns to match expected names in the rest of the code
+        df = df.rename(columns={'name': 'friendly_name', 'price': 'display_price', 'change_24h': 'return_24h'})
+        # Sort by absolute value of return_24h (magnitude) in descending order
+        df = df.sort_values(by='return_24h', key=abs, ascending=False)
         render_table(df, "Quantwater Master Board")
 
 @cli.command()
 def sector():
     """🏢 Sector View: Priority Flow."""
     df = MarketPulse().get_snapshot()
+    # Rename columns to match expected names in the rest of the code
+    df = df.rename(columns={'name': 'friendly_name', 'price': 'display_price', 'change_24h': 'return_24h'})
     order = ['BONDS', 'INDEX', 'SECTORS', 'METALS', 'FX', 'CRYPTO', 'STOCK']
     for a_class in [o for o in order if o in df['asset_class'].unique()]:
         render_table(df[df['asset_class'] == a_class], f"Sector Group: {a_class}")
@@ -52,8 +57,10 @@ def bonds():
     """🏦 Fixed Income: Treasury Yield Estimates."""
     engine = MarketPulse()
     df = engine.get_snapshot()
+    # Rename columns to match expected names in the rest of the code
+    df = df.rename(columns={'name': 'friendly_name', 'price': 'display_price', 'change_24h': 'return_24h'})
     bond_df = df[df['asset_class'] == 'BONDS'].sort_values(by='symbol')
-    
+
     table = Table(title="Calibrated Fixed Income [Yield %]", style="bold green")
     table.add_column("Symbol", style="cyan")
     table.add_column("Name", style="white")
@@ -64,8 +71,8 @@ def bonds():
     for _, row in bond_df.iterrows():
         color = "green" if row['return_24h'] > 0 else "red"
         table.add_row(
-            row['symbol'], row['friendly_name'], 
-            f"{row['display_price']:.3f}%", 
+            row['symbol'], row['friendly_name'],
+            f"{row['display_price']:.3f}%",
             f"[{color}]{row['return_24h']:+.2f}%[/{color}]",
             generate_sparkline(engine.get_sparkline_data(row['symbol']))
         )
@@ -75,6 +82,8 @@ def bonds():
 def sectors():
     """🏢 Sectors: Detailed Industry Performance."""
     df = MarketPulse().get_snapshot()
+    # Rename columns to match expected names in the rest of the code
+    df = df.rename(columns={'name': 'friendly_name', 'price': 'display_price', 'change_24h': 'return_24h'})
     render_table(df[df['asset_class'] == 'SECTORS'], "Industry Benchmarks")
 
 @cli.command()
@@ -107,6 +116,10 @@ def calendar(impact):
 
 def render_table(df, title):
     if df.empty: return
+    # Make sure columns are properly named if not already renamed
+    if 'return_24h' not in df.columns and 'change_24h' in df.columns:
+        df = df.rename(columns={'name': 'friendly_name', 'price': 'display_price', 'change_24h': 'return_24h'})
+
     engine = MarketPulse()
     table = Table(title=title, style="magenta")
     table.add_column("Symbol"); table.add_column("Name"); table.add_column("Price/Yield"); table.add_column("Return %"); table.add_column("Trend"); table.add_column("Status")
