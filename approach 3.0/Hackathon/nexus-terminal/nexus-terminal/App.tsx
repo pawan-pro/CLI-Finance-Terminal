@@ -5,6 +5,7 @@ import { StockChart } from './components/StockChart';
 import { PublicChat } from './components/PublicChat';
 import { AIAssistant } from './components/AIAssistant';
 import { MacroDashboard } from './components/MacroDashboard';
+import GlobalMonitor from './components/GlobalMonitor';
 import { User, StockQuote, OHLCPoint, NewsItem, DateRange, MarketContext, MarketInstrument, EconomicEvent, RateProbability } from './types';
 import { getCurrentUser, setCurrentUser } from './services/storage';
 import { fetchQuote, fetchTimeSeries, fetchNews, fetchBatchQuotes, fetchMarketData, convertToMarketInstrument, fetchSparkline } from './services/marketDataService';
@@ -19,7 +20,7 @@ const App: React.FC = () => {
   const [activeSymbol, setActiveSymbol] = useState('AAPL');
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL'); // New state for selected symbol
   const [timeRange, setTimeRange] = useState<'1D' | '1W'>('1D'); // New state for chart time range
-  const [view, setView] = useState<'EQUITY' | 'MACRO'>('EQUITY');
+  const [view, setView] = useState<'EQUITY' | 'MACRO' | 'GLOBAL'>('EQUITY');
 
   const [quote, setQuote] = useState<StockQuote | null>(null);
   const [history, setHistory] = useState<OHLCPoint[]>([]);
@@ -290,11 +291,17 @@ const App: React.FC = () => {
              >
                 <BarChart3 size={12} className="mr-2" /> F1: EQUITY ANALYSIS
              </button>
-             <button 
+             <button
                 onClick={() => setView('MACRO')}
                 className={`w-full text-left px-2 py-1.5 rounded text-[10px] font-mono font-bold transition-all flex items-center ${view === 'MACRO' ? 'bg-nexus-accent text-nexus-900' : 'text-slate-400 hover:bg-slate-800'}`}
              >
                 <Globe2 size={12} className="mr-2" /> F2: MACRO DASHBOARD
+             </button>
+             <button
+                onClick={() => setView('GLOBAL')}
+                className={`w-full text-left px-2 py-1.5 rounded text-[10px] font-mono font-bold transition-all flex items-center ${view === 'GLOBAL' ? 'bg-nexus-accent text-nexus-900' : 'text-slate-400 hover:bg-slate-800'}`}
+             >
+                <Globe2 size={12} className="mr-2" /> F3: GLOBAL MONITOR
              </button>
           </div>
 
@@ -365,7 +372,7 @@ const App: React.FC = () => {
                     onTimeRangeChange={setTimeRange}
                   />
                 )
-              ) : (
+              ) : view === 'MACRO' ? (
                 !macroInstruments || macroInstruments.length === 0 ? (
                   <div className="h-full w-full flex items-center justify-center bg-nexus-800 border border-slate-700 rounded-lg min-h-[400px]">
                     <div className="flex flex-col items-center space-y-2">
@@ -385,7 +392,25 @@ const App: React.FC = () => {
                     }}
                   />
                 )
-              )}
+              ) : view === 'GLOBAL' ? (
+                !macroInstruments || macroInstruments.length === 0 ? (
+                  <div className="h-full w-full flex items-center justify-center bg-nexus-800 border border-slate-700 rounded-lg min-h-[400px]">
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-8 h-8 border-2 border-nexus-accent border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-mono text-slate-500 uppercase">SYNCHRONIZING WITH DATA LAKE...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <GlobalMonitor
+                    instruments={macroInstruments}
+                    onSelectSymbol={(symbol) => {
+                      setActiveSymbol(symbol);
+                      setSelectedSymbol(symbol);
+                      setView('EQUITY');
+                    }}
+                  />
+                )
+              ) : null}
             </div>
 
             <div className="h-64 flex space-x-2 flex-shrink-0">
@@ -396,7 +421,7 @@ const App: React.FC = () => {
                     </span>
                     <Search size={12} className="text-nexus-accent" />
                   </div>
-                  <div className="flex-1 overflow-y-auto p-0 divide-y divide-slate-800">
+                  <div className="flex-1 overflow-y-auto p-0 divide-y divide-slate-800 custom-scrollbar">
                     {news.map(item => (
                       <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className="block p-3 hover:bg-slate-700/30 transition-colors group">
                         <div className="flex justify-between text-[9px] font-mono text-slate-500 mb-1">

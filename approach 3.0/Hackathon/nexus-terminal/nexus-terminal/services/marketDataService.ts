@@ -256,6 +256,37 @@ export const fetchTimeSeries = async (symbol: string, range: '1D' | '1W' = '1D')
 };
 
 /**
+ * FETCH MULTIPLE MARKET DATA
+ * Fetches data for multiple symbols from the backend API
+ */
+export const fetchMultipleMarketData = async (
+  symbols: string[],
+  timeframe: string = '15min',
+  limit: number = 100
+): Promise<{data: Record<string, any[]>}> => {
+  try {
+    const symbolsParam = symbols.join(',');
+    const url = `${CONFIG.BACKEND_API_BASE}/api/multiple-market-data?symbols=${symbolsParam}&timeframe=${timeframe}&limit=${limit}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`Multiple market data fetch failed: ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching multiple market data:', error);
+    // Return empty data structure in case of error
+    const emptyData: Record<string, any[]> = {};
+    symbols.forEach(symbol => {
+      emptyData[symbol] = [];
+    });
+    return { data: emptyData };
+  }
+};
+
+/**
  * FETCH NEWS (LOCAL MOCK IMPLEMENTATION)
  * Placeholder function - in a real implementation, this would fetch from backend
  */
