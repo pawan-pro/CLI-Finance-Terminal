@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from typing import List
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import os
@@ -88,6 +89,81 @@ async def get_sparkline(symbol: str):
         return {"symbol": symbol, "data": history}
     except:
         return {"symbol": symbol, "data": []}
+
+@app.get("/api/correlation")
+async def get_correlation():
+    """Calculates Pearson correlation for core global assets."""
+    try:
+        conn = duckdb.connect(DB_PATH)
+        # Select core assets for the 6x6 matrix
+        symbols = ['US500Roll', 'UT100Roll', 'XAUUSD.sd', 'USOILRoll', 'US10Y.px', 'EURUSD.sd']
+
+        # Pull last 100 bars and pivot
+        df = conn.execute(f"""
+            PIVOT (SELECT time_utc, symbol, close FROM m15_bars WHERE symbol IN {tuple(symbols)})
+            ON symbol USING AVG(close) GROUP BY time_utc ORDER BY time_utc DESC LIMIT 100
+        """).df().dropna()
+
+        # Calculate matrix and convert to format React expects
+        corr_matrix = df[symbols].corr().round(2).to_dict()
+        conn.close()
+        return corr_matrix
+    except Exception as e:
+        print(f"Correlation Error: {e}")
+        return {}
+
+@app.get("/api/multiple-market-data")
+def get_multiple_market_data(
+    symbols: str = Query(..., description="Comma-separated list of symbols"),
+    timeframe: str = Query("15min", enum=["tick", "1min", "5min", "15min", "1H", "1D"]),
+    limit: int = Query(100, ge=1, le=10000),
+):
+    """Get market data for multiple symbols."""
+    try:
+        conn = duckdb.connect(DB_PATH)
+
+        # Map timeframe to table
+        table_map = {
+            "tick": "ticks",
+            "1min": "m1_bars",
+            "5min": "m5_bars",
+            "15min": "m15_bars",
+            "1H": "h1_bars",
+            "1D": "d1_bars",
+        }
+
+        table = table_map.get(timeframe, "m15_bars")
+
+        # Parse symbols from comma-separated string
+        symbol_list = [s.strip() for s in symbols.split(',')]
+
+        # Query data for multiple symbols
+        placeholders = ",".join(["?" for _ in symbol_list])
+        query = f"""
+        SELECT time_utc, symbol, open, high, low, close, volume
+        FROM {table}
+        WHERE symbol IN ({placeholders})
+        ORDER BY time_utc DESC, symbol
+        LIMIT ?
+        """
+        result = conn.execute(query, symbol_list + [limit * len(symbol_list)]).fetchall()
+
+        # Convert to list of dictionaries
+        columns = ["time_utc", "symbol", "open", "high", "low", "close", "volume"]
+        data = [dict(zip(columns, row)) for row in result]
+
+        # Group by symbol
+        grouped_data = {}
+        for item in data[::-1]:  # Reverse to chronological order
+            symbol = item["symbol"]
+            if symbol not in grouped_data:
+                grouped_data[symbol] = []
+            grouped_data[symbol].append(item)
+
+        conn.close()
+        return {"data": grouped_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

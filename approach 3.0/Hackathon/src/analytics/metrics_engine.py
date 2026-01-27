@@ -75,6 +75,7 @@ class MarketPulse:
                 WHEN lp.raw_symbol = 'Facebook' THEN 'META'
                 WHEN lp.raw_symbol = 'Citigroup' THEN 'C'
                 WHEN lp.raw_symbol = 'US02Y.px' THEN 'US02Y'
+                WHEN lp.raw_symbol = 'US07Y.px' THEN 'US07Y'
                 WHEN lp.raw_symbol = 'US10Y.px' THEN 'US10Y'
                 WHEN lp.raw_symbol = 'US30Y.px' THEN 'US30Y'
                 ELSE REPLACE(REPLACE(REPLACE(lp.raw_symbol, '.sd', ''), '.lv', ''), 'Roll', '')
@@ -94,13 +95,15 @@ class MarketPulse:
                 ELSE 'STOCK'
             END as asset_class,
 
-            -- 4. PRICE / YIELD CALCULATION
-            CASE
-                WHEN lp.raw_symbol = 'US02Y.px' THEN ROUND(4.150 + (82.80 - lp.last_price) * 0.25, 3)
-                WHEN lp.raw_symbol = 'US10Y.px' THEN ROUND(4.150 + (95.94 - lp.last_price) * 0.12, 3)
-                WHEN lp.raw_symbol = 'US30Y.px' THEN ROUND(4.450 + (87.80 - lp.last_price) * 0.08, 3)
-                ELSE lp.last_price
-            END as price,
+            -- 4. PRICE / YIELD DISPLAY
+            -- For bonds (.px), the 'close' field now stores the ACTUAL YIELD (already converted in fetch script)
+            -- So we just display it directly without any calculation
+            ROUND(lp.last_price, 
+                CASE 
+                    WHEN lp.raw_symbol LIKE '%.px' THEN 3  -- 3 decimals for bond yields
+                    ELSE 2  -- 2 decimals for everything else
+                END
+            ) as price,
 
             -- 5. PERFORMANCE
             ROUND(((lp.last_price - COALESCE(bp.price_24h_ago, fp.first_price)) / 
