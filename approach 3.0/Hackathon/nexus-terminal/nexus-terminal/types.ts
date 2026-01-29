@@ -30,6 +30,7 @@ export interface MarketContext {
   quote: StockQuote | null;
   selectedRange: DateRange;
   recentHistory: OHLCPoint[];
+  visionAnalysis?: string | null;
 }
 
 export interface NewsItem {

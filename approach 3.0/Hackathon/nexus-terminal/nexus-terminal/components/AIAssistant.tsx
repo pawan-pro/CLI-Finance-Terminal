@@ -16,6 +16,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ marketContext }) => {
       timestamp: Date.now()
     }
   ]);
+
+  // Add vision analysis to messages when it's available
+  useEffect(() => {
+    if (marketContext.visionAnalysis) {
+      const visionMsg: AIChatMessage = {
+        id: `vision-${Date.now()}`,
+        role: 'model',
+        content: `📊 AGENTIC VISION ANALYSIS\n\n${marketContext.visionAnalysis}`,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, visionMsg]);
+    }
+  }, [marketContext.visionAnalysis]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);

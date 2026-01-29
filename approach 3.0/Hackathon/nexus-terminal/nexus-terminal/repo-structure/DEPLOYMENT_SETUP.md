@@ -45,8 +45,9 @@ npm run preview
 
 ## Backend Requirements
 
-The application expects a backend service running at `http://localhost:8000` with the following endpoint:
+The application expects a backend service running at `http://localhost:8000` with the following endpoints:
 - GET `/api/market` - Returns market data for all instruments
+- POST `/api/vision/analyze` - Analyzes financial chart images using Gemini 3 Flash vision capabilities
 
 If the backend is not available, the application will fall back to simulated data from the dataService.
 

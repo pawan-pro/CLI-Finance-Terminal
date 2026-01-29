@@ -39,6 +39,9 @@ const App: React.FC = () => {
   const [newsError, setNewsError] = useState<string | null>(null);
   const [watchlistError, setWatchlistError] = useState<string | null>(null);
 
+  // Vision Analysis State
+  const [visionAnalysis, setVisionAnalysis] = useState<string | null>(null);
+
   useEffect(() => {
     const stored = getCurrentUser();
     if (stored) setUser(stored);
@@ -47,6 +50,19 @@ const App: React.FC = () => {
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  // Listen for vision analysis completion events
+  useEffect(() => {
+    const handleVisionAnalysisComplete = (event: any) => {
+      setVisionAnalysis(event.detail.analysis);
+    };
+
+    window.addEventListener('visionAnalysisComplete', handleVisionAnalysisComplete);
+
+    return () => {
+      window.removeEventListener('visionAnalysisComplete', handleVisionAnalysisComplete);
+    };
   }, []);
 
   // Load economic events periodically
@@ -221,8 +237,9 @@ const App: React.FC = () => {
     symbol: selectedSymbol, // Use selectedSymbol instead of activeSymbol
     quote,
     selectedRange,
-    recentHistory: history
-  }), [selectedSymbol, quote, selectedRange, history]);
+    recentHistory: history,
+    visionAnalysis
+  }), [selectedSymbol, quote, selectedRange, history, visionAnalysis]);
 
   if (!user) return <Auth onLogin={setUser} />;
 

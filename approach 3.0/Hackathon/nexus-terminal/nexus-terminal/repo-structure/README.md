@@ -91,6 +91,7 @@ The application expects the following environment variables:
 1. **Real-time Market Data**: Live stock quotes and charts
 2. **Interactive Charts**: Time-series visualization with selection
 3. **AI Assistant**: Context-aware financial analysis powered by Gemini
-4. **Public Chat**: Real-time trading community discussion
-5. **Macro Dashboard**: Economic indicators and instruments
-6. **Authentication**: User session management
+4. **Agentic Vision**: Visual chart analysis using Gemini 3 Flash vision capabilities
+5. **Public Chat**: Real-time trading community discussion
+6. **Macro Dashboard**: Economic indicators and instruments
+7. **Authentication**: User session management

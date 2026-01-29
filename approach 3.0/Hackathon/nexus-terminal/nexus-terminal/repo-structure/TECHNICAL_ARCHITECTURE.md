@@ -70,6 +70,7 @@ Integrates with Google's Gemini AI:
 - `sendMessageToGemini()`: Sends user queries to AI
 - Processes market context for intelligent responses
 - Uses Google Search tools for enhanced analysis
+- Incorporates vision analysis results when available
 
 ### dataService.ts
 Generates simulated market data:
@@ -94,6 +95,9 @@ Client-side persistence layer:
 - Implements brush functionality for date range selection
 - Shows OHLC data with volume bars
 - Responsive design for different screen sizes
+- Includes 'Agentic Vision' button for chart image analysis
+- Captures chart as image using html2canvas
+- Shows scanning overlay during image capture
 
 ### AIAssistant.tsx
 - Maintains chat history with initialization message

@@ -165,5 +165,62 @@ def get_multiple_market_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+# New Vision Endpoint
+@app.post("/api/vision/analyze")
+async def analyze_chart_vision(data: dict):
+    """
+    Receives a base64 image of the chart.
+    Uses Gemini 3 Flash Agentic Vision to analyze it.
+    """
+    import base64
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()  # Load environment variables
+
+    import google.generativeai as genai
+
+    try:
+        # Extract the base64 string (remove data:image/png;base64, prefix if present)
+        image_str = data.get("image", "")
+        if image_str.startswith('data:image'):
+            image_data = image_str.split(",")[1]
+        else:
+            image_data = image_str
+
+        # Get API key from environment
+        api_key = os.getenv("API_KEY")
+        if not api_key:
+            return {"analysis": "Vision Module Error: API_KEY not configured in environment"}
+
+        # Configure the API key
+        genai.configure(api_key=api_key)
+
+        # Get the model
+        model = genai.GenerativeModel('gemini-3-flash-preview')
+
+        # Decode the image
+        image_bytes = base64.b64decode(image_data)
+
+        # Create the prompt
+        prompt = (
+            "You are the Quantwater Agentic Vision module. Look at this financial chart image. "
+            "1. Identify the primary trend (bullish/bearish/consolidating). "
+            "2. Note any visible support and resistance levels. "
+            "3. Describe any recognizable chart patterns (e.g., head and shoulders, triangles, etc.). "
+            "4. Highlight any significant volume patterns if visible. "
+            "Return a concise, institutional-grade analysis with specific observations."
+        )
+
+        # Generate content
+        response = model.generate_content([prompt, {
+            'mime_type': 'image/png',
+            'data': image_bytes
+        }])
+
+        return {"analysis": response.text}
+    except Exception as e:
+        return {"analysis": f"Vision Module Error: {str(e)}"}
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

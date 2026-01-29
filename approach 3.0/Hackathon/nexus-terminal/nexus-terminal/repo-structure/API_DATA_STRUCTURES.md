@@ -21,6 +21,26 @@ Returns current market data for all tracked instruments.
 ]
 ```
 
+### POST `/api/vision/analyze`
+Analyzes financial chart images using Gemini 3 Flash vision capabilities.
+
+**Request Format:**
+```json
+{
+  "image": "base64-encoded PNG image string",
+  "symbol": "string (optional)",
+  "context": "string (optional)"
+}
+```
+
+**Response Format:**
+```json
+{
+  "analysis": "string containing AI-generated analysis of the chart"
+}
+```
+```
+
 ## Type Definitions
 
 ### User Interface
@@ -124,6 +144,7 @@ interface MarketContext {
   quote: StockQuote | null;
   selectedRange: DateRange;
   recentHistory: OHLCPoint[];
+  visionAnalysis?: string | null;
 }
 
 interface DateRange {

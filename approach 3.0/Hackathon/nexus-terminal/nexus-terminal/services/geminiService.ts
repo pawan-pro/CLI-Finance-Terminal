@@ -19,6 +19,7 @@ Current Asset: ${marketContext.symbol} (${marketContext.quote?.name || 'N/A'})
 Current Price: $${marketContext.quote?.price.toFixed(2)} (${marketContext.quote?.percent_change.toFixed(2)}%)
 User Selection on Chart: ${marketContext.selectedRange.startDate || 'All'} to ${marketContext.selectedRange.endDate || 'Present'}
 Recent Price Action: ${JSON.stringify(marketContext.recentHistory.slice(-5))}
+${marketContext.visionAnalysis ? `[VISUAL ANALYSIS]\n${marketContext.visionAnalysis}\n` : ''}
 `;
 
     // Map internal message format to the SDK's Content format

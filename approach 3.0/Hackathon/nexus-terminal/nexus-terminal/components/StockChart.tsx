@@ -12,8 +12,9 @@ import {
   Area
 } from 'recharts';
 import { OHLCPoint, DateRange, StockQuote } from '../types';
-import { Activity, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, AlertCircle, Eye } from 'lucide-react';
 import { fetchTimeSeries } from '../services/marketDataService';
+import html2canvas from 'html2canvas';
 
 interface StockChartProps {
   quote: StockQuote | null;
@@ -36,6 +37,7 @@ export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, o
   const [activeRange, setActiveRange] = useState<DateRange>({ startDate: null, endDate: null });
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -50,6 +52,63 @@ export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, o
     resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
   }, []);
+
+  const captureVisionReport = async () => {
+    if (!containerRef.current) return;
+
+    setIsCapturing(true);
+
+    try {
+      // Capture the chart container as a canvas
+      const canvas = await html2canvas(containerRef.current, {
+        backgroundColor: '#0f172a', // Match the chart background
+        scale: 2, // Higher resolution for better AI analysis
+        useCORS: true,
+        allowTaint: true
+      });
+
+      // Convert canvas to base64 PNG
+      const imageData = canvas.toDataURL('image/png');
+
+      // Send to the vision API
+      const response = await fetch('http://localhost:8000/api/vision/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageData,
+          symbol: quote?.symbol,
+          context: 'stock_chart_analysis'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Dispatch a custom event to notify the parent component about the vision result
+      window.dispatchEvent(new CustomEvent('visionAnalysisComplete', {
+        detail: {
+          symbol: quote?.symbol,
+          analysis: result.analysis || result
+        }
+      }));
+    } catch (error) {
+      console.error('Error capturing vision report:', error);
+      // Dispatch an error event
+      window.dispatchEvent(new CustomEvent('visionAnalysisComplete', {
+        detail: {
+          symbol: quote?.symbol,
+          analysis: `Error: ${(error as Error).message || 'Failed to analyze chart'}`
+        }
+      }));
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   const handleBrushChange = (e: any) => {
     if (e && e.startIndex !== undefined && e.endIndex !== undefined) {
@@ -116,6 +175,21 @@ export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, o
         </div>
         <div className="flex flex-col items-end">
           <div className="flex items-center space-x-2 mb-1">
+            <button
+              onClick={captureVisionReport}
+              disabled={isCapturing}
+              className="p-1.5 rounded border border-slate-600 hover:border-nexus-accent transition-all duration-300 disabled:opacity-50 flex items-center justify-center"
+              style={{
+                boxShadow: '0 0 8px rgba(255, 215, 0, 0.5)',
+                background: 'radial-gradient(circle, rgba(255,215,0,0.1) 0%, rgba(255,215,0,0) 70%)'
+              }}
+            >
+              {isCapturing ? (
+                <div className="w-4 h-4 border-2 border-nexus-accent border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Eye size={16} className="text-yellow-400" />
+              )}
+            </button>
             <div className="flex space-x-1 bg-nexus-800 rounded border border-slate-700">
               <button
                 onClick={() => onTimeRangeChange && onTimeRangeChange('1D')}
@@ -170,15 +244,15 @@ export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, o
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="1 4" stroke="#1e293b" vertical={false} />
-                <XAxis 
-                  dataKey="datetime" 
+                <XAxis
+                  dataKey="datetime"
                   tick={{fill: '#475569', fontSize: 9, fontFamily: 'JetBrains Mono'}}
                   tickFormatter={(v) => v.split(' ')[1]?.substring(0, 5) || ''}
                   axisLine={false}
                   tickLine={false}
                   minTickGap={40}
                 />
-                <YAxis 
+                <YAxis
                   domain={['auto', 'auto']}
                   orientation="right"
                   tick={{fill: '#475569', fontSize: 9, fontFamily: 'JetBrains Mono'}}
@@ -206,16 +280,27 @@ export const StockChart: React.FC<StockChartProps> = ({ quote, history, error, o
                 <Area type="monotone" dataKey="close" stroke={color} fillOpacity={1} fill="url(#colorPrice)" strokeWidth={2} isAnimationActive={false} />
                 <Bar dataKey="volume" fill="#334155" yAxisId={1} opacity={0.2} barSize={4} isAnimationActive={false} />
                 <YAxis yAxisId={1} hide />
-                <Brush 
-                  dataKey="datetime" 
-                  height={20} 
-                  stroke="#334155" 
+                <Brush
+                  dataKey="datetime"
+                  height={20}
+                  stroke="#334155"
                   fill="#020617"
                   tickFormatter={() => ''}
                   onChange={handleBrushChange}
                 />
               </ComposedChart>
             </ResponsiveContainer>
+
+            {/* Scanning Overlay */}
+            {isCapturing && (
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-nexus-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-nexus-accent font-mono text-sm uppercase tracking-wider">SCANNING PIXELS...</p>
+                  <p className="text-slate-400 text-xs font-mono mt-1">Analyzing chart patterns</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

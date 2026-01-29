@@ -18,3 +18,4 @@ seaborn
 plotly==5.15.0
 pytest
 duckdb
+google-generativeai
