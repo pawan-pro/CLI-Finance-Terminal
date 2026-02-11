@@ -1,0 +1,5 @@
+{
+  "name": "Nexus Terminal",
+  "description": "A Bloomberg-style financial dashboard featuring real-time stock simulations, interactive charting, live public chat, and context-aware AI analysis powered by Gemini.",
+  "requestFramePermissions": []
+}
