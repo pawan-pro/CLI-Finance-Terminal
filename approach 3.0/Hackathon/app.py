@@ -36,6 +36,14 @@ def _fetch_snapshot() -> None:
     tmp_path = DB_PATH + ".tmp"
     try:
         urllib.request.urlretrieve(url, tmp_path)
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "quantwater-snapshot-loader/1.0"}
+        )
+        with urllib.request.urlopen(req) as response:
+            with open(tmp_path, 'wb') as f:
+                f.write(response.read())
+    
     except Exception as e:
         raise RuntimeError(f"[snapshot] Download failed: {e}")
 
