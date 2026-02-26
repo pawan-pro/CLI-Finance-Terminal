@@ -21,39 +21,40 @@ DB_PATH = os.environ.get(
 )
 
 def _fetch_snapshot() -> None:
-    """Download DuckDB snapshot from R2 at startup. Only runs in cloud."""
     if not _IS_CLOUD:
         print(f"[snapshot] Local mode — using {DB_PATH}")
         return
 
-    url = os.environ.get("DB_SNAPSHOT_URL")
-    if not url:
-        raise RuntimeError("DB_SNAPSHOT_URL is not set")
+    import boto3
+    from botocore.config import Config
+
+    access_key = os.environ.get("R2_ACCESS_KEY_ID")
+    secret_key = os.environ.get("R2_SECRET_ACCESS_KEY")
+    endpoint   = os.environ.get("R2_ENDPOINT_URL")
+
+    if not all([access_key, secret_key, endpoint]):
+        raise RuntimeError("[snapshot] R2 credentials not set")
 
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
-    print(f"[snapshot] Downloading from {url}")
     tmp_path = DB_PATH + ".tmp"
-    try:
-        urllib.request.urlretrieve(url, tmp_path)
-        req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "quantwater-snapshot-loader/1.0"}
-        )
-        with urllib.request.urlopen(req) as response:
-            with open(tmp_path, 'wb') as f:
-                f.write(response.read())
-    
-    except Exception as e:
-        raise RuntimeError(f"[snapshot] Download failed: {e}")
+
+    print(f"[snapshot] Downloading via R2 S3 API")
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        config=Config(signature_version="s3v4"),
+    )
+    s3.download_file("market-db", "market_data_latest.duckdb", tmp_path)
 
     size = os.path.getsize(tmp_path)
-    if size < 512 * 1024:  # Minimum 512 KB sanity check
+    if size < 512 * 1024:
         os.remove(tmp_path)
-        raise RuntimeError(f"[snapshot] File too small ({size} bytes) — aborting")
+        raise RuntimeError(f"[snapshot] File too small ({size} bytes)")
 
     os.replace(tmp_path, DB_PATH)
-    print(f"[snapshot] Ready: {DB_PATH} ({size / 1024 / 1024:.1f} MB)")
+    print(f"[snapshot] Ready: {size / 1024 / 1024:.1f} MB")
 
 _fetch_snapshot()
 
